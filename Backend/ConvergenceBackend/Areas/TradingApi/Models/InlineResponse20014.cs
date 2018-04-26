@@ -65,25 +65,25 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum AEnum for a
             /// </summary>
-            [EnumMember(Value = a)]
+            [EnumMember]
             AEnum = 1,
             
             /// <summary>
             /// Enum BEnum for b
             /// </summary>
-            [EnumMember(Value = b)]
+            [EnumMember]
             BEnum = 2,
             
             /// <summary>
             /// Enum DEnum for d
             /// </summary>
-            [EnumMember(Value = d)]
+            [EnumMember]
             DEnum = 3,
             
             /// <summary>
             /// Enum TEnum for t
             /// </summary>
-            [EnumMember(Value = t)]
+            [EnumMember]
             TEnum = 4
         }
 

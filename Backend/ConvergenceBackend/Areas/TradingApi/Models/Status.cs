@@ -28,13 +28,13 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum OkEnum for ok
             /// </summary>
-            [EnumMember(Value = ok)]
+            [EnumMember]
             OkEnum = 1,
             
             /// <summary>
             /// Enum ErrorEnum for error
             /// </summary>
-            [EnumMember(Value = error)]
+            [EnumMember]
             ErrorEnum = 2
         }
 }

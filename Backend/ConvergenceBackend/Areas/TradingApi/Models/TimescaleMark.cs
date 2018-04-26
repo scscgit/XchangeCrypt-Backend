@@ -51,25 +51,25 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum RedEnum for red
             /// </summary>
-            [EnumMember(Value = red)]
+            [EnumMember]
             RedEnum = 1,
             
             /// <summary>
             /// Enum GreenEnum for green
             /// </summary>
-            [EnumMember(Value = green)]
+            [EnumMember]
             GreenEnum = 2,
             
             /// <summary>
             /// Enum BlueEnum for blue
             /// </summary>
-            [EnumMember(Value = blue)]
+            [EnumMember]
             BlueEnum = 3,
             
             /// <summary>
             /// Enum YellowEnum for yellow
             /// </summary>
-            [EnumMember(Value = yellow)]
+            [EnumMember]
             YellowEnum = 4
         }
 
