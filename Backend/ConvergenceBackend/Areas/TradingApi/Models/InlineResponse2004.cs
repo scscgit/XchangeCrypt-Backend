@@ -23,9 +23,10 @@ namespace IO.Swagger.Models
     /// </summary>
     [DataContract]
     public partial class InlineResponse2004 : IEquatable<InlineResponse2004>
-    {         /// <summary>
-              /// Gets or Sets S
-              /// </summary>
+    {
+        /// <summary>
+        /// Gets or Sets S
+        /// </summary>
         public enum Status
         {
             /// <summary>

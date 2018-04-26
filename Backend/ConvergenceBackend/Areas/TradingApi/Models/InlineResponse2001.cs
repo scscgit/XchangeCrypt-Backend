@@ -21,9 +21,10 @@ namespace IO.Swagger.Models
     /// </summary>
     [DataContract]
     public partial class InlineResponse2001 : IEquatable<InlineResponse2001>
-    {         /// <summary>
-              /// Gets or Sets S
-              /// </summary>
+    {
+        /// <summary>
+        /// Gets or Sets S
+        /// </summary>
         public enum Status
         {
             /// <summary>
@@ -35,7 +36,7 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum ErrorEnum for error
             /// </summary>
-            [EnumMember(Value = ""error"")]
+            [EnumMember(Value = "error")]
             ErrorEnum = 2
         }
 

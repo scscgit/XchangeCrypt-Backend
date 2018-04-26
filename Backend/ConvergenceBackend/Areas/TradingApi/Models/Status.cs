@@ -11,9 +11,10 @@
 using System.Runtime.Serialization;
 
 namespace IO.Swagger.Models
-{         /// <summary>
-          /// Gets or Sets Status
-          /// </summary>
+{
+    /// <summary>
+    /// Gets or Sets Status
+    /// </summary>
     public enum Status
     {
         /// <summary>

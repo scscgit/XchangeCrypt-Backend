@@ -1,15 +1,29 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System;
 
 namespace Microsoft.AspNetCore.Authentication
 {
+    /// <summary>
+    ///
+    /// </summary>
     public static class AzureAdServiceCollectionExtensions
     {
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <returns></returns>
         public static AuthenticationBuilder AddAzureAdB2CBearer(this AuthenticationBuilder builder)
             => builder.AddAzureAdB2CBearer(_ => { });
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="configureOptions"></param>
+        /// <returns></returns>
         public static AuthenticationBuilder AddAzureAdB2CBearer(this AuthenticationBuilder builder, Action<AzureAdB2COptions> configureOptions)
         {
             builder.Services.Configure(configureOptions);
