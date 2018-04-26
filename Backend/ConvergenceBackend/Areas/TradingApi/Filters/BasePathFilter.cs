@@ -1,7 +1,7 @@
-using System.Linq;
-using System.Text.RegularExpressions;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace IO.Swagger.Filters
 {

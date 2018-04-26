@@ -1,8 +1,7 @@
-﻿using System;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System;
 
 namespace Microsoft.AspNetCore.Authentication
 {
@@ -19,7 +18,7 @@ namespace Microsoft.AspNetCore.Authentication
             return builder;
         }
 
-        private class ConfigureAzureOptions: IConfigureNamedOptions<JwtBearerOptions>
+        private class ConfigureAzureOptions : IConfigureNamedOptions<JwtBearerOptions>
         {
             private readonly AzureAdB2COptions _azureOptions;
 
