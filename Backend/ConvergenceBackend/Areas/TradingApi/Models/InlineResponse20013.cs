@@ -9,6 +9,7 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Runtime.Serialization;
 using System.Text;
@@ -24,25 +25,8 @@ namespace IO.Swagger.Models
         /// <summary>
         /// Gets or Sets S
         /// </summary>
-        public enum Status
-        {
-            /// <summary>
-            /// Enum OkEnum for ok
-            /// </summary>
-            [EnumMember(Value = "ok")]
-            OkEnum = 1,
-
-            /// <summary>
-            /// Enum ErrorEnum for error
-            /// </summary>
-            [EnumMember(Value = "error")]
-            ErrorEnum = 2
-        }
-
-        /// <summary>
-        /// Gets or Sets S
-        /// </summary>
         [DataMember(Name = "s")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public Status? S { get; set; }
 
         /// <summary>

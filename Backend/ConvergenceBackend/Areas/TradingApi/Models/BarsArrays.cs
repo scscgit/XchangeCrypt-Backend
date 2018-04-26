@@ -9,6 +9,7 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -23,10 +24,11 @@ namespace IO.Swagger.Models
     /// </summary>
     [DataContract]
     public partial class BarsArrays : IEquatable<BarsArrays>
-    {         /// <summary>
-              /// Status code.
-              /// </summary>
-              /// <value>Status code.</value>
+    {
+        /// <summary>
+        /// Status code.
+        /// </summary>
+        /// <value>Status code.</value>
         public enum SEnum
         {
             /// <summary>
@@ -54,6 +56,7 @@ namespace IO.Swagger.Models
         /// <value>Status code.</value>
         [Required]
         [DataMember(Name = "s")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public SEnum? S { get; set; }
 
         /// <summary>

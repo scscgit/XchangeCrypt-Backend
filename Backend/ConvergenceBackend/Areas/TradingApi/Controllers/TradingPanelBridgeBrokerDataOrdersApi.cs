@@ -42,7 +42,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse20010));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  }, {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  }, {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse20010>(exampleJson)
@@ -68,7 +68,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse20011));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  }, {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  }, {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse20011>(exampleJson)
@@ -94,7 +94,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2004));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
@@ -121,7 +121,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2004));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
@@ -148,7 +148,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2007));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
@@ -175,7 +175,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2006));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2006>(exampleJson)
@@ -208,7 +208,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2007));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
@@ -246,7 +246,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2005));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"orderId\" : \"orderId\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"orderId\" : \"orderId\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2005>(exampleJson)
@@ -272,7 +272,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2008));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  }, {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  }, {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2008>(exampleJson)
@@ -299,7 +299,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2007));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
@@ -326,7 +326,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2009));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2009>(exampleJson)
@@ -355,7 +355,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2007));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
@@ -382,7 +382,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2003));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"amData\" : [ [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ], [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ] ],\n    \"unrealizedPl\" : 6.02745618307040320615897144307382404804229736328125,\n    \"balance\" : 0.80082819046101150206595775671303272247314453125,\n    \"equity\" : 1.46581298050294517310021547018550336360931396484375\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"amData\" : [ [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ], [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ] ],\n    \"unrealizedPl\" : 6.02745618307040320615897144307382404804229736328125,\n    \"balance\" : 0.80082819046101150206595775671303272247314453125,\n    \"equity\" : 1.46581298050294517310021547018550336360931396484375\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2003>(exampleJson)
@@ -405,9 +405,8 @@ namespace IO.Swagger.Controllers
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2002));
-
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  }, {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  }, {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2002>(exampleJson)
@@ -434,7 +433,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse200));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"access_token\" : \"access_token\",\n    \"expiration\" : 0.80082819046101150206595775671303272247314453125\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"access_token\" : \"access_token\",\n    \"expiration\" : 0.80082819046101150206595775671303272247314453125\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse200>(exampleJson)
@@ -460,7 +459,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse2001));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"pullingInterval\" : {\n      \"accountManager\" : 5.63737665663332876420099637471139430999755859375,\n      \"orders\" : 1.46581298050294517310021547018550336360931396484375,\n      \"positions\" : 5.962133916683182377482808078639209270477294921875,\n      \"history\" : 0.80082819046101150206595775671303272247314453125,\n      \"quotes\" : 6.02745618307040320615897144307382404804229736328125\n    },\n    \"accountManager\" : [ {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ],\n    \"durations\" : [ {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"pullingInterval\" : {\n      \"accountManager\" : 5.63737665663332876420099637471139430999755859375,\n      \"orders\" : 1.46581298050294517310021547018550336360931396484375,\n      \"positions\" : 5.962133916683182377482808078639209270477294921875,\n      \"history\" : 0.80082819046101150206595775671303272247314453125,\n      \"quotes\" : 6.02745618307040320615897144307382404804229736328125\n    },\n    \"accountManager\" : [ {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ],\n    \"durations\" : [ {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse2001>(exampleJson)
@@ -486,7 +485,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse20013));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : {\n    \"asks\" : [ \"\", \"\" ],\n    \"bids\" : [ \"\", \"\" ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"asks\" : [ \"\", \"\" ],\n    \"bids\" : [ \"\", \"\" ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse20013>(exampleJson)
@@ -541,7 +540,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(SymbolMapping));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"fields\" : [ { }, { } ],\n  \"symbols\" : [ {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  }, {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  } ]\n}";
+            exampleJson = "{\n  \"fields\" : [ \"brokerSymbol\" ],\n  \"symbols\" : [ {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  }, {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  } ]\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<SymbolMapping>(exampleJson)
@@ -567,7 +566,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse20012));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : { },\n  \"d\" : [ {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  }, {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  }, {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse20012>(exampleJson)

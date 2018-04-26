@@ -11,10 +11,11 @@
 using System.Runtime.Serialization;
 
 namespace IO.Swagger.Models
-{         /// <summary>
-          /// Constant. Set it to \"brokerSymbol\".
-          /// </summary>
-          /// <value>Constant. Set it to \"brokerSymbol\".</value>
+{
+    /// <summary>
+    /// Constant. Set it to \"brokerSymbol\".
+    /// </summary>
+    /// <value>Constant. Set it to \"brokerSymbol\".</value>
     public enum SingleField
     {
         /// <summary>

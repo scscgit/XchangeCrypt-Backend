@@ -9,6 +9,7 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,7 @@ namespace IO.Swagger.Models
         /// </summary>
         /// <value>Array with the only one element &#x60;[&#39;brokerSymbol&#39;]&#x60;.</value>
         [DataMember(Name = "fields")]
+        [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
         public List<SingleField> Fields { get; set; }
 
         /// <summary>
