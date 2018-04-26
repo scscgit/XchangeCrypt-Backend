@@ -54,13 +54,13 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum BuyEnum for buy
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "buy")]
             BuyEnum = 1,
 
             /// <summary>
             /// Enum SellEnum for sell
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "sell")]
             SellEnum = 2
         }
 

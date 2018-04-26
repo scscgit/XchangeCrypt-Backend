@@ -32,19 +32,19 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum OkEnum for ok
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "ok")]
             OkEnum = 1,
 
             /// <summary>
             /// Enum ErrorEnum for error
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "error")]
             ErrorEnum = 2,
 
             /// <summary>
             /// Enum NoDataEnum for no_data
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "no_data")]
             NoDataEnum = 3
         }
 

@@ -54,13 +54,13 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum BuyEnum for buy
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "buy")]
             BuyEnum = 1,
 
             /// <summary>
             /// Enum SellEnum for sell
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "sell")]
             SellEnum = 2
         }
 
@@ -81,25 +81,25 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum MarketEnum for market
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "market")]
             MarketEnum = 1,
 
             /// <summary>
             /// Enum StopEnum for stop
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "stop")]
             StopEnum = 2,
 
             /// <summary>
             /// Enum LimitEnum for limit
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "limit")]
             LimitEnum = 3,
 
             /// <summary>
             /// Enum StoplimitEnum for stoplimit
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "stoplimit")]
             StoplimitEnum = 4
         }
 
@@ -155,13 +155,13 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum OrderEnum for order
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "order")]
             OrderEnum = 1,
 
             /// <summary>
             /// Enum PositionEnum for position
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "position")]
             PositionEnum = 2
         }
 
@@ -187,37 +187,37 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum PlacingEnum for placing
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "placing")]
             PlacingEnum = 1,
 
             /// <summary>
             /// Enum InactiveEnum for inactive
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "inactive")]
             InactiveEnum = 2,
 
             /// <summary>
             /// Enum WorkingEnum for working
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "working")]
             WorkingEnum = 3,
 
             /// <summary>
             /// Enum RejectedEnum for rejected
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "rejected")]
             RejectedEnum = 4,
 
             /// <summary>
             /// Enum FilledEnum for filled
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "filled")]
             FilledEnum = 5,
 
             /// <summary>
             /// Enum CancelledEnum for cancelled
             /// </summary>
-            [EnumMember]
+            [EnumMember(Value = "cancelled")]
             CancelledEnum = 6
         }
 

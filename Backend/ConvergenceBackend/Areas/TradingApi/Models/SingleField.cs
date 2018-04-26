@@ -20,7 +20,7 @@ namespace IO.Swagger.Models
         /// <summary>
         /// Enum BrokerSymbolEnum for brokerSymbol
         /// </summary>
-        [EnumMember]
+        [EnumMember(Value = "brokerSymbol")]
         BrokerSymbolEnum = 1
     }
 }
