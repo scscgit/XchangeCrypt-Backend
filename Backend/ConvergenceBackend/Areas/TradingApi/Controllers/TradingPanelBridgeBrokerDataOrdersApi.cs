@@ -20,6 +20,7 @@ namespace IO.Swagger.Controllers
     /// <summary>
     ///
     /// </summary>
+    //[Area("TradingApi")]
     public class TradingPanelBridgeBrokerDataOrdersApiController : Controller
     {
         /// <summary>
