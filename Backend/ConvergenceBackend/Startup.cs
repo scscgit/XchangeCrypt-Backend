@@ -20,6 +20,8 @@ using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using IO.Swagger.Filters;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication;
 
 namespace ConvergenceBackend
 {
@@ -49,6 +51,12 @@ namespace ConvergenceBackend
         /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAuthentication(sharedOptions =>
+            {
+                sharedOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddAzureAdB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
+
             // Add framework services.
             services
                 .AddMvc()
@@ -97,6 +105,7 @@ namespace ConvergenceBackend
         /// <param name="loggerFactory"></param>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            app.UseAuthentication();
             app
                 .UseMvc(routes =>
                 {
