@@ -6,7 +6,14 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
       - "80"
+  tradingbackend:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "80"
+
 networks:
   default:
     external:
       name: nat
+

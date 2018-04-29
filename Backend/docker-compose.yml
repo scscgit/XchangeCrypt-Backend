@@ -5,4 +5,11 @@ services:
     image: convergencebackend
     build:
       context: .
-      dockerfile: ConvergenceBackend\Dockerfile
+      dockerfile: ConvergenceBackend/Dockerfile
+
+  tradingbackend:
+    image: tradingbackend
+    build:
+      context: .
+      dockerfile: TradingBackend/Dockerfile
+
