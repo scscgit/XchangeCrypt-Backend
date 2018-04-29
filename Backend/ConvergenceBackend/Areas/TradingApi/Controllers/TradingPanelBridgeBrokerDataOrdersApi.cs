@@ -14,6 +14,7 @@ using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -258,24 +259,38 @@ namespace IO.Swagger.Controllers
             [FromQuery]string requestId)
         {
             Task<string> orderIdTask = Task.FromResult("Example orderId");
-            switch (type)
+            try
             {
-                case "market":
-                    break;
+                switch (type)
+                {
+                    case "market":
+                        break;
 
-                case "stop":
-                    break;
+                    case "stop":
+                        break;
 
-                case "limit":
-                    OrderService.CreateLimitOrder(accountId, instrument, qty, side, type, limitPrice, durationDateTime, takeProfit);
-                    break;
+                    case "limit":
+                        OrderService.CreateLimitOrder(accountId, instrument, qty, side, type, limitPrice, durationDateTime, takeProfit);
+                        break;
 
-                case "stoplimit":
-                    break;
+                    case "stoplimit":
+                        break;
 
-                default:
-                    // Maybe InlineResponse2005 with Errmsg instead
-                    return BadRequest("Invalid type parameter");
+                    default:
+                        // Maybe InlineResponse2005 with Errmsg instead
+                        return BadRequest("Invalid type parameter");
+                }
+            }
+            catch (Exception e)
+            {
+                return StatusCode(
+                    500,
+                    new InlineResponse2005()
+                    {
+                        S = Status.ErrorEnum,
+                        Errmsg = "Internal error occurred: " + e.Message
+                    }
+                );
             }
 
             //new ObjectResult(JsonConvert.DeserializeObject<InlineResponse2005>("{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"orderId\" : \"orderId\"\n  },\n  \"errmsg\" : \"errmsg\"\n}"));

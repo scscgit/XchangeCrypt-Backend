@@ -34,9 +34,10 @@ namespace ConvergenceBackend.Services
                 // Send the message to the queue
                 await queueClient.SendAsync(message);
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
+                Console.WriteLine($"{DateTime.Now} :: Exception: {e.Message}");
+                throw e;
             }
         }
     }
