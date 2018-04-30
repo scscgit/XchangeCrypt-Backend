@@ -9,6 +9,7 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
@@ -46,62 +47,13 @@ namespace IO.Swagger.Models
         public decimal? Qty { get; set; }
 
         /// <summary>
-        /// Side. Possible values &ndash; \"buy\" and \"sell\".
-        /// </summary>
-        /// <value>Side. Possible values &ndash; \"buy\" and \"sell\".</value>
-        public enum SideEnum
-        {
-            /// <summary>
-            /// Enum BuyEnum for buy
-            /// </summary>
-            [EnumMember(Value = "buy")]
-            BuyEnum = 1,
-
-            /// <summary>
-            /// Enum SellEnum for sell
-            /// </summary>
-            [EnumMember(Value = "sell")]
-            SellEnum = 2
-        }
-
-        /// <summary>
         /// Side. Possible values &amp;ndash; \&quot;buy\&quot; and \&quot;sell\&quot;.
         /// </summary>
         /// <value>Side. Possible values &amp;ndash; \&quot;buy\&quot; and \&quot;sell\&quot;.</value>
         [Required]
         [DataMember(Name = "side")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public SideEnum? Side { get; set; }
-
-        /// <summary>
-        /// Type. Possible values &ndash; \"market\", \"stop\", \"limit\", \"stoplimit\".
-        /// </summary>
-        /// <value>Type. Possible values &ndash; \"market\", \"stop\", \"limit\", \"stoplimit\".</value>
-        public enum TypeEnum
-        {
-            /// <summary>
-            /// Enum MarketEnum for market
-            /// </summary>
-            [EnumMember(Value = "market")]
-            MarketEnum = 1,
-
-            /// <summary>
-            /// Enum StopEnum for stop
-            /// </summary>
-            [EnumMember(Value = "stop")]
-            StopEnum = 2,
-
-            /// <summary>
-            /// Enum LimitEnum for limit
-            /// </summary>
-            [EnumMember(Value = "limit")]
-            LimitEnum = 3,
-
-            /// <summary>
-            /// Enum StoplimitEnum for stoplimit
-            /// </summary>
-            [EnumMember(Value = "stoplimit")]
-            StoplimitEnum = 4
-        }
 
         /// <summary>
         /// Type. Possible values &amp;ndash; \&quot;market\&quot;, \&quot;stop\&quot;, \&quot;limit\&quot;, \&quot;stoplimit\&quot;.
@@ -109,6 +61,7 @@ namespace IO.Swagger.Models
         /// <value>Type. Possible values &amp;ndash; \&quot;market\&quot;, \&quot;stop\&quot;, \&quot;limit\&quot;, \&quot;stoplimit\&quot;.</value>
         [Required]
         [DataMember(Name = "type")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public TypeEnum? Type { get; set; }
 
         /// <summary>
@@ -147,25 +100,6 @@ namespace IO.Swagger.Models
         public string ParentId { get; set; }
 
         /// <summary>
-        /// Type of order's parent. Should be set only for bracket orders.
-        /// </summary>
-        /// <value>Type of order's parent. Should be set only for bracket orders.</value>
-        public enum ParentTypeEnum
-        {
-            /// <summary>
-            /// Enum OrderEnum for order
-            /// </summary>
-            [EnumMember(Value = "order")]
-            OrderEnum = 1,
-
-            /// <summary>
-            /// Enum PositionEnum for position
-            /// </summary>
-            [EnumMember(Value = "position")]
-            PositionEnum = 2
-        }
-
-        /// <summary>
         /// Type of order&#39;s parent. Should be set only for bracket orders.
         /// </summary>
         /// <value>Type of order&#39;s parent. Should be set only for bracket orders.</value>
@@ -179,54 +113,12 @@ namespace IO.Swagger.Models
         public OrderDuration Duration { get; set; }
 
         /// <summary>
-        /// String constants to describe an order status.  `Status`  | Description - -- -- -- -- -|- -- -- -- -- -- -- placing   | order is not created on a broker's side yet inactive  | bracket order is created but waiting for a base order to be filled working   | order is created but not executed yet rejected  | order is rejected for some reason filled    | order is fully executed cancelled  | order is cancelled
-        /// </summary>
-        /// <value>String constants to describe an order status.  `Status`  | Description - -- -- -- -- -|- -- -- -- -- -- -- placing   | order is not created on a broker's side yet inactive  | bracket order is created but waiting for a base order to be filled working   | order is created but not executed yet rejected  | order is rejected for some reason filled    | order is fully executed cancelled  | order is cancelled </value>
-        public enum StatusEnum
-        {
-            /// <summary>
-            /// Enum PlacingEnum for placing
-            /// </summary>
-            [EnumMember(Value = "placing")]
-            PlacingEnum = 1,
-
-            /// <summary>
-            /// Enum InactiveEnum for inactive
-            /// </summary>
-            [EnumMember(Value = "inactive")]
-            InactiveEnum = 2,
-
-            /// <summary>
-            /// Enum WorkingEnum for working
-            /// </summary>
-            [EnumMember(Value = "working")]
-            WorkingEnum = 3,
-
-            /// <summary>
-            /// Enum RejectedEnum for rejected
-            /// </summary>
-            [EnumMember(Value = "rejected")]
-            RejectedEnum = 4,
-
-            /// <summary>
-            /// Enum FilledEnum for filled
-            /// </summary>
-            [EnumMember(Value = "filled")]
-            FilledEnum = 5,
-
-            /// <summary>
-            /// Enum CancelledEnum for cancelled
-            /// </summary>
-            [EnumMember(Value = "cancelled")]
-            CancelledEnum = 6
-        }
-
-        /// <summary>
         /// String constants to describe an order status.  &#x60;Status&#x60;  | Description - -- -- -- -- -|- -- -- -- -- -- -- placing   | order is not created on a broker&#39;s side yet inactive  | bracket order is created but waiting for a base order to be filled working   | order is created but not executed yet rejected  | order is rejected for some reason filled    | order is fully executed cancelled  | order is cancelled
         /// </summary>
         /// <value>String constants to describe an order status.  &#x60;Status&#x60;  | Description - -- -- -- -- -|- -- -- -- -- -- -- placing   | order is not created on a broker&#39;s side yet inactive  | bracket order is created but waiting for a base order to be filled working   | order is created but not executed yet rejected  | order is rejected for some reason filled    | order is fully executed cancelled  | order is cancelled </value>
         [Required]
         [DataMember(Name = "status")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public StatusEnum? Status { get; set; }
 
         /// <summary>

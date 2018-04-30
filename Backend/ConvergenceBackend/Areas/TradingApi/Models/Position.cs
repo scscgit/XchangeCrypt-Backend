@@ -9,6 +9,7 @@
  */
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
@@ -46,30 +47,12 @@ namespace IO.Swagger.Models
         public decimal? Qty { get; set; }
 
         /// <summary>
-        /// Side. Possible values &ndash; \"buy\" and \"sell\".
-        /// </summary>
-        /// <value>Side. Possible values &ndash; \"buy\" and \"sell\".</value>
-        public enum SideEnum
-        {
-            /// <summary>
-            /// Enum BuyEnum for buy
-            /// </summary>
-            [EnumMember(Value = "buy")]
-            BuyEnum = 1,
-
-            /// <summary>
-            /// Enum SellEnum for sell
-            /// </summary>
-            [EnumMember(Value = "sell")]
-            SellEnum = 2
-        }
-
-        /// <summary>
         /// Side. Possible values &amp;ndash; \&quot;buy\&quot; and \&quot;sell\&quot;.
         /// </summary>
         /// <value>Side. Possible values &amp;ndash; \&quot;buy\&quot; and \&quot;sell\&quot;.</value>
         [Required]
         [DataMember(Name = "side")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public SideEnum? Side { get; set; }
 
         /// <summary>

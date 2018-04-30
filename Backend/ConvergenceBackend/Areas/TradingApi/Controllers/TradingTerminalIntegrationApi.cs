@@ -21,7 +21,8 @@ namespace IO.Swagger.Controllers
     /// <summary>
     ///
     /// </summary>
-    //[Area("TradingApi")]
+    [Area("TradingApi")]
+    [Route("tradingapi/v1/")]
     public class TradingTerminalIntegrationApiController : Controller
     {
         /// <summary>
@@ -34,7 +35,7 @@ namespace IO.Swagger.Controllers
         /// <param name="to">Unix timestamp (UTC) of the rightmost required bar, including &#x60;to&#x60;.</param>
         /// <response code="200">Response is expected to be an object with properties listed below. Each property is an array</response>
         [HttpGet]
-        [Route("/tradingview/v1/marks")]
+        [Route("marks")]
         [ValidateModelState]
         [SwaggerOperation("MarksGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(MarksArrays), description: "Response is expected to be an object with properties listed below. Each property is an array")]
@@ -63,7 +64,7 @@ namespace IO.Swagger.Controllers
         /// <param name="to">Unix timestamp (UTC) of the rightmost required bar, including &#x60;to&#x60;.</param>
         /// <response code="200">Response is expected to be an array.</response>
         [HttpGet]
-        [Route("/tradingview/v1/timescale_marks")]
+        [Route("timescale_marks")]
         [ValidateModelState]
         [SwaggerOperation("TimescaleMarksGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<TimescaleMark>), description: "Response is expected to be an array.")]

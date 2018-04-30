@@ -23,7 +23,8 @@ namespace IO.Swagger.Controllers
     /// <summary>
     ///
     /// </summary>
-    //[Area("TradingApi")]
+    [Area("TradingApi")]
+    [Route("tradingapi/v1/")]
     public class TradingPanelBridgeBrokerDataOrdersApiController : Controller
     {
         /// <summary>
@@ -35,7 +36,7 @@ namespace IO.Swagger.Controllers
         /// <param name="maxCount">Maximum count of executions to return</param>
         /// <response code="200">List of executions</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/executions")]
+        [Route("accounts/{accountId}/executions")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdExecutionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20010), description: "List of executions")]
@@ -61,7 +62,7 @@ namespace IO.Swagger.Controllers
         /// <param name="accountId">The account identifier</param>
         /// <response code="200">List of instruments</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/instruments")]
+        [Route("accounts/{accountId}/instruments")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdInstrumentsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
@@ -87,7 +88,7 @@ namespace IO.Swagger.Controllers
         /// <param name="accountId">The account identifier</param>
         /// <response code="200">List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/orders")]
+        [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
@@ -114,7 +115,7 @@ namespace IO.Swagger.Controllers
         /// <param name="maxCount">Maximum amount of orders to return</param>
         /// <response code="200">List of orders</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/ordersHistory")]
+        [Route("accounts/{accountId}/ordersHistory")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersHistoryGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of orders")]
@@ -141,7 +142,7 @@ namespace IO.Swagger.Controllers
         /// <param name="orderId">Order ID</param>
         /// <response code="200">OK</response>
         [HttpDelete]
-        [Route("/tradingview/v1/accounts/{accountId}/orders/{orderId}")]
+        [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
@@ -168,7 +169,7 @@ namespace IO.Swagger.Controllers
         /// <param name="orderId">Order ID</param>
         /// <response code="200">Order</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/orders/{orderId}")]
+        [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2006), description: "Order")]
@@ -201,7 +202,7 @@ namespace IO.Swagger.Controllers
         /// <param name="digitalSignature">Digital signature (if supported)</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/tradingview/v1/accounts/{accountId}/orders/{orderId}")]
+        [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
@@ -239,7 +240,7 @@ namespace IO.Swagger.Controllers
         /// <param name="requestId">Unique identifier for a request</param>
         /// <response code="200">Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.</response>
         [HttpPost]
-        [Route("/tradingview/v1/accounts/{accountId}/orders")]
+        [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersPost")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2005), description: "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
@@ -315,7 +316,7 @@ namespace IO.Swagger.Controllers
         /// <param name="accountId">The account identifier</param>
         /// <response code="200">Array of positions</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/positions")]
+        [Route("accounts/{accountId}/positions")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2008), description: "Array of positions")]
@@ -342,7 +343,7 @@ namespace IO.Swagger.Controllers
         /// <param name="positionId">Position ID</param>
         /// <response code="200">OK</response>
         [HttpDelete]
-        [Route("/tradingview/v1/accounts/{accountId}/positions/{positionId}")]
+        [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
@@ -369,7 +370,7 @@ namespace IO.Swagger.Controllers
         /// <param name="positionId">Position ID</param>
         /// <response code="200">Position object</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/positions/{positionId}")]
+        [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2009), description: "Position object")]
@@ -398,7 +399,7 @@ namespace IO.Swagger.Controllers
         /// <param name="takeProfit">TakeProfit price</param>
         /// <response code="200">OK</response>
         [HttpPut]
-        [Route("/tradingview/v1/accounts/{accountId}/positions/{positionId}")]
+        [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
@@ -425,7 +426,7 @@ namespace IO.Swagger.Controllers
         /// <param name="locale">Locale (language) id</param>
         /// <response code="200">OK</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts/{accountId}/state")]
+        [Route("accounts/{accountId}/state")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdStateGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2003), description: "OK")]
@@ -450,7 +451,7 @@ namespace IO.Swagger.Controllers
         /// <remarks>Get a list of accounts owned by the user</remarks>
         /// <response code="200">Accounts list</response>
         [HttpGet]
-        [Route("/tradingview/v1/accounts")]
+        [Route("accounts")]
         [ValidateModelState]
         [SwaggerOperation("AccountsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2002), description: "Accounts list")]
@@ -476,7 +477,7 @@ namespace IO.Swagger.Controllers
         /// <param name="password">User Password</param>
         /// <response code="200">Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.</response>
         [HttpPost]
-        [Route("/tradingview/v1/authorize")]
+        [Route("authorize")]
         [ValidateModelState]
         [SwaggerOperation("AuthorizePost")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200), description: "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
@@ -502,7 +503,7 @@ namespace IO.Swagger.Controllers
         /// <param name="locale">Locale (language) id</param>
         /// <response code="200">Configuration</response>
         [HttpGet]
-        [Route("/tradingview/v1/config")]
+        [Route("config")]
         [ValidateModelState]
         [SwaggerOperation("ConfigGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2001), description: "Configuration")]
@@ -528,7 +529,7 @@ namespace IO.Swagger.Controllers
         /// <param name="symbol">instrument name</param>
         /// <response code="200">Depth of market</response>
         [HttpGet]
-        [Route("/tradingview/v1/depth")]
+        [Route("depth")]
         [ValidateModelState]
         [SwaggerOperation("DepthGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20013), description: "Depth of market")]
@@ -558,7 +559,7 @@ namespace IO.Swagger.Controllers
         /// <param name="countback">Number of bars (higher priority than &#x60;from&#x60;) starting with &#x60;to&#x60;. If &#x60;countback&#x60; is set, &#x60;from&#x60; should be ignorred. It is used only by tradingview.com, Trading Terminal will never use it.</param>
         /// <response code="200">Response is expected to be an object with properties listed below. Each property is treated as a table column</response>
         [HttpGet]
-        [Route("/tradingview/v1/history")]
+        [Route("history")]
         [ValidateModelState]
         [SwaggerOperation("HistoryGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(BarsArrays), description: "Response is expected to be an object with properties listed below. Each property is treated as a table column")]
@@ -583,7 +584,7 @@ namespace IO.Swagger.Controllers
         /// <remarks>Return all broker instruments with corresponding TradingView instruments. It is required to add a Broker to TradingView.com. It is not required for Trading Terminal integration. This request works without authorization!</remarks>
         /// <response code="200">Broker &amp;ndash; TradingView instruments map</response>
         [HttpGet]
-        [Route("/tradingview/v1/mapping")]
+        [Route("mapping")]
         [ValidateModelState]
         [SwaggerOperation("MappingGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(SymbolMapping), description: "Broker &amp;ndash; TradingView instruments map")]
@@ -609,7 +610,7 @@ namespace IO.Swagger.Controllers
         /// <param name="symbols">comma separated symbols</param>
         /// <response code="200">Current prices</response>
         [HttpGet]
-        [Route("/tradingview/v1/quotes")]
+        [Route("quotes")]
         [ValidateModelState]
         [SwaggerOperation("QuotesGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20012), description: "Current prices")]
@@ -634,7 +635,7 @@ namespace IO.Swagger.Controllers
         /// <remarks>Stream of prices. Server constantly keeps the connection alive. If the connection is broken the server constantly tries to restore it. Transfer mode is &#39;chunked encoding&#39;. The data feed should set &#39;Transfer-Encoding: chunked&#39; and make sure that all intermediate proxies are set to use this mode. All messages are finished with &#39;\\n&#39;. Streaming data should contain real-time only. It shouldn&#39;t contain snapshots of data.</remarks>
         /// <response code="200">Data feed should provide ticks (trades, asks, bids) and daily bars.  If there is no trades the data feed should set trades to bids.  If there is only ask/bid implementation you must also set the trade (same as bid but it&#39;s size must be &gt;&#x3D; 1).  Size for trades is always &gt;&#x3D; 1 except for a correction. In case of correction size can be 0.  All times should be UNIX time UTC.  Daily bars are required if they cannot be built from ticks (has_dwm should be set to true in the symbol information).  Fields for asks, bids and trades: &#x60;id&#x60;, &#x60;p&#x60;, &#x60;s&#x60; (optional for asks and bids), &#x60;t&#x60;, &#x60;f&#x60;.  Fields for daily bars: &#x60;id&#x60;, &#x60;t&#x60;, &#x60;o&#x60;, &#x60;h&#x60;, &#x60;l&#x60;, &#x60;c&#x60;, &#x60;v&#x60;.  Messages: 1. trade &#x60;{\&quot;id\&quot;:\&quot;symbol\&quot;,\&quot;p\&quot;:price,\&quot;s\&quot;:size,\&quot;t\&quot;:time}&#x60; 2. ask &#x60;{\&quot;id\&quot;:\&quot;symbol\&quot;,\&quot;p\&quot;:price,\&quot;s\&quot;:size,\&quot;t\&quot;:time,\&quot;f\&quot;:\&quot;a\&quot;}&#x60; 3. bid &#x60;{\&quot;id\&quot;:\&quot;symbol\&quot;,\&quot;p\&quot;:price,\&quot;s\&quot;:size,\&quot;t\&quot;:time,\&quot;f\&quot;:\&quot;b\&quot;}&#x60; 4. daily bar &#x60;{\&quot;id\&quot;:\&quot;symbol\&quot;,\&quot;o\&quot;:open,\&quot;h\&quot;:high,\&quot;l\&quot;:low,\&quot;c\&quot;:close,\&quot;v\&quot;:volume,\&quot;t\&quot;:time,\&quot;f\&quot;:\&quot;d\&quot;}&#x60; </response>
         [HttpGet]
-        [Route("/tradingview/v1/streaming")]
+        [Route("streaming")]
         [ValidateModelState]
         [SwaggerOperation("StreamingGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20014), description: "Data feed should provide ticks (trades, asks, bids) and daily bars. If there is no trades the data feed should set trades to bids. If there is only ask/bid implementation you must also set the trade (same as bid but it's size must be >= 1). Size for trades is always >= 1 except for a correction. In case of correction size can be 0. All times should be UNIX time UTC. Daily bars are required if they cannot be built from ticks (has_dwm should be set to true in the symbol information). Fields for asks, bids and trades: `id`, `p`, `s` (optional for asks and bids), `t`, `f`. Fields for daily bars: `id`, `t`, `o`, `h`, `l`, `c`, `v`. Messages: 1. trade `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time}` 2. ask `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time,\"f\":\"a\"}` 3. bid `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time,\"f\":\"b\"}` 4. daily bar `{\"id\":\"symbol\",\"o\":open,\"h\":high,\"l\":low,\"c\":close,\"v\":volume,\"t\":time,\"f\":\"d\"}`")]
@@ -659,7 +660,7 @@ namespace IO.Swagger.Controllers
         /// <remarks>Get a list of all instruments</remarks>
         /// <response code="200">List of instruments</response>
         [HttpGet]
-        [Route("/tradingview/v1/symbol_info")]
+        [Route("symbol_info")]
         [ValidateModelState]
         [SwaggerOperation("SymbolInfoGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(SymbolInfoArrays), description: "List of instruments")]

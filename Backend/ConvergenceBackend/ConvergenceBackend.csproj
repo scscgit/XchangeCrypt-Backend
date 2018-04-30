@@ -16,7 +16,6 @@
   <ItemGroup>
     <Folder Include="Areas\TradingApi\Controllers\" />
     <Folder Include="Areas\TradingApi\Data\" />
-    <Folder Include="Areas\TradingApi\Models\" />
     <Folder Include="Areas\TradingApi\Views\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
