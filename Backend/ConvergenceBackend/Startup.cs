@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -22,11 +23,12 @@ using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.IO;
+using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend
 {
     /// <summary>
-    /// Startup
+    /// Startup of ConvergenceBackend.
     /// </summary>
     public class Startup
     {
@@ -35,7 +37,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         private IConfiguration Configuration { get; }
 
         /// <summary>
-        /// Constructor
         /// </summary>
         public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
@@ -54,7 +55,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             })
             .AddAzureAdB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
 
-            // Add framework services.
+            // Framework services
             services
                 .AddMvc()
                 .AddJsonOptions(opts =>
@@ -65,7 +66,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                         CamelCaseText = true
                     });
                 });
-
             services
                 .AddSwaggerGen(c =>
                 {
@@ -92,6 +92,12 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     // Use [ValidateModelState] on Actions to actually validate it in C# as well!
                     c.OperationFilter<GeneratePathParamsValidationFilter>();
                 });
+
+            // Trading services
+            services.AddTransient<OrderService>();
+
+            // Persistently running queue writer
+            services.AddSingleton<IHostedService, TradingBackendQueueWriter>();
         }
 
         /// <summary>

@@ -21,12 +21,26 @@ using XchangeCrypt.Backend.ConvergenceBackend.Services;
 namespace IO.Swagger.Controllers
 {
     /// <summary>
-    ///
+    /// Trading panel bridge for broker data orders.
     /// </summary>
     [Area("TradingApi")]
     [Route("api/v1/tradingapi/")]
     public class TradingPanelBridgeBrokerDataOrdersApiController : Controller
     {
+        /// <summary>
+        /// TODO: replace everywhere with an actual authenticated username.
+        /// </summary>
+        private const string TestingMockUser = "9testing5user9";
+
+        private readonly OrderService _orderService;
+
+        /// <summary>
+        /// </summary>
+        public TradingPanelBridgeBrokerDataOrdersApiController(OrderService orderService)
+        {
+            _orderService = orderService;
+        }
+
         /// <summary>
         ///
         /// </summary>
@@ -259,28 +273,48 @@ namespace IO.Swagger.Controllers
             [FromForm]string digitalSignature,
             [FromQuery]string requestId)
         {
-            Task<string> orderIdTask = Task.FromResult("Example orderId");
+            Task orderTask;
             try
             {
                 switch (type)
                 {
                     case "market":
+                        orderTask = _orderService.CreateMarketOrder(
+                            TestingMockUser, accountId, instrument, qty, side, type, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "stop":
+                        orderTask = _orderService.CreateStopOrder(
+                            TestingMockUser, accountId, instrument, qty, side, type, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "limit":
-                        OrderService.CreateLimitOrder(accountId, instrument, qty, side, type, limitPrice, durationDateTime, takeProfit);
+                        orderTask = _orderService.CreateLimitOrder(
+                            TestingMockUser, accountId, instrument, qty, side, type, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "stoplimit":
-                        break;
+                        return StatusCode(
+                            400,
+                            new InlineResponse2005()
+                            {
+                                S = Status.ErrorEnum,
+                                Errmsg = "Invalid type parameter: stoplimit not supported yet"
+                            }
+                        );
 
                     default:
-                        // Maybe InlineResponse2005 with Errmsg instead
-                        return BadRequest("Invalid type parameter");
+                        return StatusCode(
+                            400,
+                            new InlineResponse2005()
+                            {
+                                S = Status.ErrorEnum,
+                                Errmsg = "Invalid type parameter"
+                            }
+                        );
                 }
+                // Finish sending in order to catch exceptions
+                orderTask.Wait();
             }
             catch (Exception e)
             {
@@ -293,9 +327,6 @@ namespace IO.Swagger.Controllers
                     }
                 );
             }
-
-            //new ObjectResult(JsonConvert.DeserializeObject<InlineResponse2005>("{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"orderId\" : \"orderId\"\n  },\n  \"errmsg\" : \"errmsg\"\n}"));
-
             return StatusCode(
                 200,
                 new InlineResponse2005()
@@ -303,7 +334,8 @@ namespace IO.Swagger.Controllers
                     S = Status.OkEnum,
                     D = new InlineResponse2005D()
                     {
-                        OrderId = orderIdTask.Result
+                        // Currently the OrderId is not supported, as the request is asynchronous
+                        OrderId = requestId
                     }
                 }
             );

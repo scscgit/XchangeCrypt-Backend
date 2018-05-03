@@ -77,14 +77,14 @@ namespace XchangeCrypt.Backend.TradingBackend
                     case MessageTypes.LimitOrder:
                         switch (message.UserProperties[ParameterNames.Side])
                         {
-                            case LimitOrderSides.Buy:
+                            case "buy":
                                 _limitOrderService.Buy(
                                     (string)message.UserProperties["user"],
                                     (int)message.UserProperties["limitPrice"]
                                     );
                                 break;
 
-                            case LimitOrderSides.Sell:
+                            case "sell":
                                 _limitOrderService.Sell(
                                     (string)message.UserProperties["user"],
                                     (int)message.UserProperties["limitPrice"]

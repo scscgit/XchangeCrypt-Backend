@@ -1,23 +1,58 @@
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 {
-    public class QueueWriter : IDisposable
+    /// <summary>
+    /// Supports writing into a Service Bus Azure queue that prepares requests for all asynchronous actions
+    /// to be executed in other backend components.
+    /// </summary>
+    public abstract class QueueWriter : IHostedService
     {
-        // Connection String for the namespace can be obtained from the Azure portal under the
-        // 'Shared Access policies' section.
-        private const string ServiceBusConnectionString = "Endpoint=sb://xchangecrypttest.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=//VIMVDa0Mi9zs0nPZGQvyk0yueSL4L8QOhfqF2Bd1k=";
+        private readonly string _serviceBusConnectionString;
+        private readonly string _queueName;
 
-        private const string QueueName = "TradeRequests";
+        private IQueueClient _queueClient;
 
-        private static IQueueClient queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
-        //static MessageSender messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
+        /// <summary>
+        /// </summary>
+        public QueueWriter(string serviceBusConnectionString, string queueName)
+        {
+            _serviceBusConnectionString = serviceBusConnectionString;
+            _queueName = queueName;
+        }
 
-        public static async Task SendMessageAsync(IDictionary<string, object> userProperties, String messageBody)
+        /// <summary>
+        /// Initialization.
+        /// </summary>
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
+            _queueClient = new QueueClient(_serviceBusConnectionString, _queueName);
+            await Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await _queueClient.CloseAsync();
+        }
+
+        /// <summary>
+        /// Sends a message to the specified backend via queue.
+        /// </summary>
+        /// <param name="userProperties">Map of parameters of the queue</param>
+        /// <param name="messageBody">Message to be delivered in the queue</param>
+        public async Task SendMessageAsync(IDictionary<string, object> userProperties, String messageBody = null)
         {
             try
             {
@@ -32,7 +67,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
                 Console.WriteLine($"Sending message: {messageBody}");
 
                 // Send the message to the queue
-                await queueClient.SendAsync(message);
+                await _queueClient.SendAsync(message);
             }
             catch (Exception e)
             {
@@ -40,13 +75,23 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
                 throw e;
             }
         }
+    }
+
+    /// <summary>
+    /// TradingBackend instance of QueueWriter.
+    /// </summary>
+    public class TradingBackendQueueWriter : QueueWriter
+    {
+        // Connection String for the namespace can be obtained from the Azure portal under the
+        // 'Shared Access policies' section.
+        private const string ServiceBusConnectionString = "Endpoint=sb://xchangecrypttest.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=//VIMVDa0Mi9zs0nPZGQvyk0yueSL4L8QOhfqF2Bd1k=";
+
+        private const string QueueName = "TradeRequests";
 
         /// <summary>
-        /// Cleanup
         /// </summary>
-        public void Dispose()
+        public TradingBackendQueueWriter(string serviceBusConnectionString, string queueName) : base(ServiceBusConnectionString, QueueName)
         {
-            queueClient.CloseAsync().GetAwaiter().GetResult();
         }
     }
 }

@@ -8,12 +8,11 @@ using XchangeCrypt.Backend.TradingBackend.Services;
 namespace XchangeCrypt.Backend.TradingBackend
 {
     /// <summary>
-    /// Startup
+    /// Startup of TradingBackend.
     /// </summary>
     public class Startup
     {
         /// <summary>
-        /// Constructor
         /// </summary>
         public Startup(IConfiguration configuration)
         {
