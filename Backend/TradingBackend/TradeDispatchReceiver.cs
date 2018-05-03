@@ -1,3 +1,4 @@
+using ConstantsLibrary;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using TradingBackend.Services;
+using static ConstantsLibrary.MessagingConstants;
 
 namespace TradingBackend
 {
@@ -69,19 +71,19 @@ namespace TradingBackend
             // Process the message
             Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
-            switch (message.UserProperties["MessageType"])
+            switch (message.UserProperties[ParameterNames.MessageType])
             {
-                case "LimitOrder":
-                    switch (message.UserProperties["Side"])
+                case MessageTypes.LimitOrder:
+                    switch (message.UserProperties[ParameterNames.Side])
                     {
-                        case "buy":
+                        case LimitOrderSides.Buy:
                             _limitOrderService.Buy(
                                 (string)message.UserProperties["user"],
                                 (int)message.UserProperties["limitPrice"]
                                 );
                             break;
 
-                        case "sell":
+                        case LimitOrderSides.Sell:
                             _limitOrderService.Sell(
                                 (string)message.UserProperties["user"],
                                 (int)message.UserProperties["limitPrice"]
@@ -92,7 +94,6 @@ namespace TradingBackend
                             await ReportInvalidMessage(message, $"Not recognized LimitOrder message side {message.UserProperties["Side"]}");
                             return;
                     }
-
                     break;
 
                 default:
