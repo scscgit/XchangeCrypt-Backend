@@ -14,7 +14,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 
         /// <summary>
         /// </summary>
-        public OrderService(QueueWriter queueWriter)
+        public OrderService(TradingBackendQueueWriter queueWriter)
         {
             _queueWriter = queueWriter;
         }

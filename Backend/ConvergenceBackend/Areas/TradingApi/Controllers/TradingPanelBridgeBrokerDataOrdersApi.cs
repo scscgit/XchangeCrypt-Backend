@@ -323,7 +323,7 @@ namespace IO.Swagger.Controllers
                     new InlineResponse2005()
                     {
                         S = Status.ErrorEnum,
-                        Errmsg = "Internal error occurred: " + e.Message
+                        Errmsg = $"Internal error occurred: {e.Message}\n{e.StackTrace}"
                     }
                 );
             }

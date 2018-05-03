@@ -12,39 +12,16 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
     /// Supports writing into a Service Bus Azure queue that prepares requests for all asynchronous actions
     /// to be executed in other backend components.
     /// </summary>
-    public abstract class QueueWriter : IHostedService
+    public abstract class QueueWriter : IDisposable
     {
-        private readonly string _serviceBusConnectionString;
-        private readonly string _queueName;
-
         private IQueueClient _queueClient;
 
         /// <summary>
         /// </summary>
         public QueueWriter(string serviceBusConnectionString, string queueName)
         {
-            _serviceBusConnectionString = serviceBusConnectionString;
-            _queueName = queueName;
-        }
-
-        /// <summary>
-        /// Initialization.
-        /// </summary>
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
             //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
-            _queueClient = new QueueClient(_serviceBusConnectionString, _queueName);
-            await Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Cleanup.
-        /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            await _queueClient.CloseAsync();
+            _queueClient = new QueueClient(serviceBusConnectionString, queueName);
         }
 
         /// <summary>
@@ -56,7 +33,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
         {
             try
             {
-                var message = new Message(Encoding.UTF8.GetBytes(messageBody));
+                var message = messageBody == null ? new Message() : new Message(Encoding.UTF8.GetBytes(messageBody));
 
                 foreach (KeyValuePair<string, object> entry in userProperties)
                 {
@@ -64,7 +41,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
                 }
 
                 // Write the body of the message to the console
-                Console.WriteLine($"Sending message: {messageBody}");
+                Console.WriteLine($"Sending message with {userProperties.Count} properties: {messageBody ?? "no body"}");
 
                 // Send the message to the queue
                 await _queueClient.SendAsync(message);
@@ -74,6 +51,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
                 Console.WriteLine($"{DateTime.Now} :: Exception: {e.Message}");
                 throw e;
             }
+        }
+
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
+        public void Dispose()
+        {
+            _queueClient.CloseAsync().Wait();
         }
     }
 
@@ -90,7 +75,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 
         /// <summary>
         /// </summary>
-        public TradingBackendQueueWriter(string serviceBusConnectionString, string queueName) : base(ServiceBusConnectionString, QueueName)
+        public TradingBackendQueueWriter() : base(ServiceBusConnectionString, QueueName)
         {
         }
     }

@@ -97,7 +97,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             services.AddTransient<OrderService>();
 
             // Persistently running queue writer
-            services.AddSingleton<IHostedService, TradingBackendQueueWriter>();
+            services.AddSingleton<TradingBackendQueueWriter>();
         }
 
         /// <summary>
