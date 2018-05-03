@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ConvergenceBackend.Services
 {
-    public class QueueWriter
+    public class QueueWriter : IDisposable
     {
         // Connection String for the namespace can be obtained from the Azure portal under the
         // 'Shared Access policies' section.
@@ -39,6 +39,14 @@ namespace ConvergenceBackend.Services
                 Console.WriteLine($"{DateTime.Now} :: Exception: {e.Message}");
                 throw e;
             }
+        }
+
+        /// <summary>
+        /// Cleanup
+        /// </summary>
+        public void Dispose()
+        {
+            queueClient.CloseAsync().GetAwaiter().GetResult();
         }
     }
 }

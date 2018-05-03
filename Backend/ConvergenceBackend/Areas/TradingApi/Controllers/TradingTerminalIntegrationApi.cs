@@ -22,7 +22,7 @@ namespace IO.Swagger.Controllers
     ///
     /// </summary>
     [Area("TradingApi")]
-    [Route("tradingapi/v1/")]
+    [Route("api/v1/tradingapi/")]
     public class TradingTerminalIntegrationApiController : Controller
     {
         /// <summary>

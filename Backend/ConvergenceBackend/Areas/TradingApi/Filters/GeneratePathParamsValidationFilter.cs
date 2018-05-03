@@ -24,6 +24,11 @@ namespace IO.Swagger.Filters
             {
                 var swaggerParam = operation.Parameters.SingleOrDefault(p => p.Name == par.Name);
 
+                var parameterDescriptor = ((ControllerParameterDescriptor)par.ParameterDescriptor);
+                if (parameterDescriptor == null)
+                {
+                    throw new System.Exception($"Swagger validation error: Problem with your Controller's parameter named {par.Name}, it is missing a descriptor.");
+                }
                 var attributes = ((ControllerParameterDescriptor)par.ParameterDescriptor).ParameterInfo.CustomAttributes;
 
                 if (attributes != null && attributes.Count() > 0 && swaggerParam != null)
