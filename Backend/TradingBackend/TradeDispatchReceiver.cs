@@ -1,12 +1,15 @@
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using TradingBackend.Services;
 
 namespace TradingBackend
 {
-    public class TradeDispatchReceiver : IDisposable
+    public class TradeDispatchReceiver : IHostedService
     {
         // Connection String for the namespace can be obtained from the Azure portal under the
         // 'Shared Access policies' section.
@@ -14,9 +17,36 @@ namespace TradingBackend
 
         private const string QueueName = "TradeRequests";
 
-        private IQueueClient queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+        private MonitorService _monitorService;
+        private LimitOrderService _limitOrderService;
+        private IQueueClient _queueClient;
 
-        public void RegisterReceiveMessagesHandler()
+        public TradeDispatchReceiver(MonitorService monitorService, LimitOrderService limitOrderService)
+        {
+            _monitorService = monitorService;
+            _limitOrderService = limitOrderService;
+
+            _queueClient = new QueueClient(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
+        }
+
+        /// <summary>
+        /// Handler registration.
+        /// </summary>
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            RegisterReceiveMessagesHandler();
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Cleanup.
+        /// </summary>
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await _queueClient.CloseAsync();
+        }
+
+        private void RegisterReceiveMessagesHandler()
         {
             // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
             var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
@@ -31,7 +61,7 @@ namespace TradingBackend
             };
 
             // Register the function that will process messages
-            queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+            _queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
 
         private async Task ProcessMessagesAsync(Message message, CancellationToken token)
@@ -39,30 +69,70 @@ namespace TradingBackend
             // Process the message
             Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
+            switch (message.UserProperties["MessageType"])
+            {
+                case "LimitOrder":
+                    switch (message.UserProperties["Side"])
+                    {
+                        case "buy":
+                            _limitOrderService.Buy(
+                                (string)message.UserProperties["user"],
+                                (int)message.UserProperties["limitPrice"]
+                                );
+                            break;
+
+                        case "sell":
+                            _limitOrderService.Sell(
+                                (string)message.UserProperties["user"],
+                                (int)message.UserProperties["limitPrice"]
+                                );
+                            break;
+
+                        default:
+                            await ReportInvalidMessage(message, $"Not recognized LimitOrder message side {message.UserProperties["Side"]}");
+                            return;
+                    }
+
+                    break;
+
+                default:
+                    await ReportInvalidMessage(message, $"Not recognized message type {message.UserProperties["MessageType"]}");
+                    return;
+            }
+
             // Complete the message so that it is not received again.
             // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-            await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+            await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
 
             // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
             // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls
             // to avoid unnecessary exceptions.
         }
 
+        private async Task ReportInvalidMessage(Message message, string errorMessage)
+        {
+            var deadLetterTask = _queueClient.DeadLetterAsync(message.SystemProperties.LockToken, new Dictionary<string, object>() { { "errorMessage", errorMessage } });
+
+            var error = $"Message handler couldn't handle a message {message.MessageId}.\n";
+            error += $"{errorMessage}\n";
+            error += "Exception context for troubleshooting:\n";
+            Console.Write(error);
+            _monitorService.Errors.Add(error);
+            await deadLetterTask;
+        }
+
         // Use this Handler to look at the exceptions received on the MessagePump
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
         {
-            Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
+            var error = $"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.\n";
             var context = exceptionReceivedEventArgs.ExceptionReceivedContext;
-            Console.WriteLine("Exception context for troubleshooting:");
-            Console.WriteLine($"- Endpoint: {context.Endpoint}");
-            Console.WriteLine($"- Entity Path: {context.EntityPath}");
-            Console.WriteLine($"- Executing Action: {context.Action}");
+            error += "Exception context for troubleshooting:\n";
+            error += $"- Endpoint: {context.Endpoint}\n";
+            error += $"- Entity Path: {context.EntityPath}\n";
+            error += $"- Executing Action: {context.Action}\n";
+            Console.Write(error);
+            _monitorService.Errors.Add(error);
             return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            queueClient.CloseAsync();
         }
     }
 }
