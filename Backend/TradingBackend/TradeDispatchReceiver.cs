@@ -1,4 +1,3 @@
-using ConstantsLibrary;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -6,10 +5,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using TradingBackend.Services;
-using static ConstantsLibrary.MessagingConstants;
+using XchangeCrypt.Backend.TradingBackend.Services;
+using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
-namespace TradingBackend
+namespace XchangeCrypt.Backend.TradingBackend
 {
     public class TradeDispatchReceiver : IHostedService
     {
@@ -68,57 +67,66 @@ namespace TradingBackend
 
         private async Task ProcessMessagesAsync(Message message, CancellationToken token)
         {
-            // Process the message
-            Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
-
-            switch (message.UserProperties[ParameterNames.MessageType])
+            try
             {
-                case MessageTypes.LimitOrder:
-                    switch (message.UserProperties[ParameterNames.Side])
-                    {
-                        case LimitOrderSides.Buy:
-                            _limitOrderService.Buy(
-                                (string)message.UserProperties["user"],
-                                (int)message.UserProperties["limitPrice"]
-                                );
-                            break;
+                // Process the message
+                Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
-                        case LimitOrderSides.Sell:
-                            _limitOrderService.Sell(
-                                (string)message.UserProperties["user"],
-                                (int)message.UserProperties["limitPrice"]
-                                );
-                            break;
+                switch (message.UserProperties[ParameterNames.MessageType])
+                {
+                    case MessageTypes.LimitOrder:
+                        switch (message.UserProperties[ParameterNames.Side])
+                        {
+                            case LimitOrderSides.Buy:
+                                _limitOrderService.Buy(
+                                    (string)message.UserProperties["user"],
+                                    (int)message.UserProperties["limitPrice"]
+                                    );
+                                break;
 
-                        default:
-                            await ReportInvalidMessage(message, $"Not recognized LimitOrder message side {message.UserProperties["Side"]}");
-                            return;
-                    }
-                    break;
+                            case LimitOrderSides.Sell:
+                                _limitOrderService.Sell(
+                                    (string)message.UserProperties["user"],
+                                    (int)message.UserProperties["limitPrice"]
+                                    );
+                                break;
 
-                default:
-                    await ReportInvalidMessage(message, $"Not recognized message type {message.UserProperties["MessageType"]}");
-                    return;
+                            default:
+                                await ReportInvalidMessage(message, $"Not recognized LimitOrder message side {message.UserProperties["Side"]}");
+                                return;
+                        }
+                        break;
+
+                    default:
+                        await ReportInvalidMessage(message, $"Not recognized message type {message.UserProperties["MessageType"]}");
+                        return;
+                }
+
+                // Complete the message so that it is not received again.
+                // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
+                await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
+                var messageDescription = $"{message.UserProperties[ParameterNames.MessageType]} ID {message.MessageId}, body: {message.Body}";
+                Console.WriteLine($"Consumed message {messageDescription}");
+                _monitorService.LastMessage = messageDescription;
+
+                // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
+                // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls
+                // to avoid unnecessary exceptions.
             }
-
-            // Complete the message so that it is not received again.
-            // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-            await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
-
-            // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
-            // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls
-            // to avoid unnecessary exceptions.
+            catch (Exception e)
+            {
+                await ReportInvalidMessage(message, $"{e.GetType().Name} was thrown inside {typeof(TradeDispatchReceiver).Name} during message processing. Exception message: {e.Message}");
+            }
         }
 
         private async Task ReportInvalidMessage(Message message, string errorMessage)
         {
             var deadLetterTask = _queueClient.DeadLetterAsync(message.SystemProperties.LockToken, new Dictionary<string, object>() { { "errorMessage", errorMessage } });
 
-            var error = $"Message handler couldn't handle a message {message.MessageId}.\n";
+            var error = $"Message handler couldn't handle a message with ID {message.MessageId}.\n";
             error += $"{errorMessage}\n";
-            error += "Exception context for troubleshooting:\n";
             Console.Write(error);
-            _monitorService.Errors.Add(error);
+            _monitorService.ReportError(error);
             await deadLetterTask;
         }
 
@@ -132,7 +140,7 @@ namespace TradingBackend
             error += $"- Entity Path: {context.EntityPath}\n";
             error += $"- Executing Action: {context.Action}\n";
             Console.Write(error);
-            _monitorService.Errors.Add(error);
+            _monitorService.ReportError(error);
             return Task.CompletedTask;
         }
     }

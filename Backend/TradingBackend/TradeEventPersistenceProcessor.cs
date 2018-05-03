@@ -1,4 +1,4 @@
-namespace TradingBackend
+namespace XchangeCrypt.Backend.TradingBackend
 {
     public class TradeEventPersistenceProcessor
     {

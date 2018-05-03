@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ConvergenceBackend.Services
+namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 {
     public class OrderService
     {

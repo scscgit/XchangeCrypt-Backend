@@ -1,4 +1,4 @@
-namespace ConstantsLibrary
+namespace XchangeCrypt.Backend.ConstantsLibrary
 {
     public class MessagingConstants
     {

@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <DockerComposeProjectPath>..\Backend\docker-compose.dcproj</DockerComposeProjectPath>
+    <RootNamespace>XchangeCrypt.Backend.TradingBackend</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

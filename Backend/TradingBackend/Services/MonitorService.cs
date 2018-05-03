@@ -1,10 +1,33 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
-namespace TradingBackend.Services
+namespace XchangeCrypt.Backend.TradingBackend.Services
 {
     public class MonitorService
     {
-        public IList<string> Errors = new List<string>();
+        private const int MaxErrors = 1000;
+
+        private IList<string> _errors = new List<string>();
+
+        public bool Enabled = true;
         public string LastMessage = null;
+
+        public IEnumerable<string> GetErrors()
+        {
+            return new ReadOnlyCollection<string>(_errors);
+        }
+
+        public void ReportError(string error)
+        {
+            if (!Enabled)
+            {
+                return;
+            }
+            _errors.Add(error);
+            if (_errors.Count > MaxErrors)
+            {
+                _errors.RemoveAt(0);
+            }
+        }
     }
 }

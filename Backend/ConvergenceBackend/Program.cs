@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace ConvergenceBackend
+namespace XchangeCrypt.Backend.ConvergenceBackend
 {
     /// <summary>
     /// Program

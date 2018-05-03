@@ -3,12 +3,18 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using TradingBackend.Services;
+using XchangeCrypt.Backend.TradingBackend.Services;
 
-namespace TradingBackend
+namespace XchangeCrypt.Backend.TradingBackend
 {
+    /// <summary>
+    /// Startup
+    /// </summary>
     public class Startup
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -16,7 +22,9 @@ namespace TradingBackend
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to add services to the container.
+        /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
@@ -31,7 +39,9 @@ namespace TradingBackend
             services.AddTransient<LimitOrderService>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// </summary>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -39,7 +49,11 @@ namespace TradingBackend
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseMvc();
+            app
+                .UseMvc()
+                // index.html for redirect
+                .UseDefaultFiles()
+                .UseStaticFiles();
         }
     }
 }

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using TradingBackend.Services;
+using XchangeCrypt.Backend.TradingBackend.Services;
 
-namespace TradingBackend.Controllers
+namespace XchangeCrypt.Backend.TradingBackend.Controllers
 {
     [Route("api/v1/monitorapi/")]
     public class MonitorController : Controller
@@ -17,7 +17,7 @@ namespace TradingBackend.Controllers
         [HttpGet("errors")]
         public IEnumerable<string> Errors()
         {
-            return _monitorService.Errors;
+            return _monitorService.GetErrors();
         }
 
         [HttpGet("last_message")]

@@ -23,7 +23,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.IO;
 
-namespace ConvergenceBackend
+namespace XchangeCrypt.Backend.ConvergenceBackend
 {
     /// <summary>
     /// Startup
@@ -37,8 +37,6 @@ namespace ConvergenceBackend
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="env"></param>
-        /// <param name="configuration"></param>
         public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
             _hostingEnv = env;
@@ -48,7 +46,6 @@ namespace ConvergenceBackend
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>
-        /// <param name="services"></param>
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAuthentication(sharedOptions =>
@@ -100,9 +97,6 @@ namespace ConvergenceBackend
         /// <summary>
         /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         /// </summary>
-        /// <param name="app"></param>
-        /// <param name="env"></param>
-        /// <param name="loggerFactory"></param>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             app.UseAuthentication();

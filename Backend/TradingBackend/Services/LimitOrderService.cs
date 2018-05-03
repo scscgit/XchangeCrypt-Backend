@@ -1,6 +1,6 @@
 using System;
 
-namespace TradingBackend.Services
+namespace XchangeCrypt.Backend.TradingBackend.Services
 {
     // TODO: one instance per instrument?
     public class LimitOrderService
@@ -16,7 +16,7 @@ namespace TradingBackend.Services
 
         internal void Sell(string user, int limitPrice)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"User {user} sold at {limitPrice}");
         }
     }
 }

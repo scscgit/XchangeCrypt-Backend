@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConvergenceBackend.Services
+namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 {
     public class QueueWriter : IDisposable
     {

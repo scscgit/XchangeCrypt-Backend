@@ -1,9 +1,9 @@
-using ConvergenceBackend.Areas.AccountApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models;
 
-namespace ConvergenceBackend.Areas.AccountApi.Controllers
+namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
 {
     /// <summary>
     /// Accessor for management operations over a user's private account.
