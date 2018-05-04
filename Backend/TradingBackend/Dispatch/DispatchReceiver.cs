@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using XchangeCrypt.Backend.TradingBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
-namespace XchangeCrypt.Backend.TradingBackend
+namespace XchangeCrypt.Backend.TradingBackend.Dispatch
 {
-    public class TradeDispatchReceiver : IHostedService
+    public class DispatchReceiver : IHostedService
     {
         // Connection String for the namespace can be obtained from the Azure portal under the
         // 'Shared Access policies' section.
@@ -18,16 +18,14 @@ namespace XchangeCrypt.Backend.TradingBackend
 
         private const string QueueName = "TradeRequests";
 
-        private MonitorService _monitorService;
-        private LimitOrderService _limitOrderService;
+        private readonly MonitorService _monitorService;
+        private readonly TradingOrderDispatch _tradingOrderDispatch;
         private IQueueClient _queueClient;
 
-        public TradeDispatchReceiver(MonitorService monitorService, LimitOrderService limitOrderService)
+        public DispatchReceiver(MonitorService monitorService, TradingOrderDispatch tradingOrderDispatch)
         {
             _monitorService = monitorService;
-            _limitOrderService = limitOrderService;
-
-            _queueClient = new QueueClient(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
+            _tradingOrderDispatch = tradingOrderDispatch;
         }
 
         /// <summary>
@@ -35,6 +33,7 @@ namespace XchangeCrypt.Backend.TradingBackend
         /// </summary>
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            _queueClient = new QueueClient(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
             RegisterReceiveMessagesHandler();
             return Task.CompletedTask;
         }
@@ -70,42 +69,26 @@ namespace XchangeCrypt.Backend.TradingBackend
             try
             {
                 // Process the message
-                Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
+                var messageBody = message.Body == null ? "" : Encoding.UTF8.GetString(message.Body);
+                Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{messageBody}");
 
+                Task dispatchedTask;
                 switch (message.UserProperties[ParameterNames.MessageType])
                 {
-                    case MessageTypes.LimitOrder:
-                        switch (message.UserProperties[ParameterNames.Side])
-                        {
-                            case "buy":
-                                _limitOrderService.Buy(
-                                    (string)message.UserProperties["user"],
-                                    (int)message.UserProperties["limitPrice"]
-                                    );
-                                break;
-
-                            case "sell":
-                                _limitOrderService.Sell(
-                                    (string)message.UserProperties["user"],
-                                    (int)message.UserProperties["limitPrice"]
-                                    );
-                                break;
-
-                            default:
-                                await ReportInvalidMessage(message, $"Not recognized LimitOrder message side {message.UserProperties["Side"]}");
-                                return;
-                        }
+                    case MessageTypes.TradingOrder:
+                        dispatchedTask = _tradingOrderDispatch.Dispatch(message, errorMessage => ReportInvalidMessage(message, errorMessage));
                         break;
 
                     default:
-                        await ReportInvalidMessage(message, $"Not recognized message type {message.UserProperties["MessageType"]}");
+                        await ReportInvalidMessage(message, $"Unrecognized MessageType {message.UserProperties[ParameterNames.MessageType]}");
                         return;
                 }
+                await dispatchedTask;
 
                 // Complete the message so that it is not received again.
                 // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
                 await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
-                var messageDescription = $"{message.UserProperties[ParameterNames.MessageType]} ID {message.MessageId}, body: {message.Body}";
+                var messageDescription = $"{message.UserProperties[ParameterNames.MessageType]} ID {message.MessageId}, body: {messageBody}";
                 Console.WriteLine($"Consumed message {messageDescription}");
                 _monitorService.LastMessage = messageDescription;
 
@@ -115,7 +98,10 @@ namespace XchangeCrypt.Backend.TradingBackend
             }
             catch (Exception e)
             {
-                await ReportInvalidMessage(message, $"{e.GetType().Name} was thrown inside {typeof(TradeDispatchReceiver).Name} during message processing. Exception message: {e.Message}");
+                await ReportInvalidMessage(
+                    message,
+                    $"{e.GetType().Name} was thrown inside {typeof(DispatchReceiver).Name} during message processing. " +
+                    $"Exception message: {e.Message}. StackTrace: {e.StackTrace}");
             }
         }
 

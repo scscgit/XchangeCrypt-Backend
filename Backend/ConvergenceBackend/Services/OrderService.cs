@@ -28,7 +28,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
            string instrument,
            decimal? qty,
            string side,
-           string type,
            decimal? limitPrice,
            string durationType,
            decimal? durationDateTime,
@@ -39,14 +38,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
-                    { ParameterNames.MessageType, MessageTypes.LimitOrder},
+                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
 
                     { ParameterNames.Quantity, qty},
                     { ParameterNames.Side, side},
-                    { ParameterNames.Type, type},
+                    { ParameterNames.Type, OrderTypes.LimitOrder},
                     { ParameterNames.LimitPrice, limitPrice},
                     { ParameterNames.DurationType, durationType},
                     { ParameterNames.Duration, durationDateTime},
@@ -66,7 +65,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
            string instrument,
            decimal? qty,
            string side,
-           string type,
            decimal? stopPrice,
            string durationType,
            decimal? durationDateTime,
@@ -77,14 +75,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
-                    { ParameterNames.MessageType, MessageTypes.StopOrder},
+                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
 
                     { ParameterNames.Quantity, qty},
                     { ParameterNames.Side, side},
-                    { ParameterNames.Type, type},
+                    { ParameterNames.Type, OrderTypes.StopOrder},
                     { ParameterNames.StopPrice, stopPrice},
                     { ParameterNames.DurationType, durationType},
                     { ParameterNames.Duration, durationDateTime},
@@ -104,7 +102,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
            string instrument,
            decimal? qty,
            string side,
-           string type,
            string durationType,
            decimal? durationDateTime,
            decimal? stopLoss,
@@ -114,15 +111,15 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
+                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.User, user},
-                    { ParameterNames.MessageType, MessageTypes.MarketOrder},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
 
                     { ParameterNames.Quantity, qty},
                     { ParameterNames.Side, side},
-                    { ParameterNames.Type, type},
+                    { ParameterNames.Type, OrderTypes.MarketOrder},
                     { ParameterNames.DurationType, durationType},
                     { ParameterNames.Duration, durationDateTime},
                     { ParameterNames.StopLoss, stopLoss},

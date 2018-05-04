@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using XchangeCrypt.Backend.TradingBackend.Dispatch;
 using XchangeCrypt.Backend.TradingBackend.Services;
 
 namespace XchangeCrypt.Backend.TradingBackend
@@ -29,13 +30,16 @@ namespace XchangeCrypt.Backend.TradingBackend
             services.AddMvc();
 
             // Persistently running queue message handler
-            services.AddSingleton<IHostedService, TradeDispatchReceiver>();
+            services.AddSingleton<IHostedService, DispatchReceiver>();
 
             // Meta-faculties
-            services.AddTransient<MonitorService>();
+            services.AddSingleton<MonitorService>();
 
             // Custom services
+            services.AddTransient<TradingOrderDispatch>();
             services.AddTransient<LimitOrderService>();
+            services.AddTransient<MarketOrderService>();
+            services.AddTransient<StopOrderService>();
         }
 
         /// <summary>

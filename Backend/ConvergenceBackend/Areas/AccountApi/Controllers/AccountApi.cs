@@ -11,7 +11,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
     [Produces("application/json")]
     [Area("AccountApi")]
     [Route("api/v1/accountapi/")]
-    public class AccountController : Controller
+    public class AccountApi : Controller
     {
         /// <summary>
         /// Receives all profile details related to an account of the authorized user.

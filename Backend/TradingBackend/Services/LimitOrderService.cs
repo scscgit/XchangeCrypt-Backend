@@ -1,22 +1,25 @@
 using System;
+using System.Threading.Tasks;
 
 namespace XchangeCrypt.Backend.TradingBackend.Services
 {
     // TODO: one instance per instrument?
-    public class LimitOrderService
+    public class LimitOrderService : AbstractTradingOrderService
     {
+        /// <summary>
+        /// </summary>
         public LimitOrderService()
         {
         }
 
-        internal void Buy(string user, int limitPrice)
+        internal Task Buy(string user, string accountId, string instrument, decimal? quantity, string side, string type, decimal? limitPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
         {
-            Console.WriteLine($"User {user} bought at {limitPrice}");
+            throw new NotImplementedException();
         }
 
-        internal void Sell(string user, int limitPrice)
+        internal Task Sell(string user, string accountId, string instrument, decimal? quantity, string side, string type, decimal? limitPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
         {
-            Console.WriteLine($"User {user} sold at {limitPrice}");
+            throw new NotImplementedException();
         }
     }
 }
