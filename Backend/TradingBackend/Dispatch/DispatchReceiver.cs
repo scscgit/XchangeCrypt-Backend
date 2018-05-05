@@ -83,6 +83,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
                         await ReportInvalidMessage(message, $"Unrecognized MessageType {message.UserProperties[ParameterNames.MessageType]}");
                         return;
                 }
+                // Throws invalid message exception on error
                 await dispatchedTask;
 
                 // Complete the message so that it is not received again.
@@ -95,6 +96,11 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
                 // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
                 // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls
                 // to avoid unnecessary exceptions.
+            }
+            catch (InvalidMessageException e)
+            {
+                // Invalid message exception isn't avoided, but it mustn't cause the report of yet another invalid message
+                throw e;
             }
             catch (Exception e)
             {
@@ -114,6 +120,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
             Console.Write(error);
             _monitorService.ReportError(error);
             await deadLetterTask;
+            throw new InvalidMessageException(error);
         }
 
         // Use this Handler to look at the exceptions received on the MessagePump
@@ -128,6 +135,13 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
             Console.Write(error);
             _monitorService.ReportError(error);
             return Task.CompletedTask;
+        }
+
+        public class InvalidMessageException : Exception
+        {
+            public InvalidMessageException(string message) : base(message)
+            {
+            }
         }
     }
 }

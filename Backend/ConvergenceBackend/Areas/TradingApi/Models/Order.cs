@@ -104,6 +104,7 @@ namespace IO.Swagger.Models
         /// </summary>
         /// <value>Type of order&#39;s parent. Should be set only for bracket orders.</value>
         [DataMember(Name = "parentType")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public ParentTypeEnum? ParentType { get; set; }
 
         /// <summary>
