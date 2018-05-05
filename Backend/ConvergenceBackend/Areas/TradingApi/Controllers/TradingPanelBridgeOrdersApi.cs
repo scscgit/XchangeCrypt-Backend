@@ -1,11 +1,13 @@
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
@@ -18,18 +20,15 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/tradingapi/")]
     public class TradingPanelBridgeOrdersApi : Controller
     {
-        /// <summary>
-        /// TODO: replace everywhere with an actual authenticated username.
-        /// </summary>
-        private const string TestingMockUser = "9testing5user9";
-
         private readonly OrderService _orderService;
+        private readonly UserService _userService;
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeOrdersApi(OrderService orderService)
+        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService)
         {
             _orderService = orderService;
+            _userService = userService;
         }
 
         /// <summary>
@@ -249,6 +248,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersPost")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2005), description: "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersPost(
             [FromRoute][Required]string accountId,
             [FromForm][Required()]string instrument,
@@ -267,21 +267,22 @@ namespace IO.Swagger.Controllers
             Task orderTask;
             try
             {
+                var user = User.GetIdentifier();
                 switch (type)
                 {
                     case OrderTypes.MarketOrder:
                         orderTask = _orderService.CreateMarketOrder(
-                            TestingMockUser, accountId, instrument, qty, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
                         orderTask = _orderService.CreateStopOrder(
-                            TestingMockUser, accountId, instrument, qty, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
                         orderTask = _orderService.CreateLimitOrder(
-                            TestingMockUser, accountId, instrument, qty, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "stoplimit":

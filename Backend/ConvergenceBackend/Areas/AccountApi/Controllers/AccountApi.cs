@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,6 +12,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
     [Produces("application/json")]
     [Area("AccountApi")]
     [Route("api/v1/accountapi/")]
+    [Authorize]
     public class AccountApi : Controller
     {
         /// <summary>
