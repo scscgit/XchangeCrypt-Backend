@@ -1,5 +1,6 @@
 using IO.Swagger.Filters;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,7 +12,9 @@ using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
@@ -42,7 +45,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
             {
-                sharedOptions.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                sharedOptions.DefaultScheme = $"{CookieAuthenticationDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}";
                 sharedOptions.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
             })
             .AddAzureAdB2C(options => Configuration.Bind("Authentication:AzureAdB2C", options))
@@ -77,6 +80,10 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                             Email = ""
                         },
                         TermsOfService = ""
+                    });
+                    c.AddSecurityDefinition("Bearer", new ApiKeyScheme { In = "header", Description = "Please enter JWT with Bearer into field", Name = "Authorization", Type = "apiKey" });
+                    c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>> {
+                        { "Bearer", Enumerable.Empty<string>() },
                     });
                     c.CustomSchemaIds(type => type.FriendlyId(true));
                     c.DescribeAllEnumsAsStrings();

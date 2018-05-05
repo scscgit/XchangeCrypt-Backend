@@ -1,0 +1,28 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using System.Security.Claims
+@{
+	ViewData["Title"] = "Login";
+}
+<h2>@ViewData["Title"]</h2>
+<h3>API Payload:</h3>
+<p>@ViewData["Payload"]</p>
+
+<table class="table-hover table-condensed table-striped">
+	<tr>
+		<th>Claim Type</th>
+		<th>Claim Value</th>
+	</tr>
+	@foreach (Claim claim in User.Claims)
+	{
+		<tr>
+			<td>@claim.Type</td>
+			<td>@claim.Value</td>
+		</tr>
+	}
+</table>
+
+<p><a asp-area="" asp-controller="Login" asp-action="Api">Request API Payload</a></p>
+<p><a asp-area="" asp-controller="Session" asp-action="SignIn">Sign in</a></p>
+<p><a asp-area="" asp-controller="Session" asp-action="SignOut">Sign out</a></p>
+<p><a asp-area="" asp-controller="Session" asp-action="ResetPassword">Reset Password</a></p>
+<p><a asp-area="" asp-controller="Session" asp-action="EditProfile">Edit Profile</a></p>

@@ -30,11 +30,20 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         /// <summary>
-        /// Redirects the user to a log in page and prints a response.
+        /// Displays the session choices to the user.
         /// </summary>
         [Route("login")]
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// Redirects the user to a log in page and prints a response.
+        /// </summary>
+        [Route("api")]
         [Authorize]
-        public async Task<IActionResult> Login()
+        public async Task<IActionResult> Api()
         {
             string responseString = "";
             try
@@ -85,7 +94,8 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
             }
 
             ViewData["Payload"] = $"{responseString}";
-            return View();
+            ViewData["Message"] = String.Format("Claims available for the user {0}", (User.FindFirst("name")?.Value));
+            return Login();
         }
     }
 }

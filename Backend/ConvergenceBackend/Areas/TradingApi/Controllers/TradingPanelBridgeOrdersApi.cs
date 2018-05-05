@@ -251,10 +251,10 @@ namespace IO.Swagger.Controllers
         [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersPost(
             [FromRoute][Required]string accountId,
-            [FromForm][Required()]string instrument,
-            [FromForm][Required()]decimal? qty,
-            [FromForm][Required()]string side,
-            [FromForm][Required()]string type,
+            [FromForm][Required]string instrument,
+            [FromForm][Required]decimal? qty,
+            [FromForm][Required]string side,
+            [FromForm][Required]string type,
             [FromForm]decimal? limitPrice,
             [FromForm]decimal? stopPrice,
             [FromForm]string durationType,
