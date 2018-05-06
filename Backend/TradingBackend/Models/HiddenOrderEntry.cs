@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System.Collections.Generic;
 using XchangeCrypt.Backend.TradingBackend.Models.Enums;
 
 namespace XchangeCrypt.Backend.TradingBackend.Models
@@ -26,8 +27,6 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
         [BsonRepresentation(BsonType.String)]
         public OrderType Type { get; set; }
 
-        public decimal? LimitPrice { get; set; }
-
         public decimal? StopPrice { get; set; }
 
         public string ParentId { get; set; }
@@ -35,5 +34,14 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
         public ParentOrderType ParentType { get; set; }
+
+        /// <summary>
+        /// Many to many reverse side.
+        /// </summary>
+        public IList<string> ChildrenIds { get; set; } = new List<string>();
+
+        public string DurationType { get; set; }
+
+        public decimal? Duration { get; set; }
     }
 }

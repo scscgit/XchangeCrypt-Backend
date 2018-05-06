@@ -1,15 +1,19 @@
 using System;
 using System.Threading.Tasks;
+using XchangeCrypt.Backend.TradingBackend.Repositories;
 
 namespace XchangeCrypt.Backend.TradingBackend.Services
 {
     // TODO: one instance per instrument?
     public class StopOrderService : AbstractTradingOrderService
     {
+        public TradingRepository TradingRepository { get; }
+
         /// <summary>
         /// </summary>
-        public StopOrderService()
+        public StopOrderService(TradingRepository tradingRepository)
         {
+            TradingRepository = tradingRepository;
         }
 
         internal Task Buy(string user, string accountId, string instrument, decimal? quantity, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)

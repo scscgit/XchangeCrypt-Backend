@@ -26,20 +26,14 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
         [BsonRepresentation(BsonType.String)]
         public OrderSide Side { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        [BsonRepresentation(BsonType.String)]
-        public OrderType Type { get; set; }
-
         public decimal FilledQty { get; set; }
 
         public decimal? LimitPrice { get; set; }
 
-        public decimal? StopPrice { get; set; }
-
         /// <summary>
         /// Many to many reverse side.
         /// </summary>
-        public IList<string> ChildrenIds { get; set; }
+        public IList<string> ChildrenIds { get; set; } = new List<string>();
 
         public string DurationType { get; set; }
 

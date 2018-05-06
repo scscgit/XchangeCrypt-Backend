@@ -29,20 +29,20 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             }
             var orderSide = orderSideOptional.Value;
 
+            // This includes type check assertions
             switch (type)
             {
-                //todo
                 case OrderTypes.LimitOrder:
-                    return ActivityHistoryService.PersistLimitOrder(
-                        user, accountId, instrument, quantity, orderSide, limitPrice, durationType, duration, stopLoss, takeProfit);
+                    return TradeExecutor.Limit(ActivityHistoryService.PersistLimitOrder(
+                       user, accountId, instrument, quantity.Value, orderSide, limitPrice.Value, durationType, duration, stopLoss, takeProfit));
 
                 case OrderTypes.StopOrder:
-                    return ActivityHistoryService.PersistStopOrder(
-                        user, accountId, instrument, quantity, orderSide, stopPrice, durationType, duration, stopLoss, takeProfit);
+                    return TradeExecutor.Stop(ActivityHistoryService.PersistStopOrder(
+                        user, accountId, instrument, quantity.Value, orderSide, stopPrice.Value, durationType, duration, stopLoss, takeProfit));
 
                 case OrderTypes.MarketOrder:
-                    return ActivityHistoryService.PersistMarketOrder(
-                        user, accountId, instrument, quantity, orderSide, durationType, duration, stopLoss, takeProfit);
+                    return TradeExecutor.Market(ActivityHistoryService.PersistMarketOrder(
+                        user, accountId, instrument, quantity.Value, orderSide, durationType, duration, stopLoss, takeProfit));
 
                 default:
                     return reportInvalidMessage($"Unrecognized order type {type}");

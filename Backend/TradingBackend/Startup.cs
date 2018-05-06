@@ -43,7 +43,7 @@ namespace XchangeCrypt.Backend.TradingBackend
 
             // Processors are made ad-hoc via factory
             services.AddTransient<ProcessorFactory>();
-            // They use Executors
+            // They use their own Executor instances
             services.AddTransient<TradeExecutor>();
 
             // Custom services

@@ -23,7 +23,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         public string Instrument { get; set; }
 
-        public decimal? Qty { get; set; }
+        public decimal Qty { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
