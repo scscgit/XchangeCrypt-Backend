@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using XchangeCrypt.Backend.TradingBackend.Dispatch;
+using XchangeCrypt.Backend.TradingBackend.Repositories;
 using XchangeCrypt.Backend.TradingBackend.Services;
 
 namespace XchangeCrypt.Backend.TradingBackend
@@ -40,6 +41,14 @@ namespace XchangeCrypt.Backend.TradingBackend
             services.AddTransient<LimitOrderService>();
             services.AddTransient<MarketOrderService>();
             services.AddTransient<StopOrderService>();
+
+            // Custom repositories
+            services.AddTransient<AccountRepository>();
+            services.AddTransient<ActivityHistoryRepository>();
+            services.AddTransient<TradingRepository>();
+
+            // Custom singleton services
+            services.AddTransient<DataAccess>();
         }
 
         /// <summary>

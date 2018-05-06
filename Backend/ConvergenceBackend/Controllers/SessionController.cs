@@ -60,7 +60,8 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
                 return RedirectToAction(nameof(LoginController.Login), "Login");
             }
 
-            return View();
+            // Redirect there anyway, as it's the login page
+            return RedirectToAction(nameof(LoginController.Login), "Login");
         }
     }
 }
