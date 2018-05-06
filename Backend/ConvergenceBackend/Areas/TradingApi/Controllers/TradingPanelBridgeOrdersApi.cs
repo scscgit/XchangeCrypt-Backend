@@ -578,7 +578,7 @@ namespace IO.Swagger.Controllers
             // return StatusCode(200, default(InlineResponse20013));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"asks\" : [ \"0.000003\", \"1.98582\" ],\n    \"bids\" : [ \"0.000005\", \"2.5855\" ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"asks\" : [ 0.000003, 1.98582 ],\n    \"bids\" : [ 0.000005, 2.5855 ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
             ? JsonConvert.DeserializeObject<InlineResponse20013>(exampleJson)

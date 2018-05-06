@@ -41,7 +41,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
                 {
                     CoinSymbol="BTC",
                     WalletPublicKey="B65983299",
-                    Balance=5000000000,
+                    Balance=5000000,
                 },
                 new WalletDetails
                 {
