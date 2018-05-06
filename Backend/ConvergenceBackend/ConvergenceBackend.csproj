@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ConstantsLibrary\ConstantsLibrary.csproj" />
+    <ProjectReference Include="..\TradingBackend\TradingBackend.csproj" />
   </ItemGroup>
 
 </Project>

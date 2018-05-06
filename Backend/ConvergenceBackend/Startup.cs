@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend
@@ -98,12 +99,21 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     c.OperationFilter<GeneratePathParamsValidationFilter>();
                 });
 
-            // Trading services
+            // Trading services (Queue)
             services.AddTransient<OrderService>();
             services.AddTransient<UserService>();
 
+            // Caching services
+            services.AddTransient<OrderCaching>();
+
             // Persistently running queue writer
             services.AddSingleton<TradingBackendQueueWriter>();
+
+            // Caching inside Convergence via TradingBackend dependency
+            services.AddTransient<TradingBackend.Repositories.AccountRepository>();
+            services.AddTransient<TradingBackend.Repositories.ActivityHistoryRepository>();
+            services.AddTransient<TradingBackend.Repositories.TradingRepository>();
+            services.AddSingleton<TradingBackend.Repositories.DataAccess>();
         }
 
         /// <summary>

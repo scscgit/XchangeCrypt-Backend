@@ -59,7 +59,7 @@ namespace XchangeCrypt.Backend.TradingBackend
             services.AddTransient<TradingRepository>();
 
             // Custom singleton services
-            services.AddTransient<DataAccess>();
+            services.AddSingleton<DataAccess>();
         }
 
         /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Security.Claims;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication
@@ -6,7 +7,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication
     {
         public static string GetIdentifier(this ClaimsPrincipal user)
         {
-            return user.FindFirst(ClaimTypes.NameIdentifier).Value;
+            try
+            {
+                return user.FindFirst(ClaimTypes.NameIdentifier).Value;
+            }
+            catch (NullReferenceException e)
+            {
+                throw new Exception("Couldn't find authorized User's Identifier. Are you logged in and does the REST mapping use [Authorize]?", e);
+            }
         }
     }
 }

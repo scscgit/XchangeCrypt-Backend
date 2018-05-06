@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
@@ -20,15 +22,17 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/tradingapi/")]
     public class TradingPanelBridgeOrdersApi : Controller
     {
-        private readonly OrderService _orderService;
-        private readonly UserService _userService;
+        public UserService UserService { get; }
+        public OrderService OrderService { get; }
+        public OrderCaching OrderCaching { get; }
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService)
+        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService, OrderCaching orderCaching)
         {
-            _orderService = orderService;
-            _userService = userService;
+            UserService = userService;
+            OrderService = orderService;
+            OrderCaching = orderCaching;
         }
 
         /// <summary>
@@ -44,19 +48,18 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdExecutionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20010), description: "List of executions")]
-        public virtual IActionResult AccountsAccountIdExecutionsGet([FromRoute][Required]string accountId, [FromQuery][Required()]string instrument, [FromQuery]decimal? maxCount)
+        [Authorize]
+        public virtual IActionResult AccountsAccountIdExecutionsGet([FromRoute][Required]string accountId, [FromQuery][Required()]string instrument, [FromQuery]int? maxCount)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse20010));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  }, {\n    \"side\" : \"buy\",\n    \"price\" : 0.80082819046101150206595775671303272247314453125,\n    \"qty\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\",\n    \"time\" : 6.02745618307040320615897144307382404804229736328125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse20010>(exampleJson)
-            : default(InlineResponse20010);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new InlineResponse20010()
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = OrderCaching.GetExecutions(User.GetIdentifier(), instrument, maxCount),
+                }
+            );
         }
 
         /// <summary>
@@ -72,17 +75,26 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
         public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute][Required]string accountId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse20011));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  }, {\n    \"qtyStep\" : 1.46581298050294517310021547018550336360931396484375,\n    \"pipSize\" : 5.962133916683182377482808078639209270477294921875,\n    \"pipValue\" : 5.63737665663332876420099637471139430999755859375,\n    \"minTick\" : 2.3021358869347654518833223846741020679473876953125,\n    \"lotSize\" : 7.061401241503109105224211816675961017608642578125,\n    \"name\" : \"name\",\n    \"description\" : \"description\",\n    \"maxQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"minQty\" : 0.80082819046101150206595775671303272247314453125\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse20011>(exampleJson)
-            : default(InlineResponse20011);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            var instruments = new List<Instrument>();
+            instruments.Add(new Instrument()
+            {
+                Name = "QBC_BTC",
+                Description = "QBC_BTC",
+            });
+            instruments.Add(new Instrument()
+            {
+                Name = "LTC_BTC",
+                Description = "QBC_BTC",
+            });
+            return StatusCode(
+                200,
+                new InlineResponse20011()
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = instruments,
+                }
+            );
         }
 
         /// <summary>
@@ -271,17 +283,17 @@ namespace IO.Swagger.Controllers
                 switch (type)
                 {
                     case OrderTypes.MarketOrder:
-                        orderTask = _orderService.CreateMarketOrder(
+                        orderTask = OrderService.CreateMarketOrder(
                             user, accountId, instrument, qty, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
-                        orderTask = _orderService.CreateStopOrder(
+                        orderTask = OrderService.CreateStopOrder(
                             user, accountId, instrument, qty, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
-                        orderTask = _orderService.CreateLimitOrder(
+                        orderTask = OrderService.CreateLimitOrder(
                             user, accountId, instrument, qty, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
