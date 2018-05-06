@@ -2,7 +2,8 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 {
     public class CoinWallet
     {
-        public string CoinName;
+        // TODO maybe unique ID
+        public string CoinSymbol;
 
         /// <summary>
         /// Generated from WalletBackend, copy.

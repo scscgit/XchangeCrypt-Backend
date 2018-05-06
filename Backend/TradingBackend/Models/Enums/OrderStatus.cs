@@ -6,6 +6,6 @@ namespace XchangeCrypt.Backend.TradingBackend.Models.Enums
         Placing, Inactive, Working,
 
         // Order history entry
-        Rejected, Filled, Cancelled
+        Rejected, Filled, Cancelled,
     }
 }

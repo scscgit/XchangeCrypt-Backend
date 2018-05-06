@@ -1,12 +1,21 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using XchangeCrypt.Backend.TradingBackend.Models.Enums;
 
 namespace XchangeCrypt.Backend.TradingBackend.Models
 {
     public class ActivityHistoryOrderEntry
     {
-        public string Id { get; set; }
+        public ObjectId Id { get; set; }
 
-        public ActivityHistoryEntryType EntryType { get; set; }
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public ActivityHistoryEntryType EntryType { get; set; } = ActivityHistoryEntryType.TradeOrder;
+
+        public DateTime EntryTime { get; set; }
 
         public string User { get; set; }
 
@@ -16,8 +25,12 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         public decimal? Qty { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
         public OrderSide Side { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
         public OrderType Type { get; set; }
 
         public decimal? LimitPrice { get; set; }

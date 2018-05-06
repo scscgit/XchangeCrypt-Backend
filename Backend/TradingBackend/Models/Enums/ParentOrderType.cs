@@ -10,6 +10,6 @@ namespace XchangeCrypt.Backend.TradingBackend.Models.Enums
         /// <summary>
         /// I guess a limit order.
         /// </summary>
-        Position
+        Position,
     }
 }

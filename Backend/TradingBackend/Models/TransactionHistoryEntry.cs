@@ -1,8 +1,13 @@
+using MongoDB.Bson;
+using System;
+
 namespace XchangeCrypt.Backend.TradingBackend.Models
 {
     public class TransactionHistoryEntry
     {
-        public string Id { get; set; }
+        public ObjectId Id { get; set; }
+
+        public DateTime EntryTime { get; set; }
 
         public string User { get; set; }
 

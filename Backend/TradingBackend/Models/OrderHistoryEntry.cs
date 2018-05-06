@@ -1,10 +1,14 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using XchangeCrypt.Backend.TradingBackend.Models.Enums;
 
 namespace XchangeCrypt.Backend.TradingBackend.Models
 {
     public class OrderHistoryEntry
     {
-        public string Id { get; set; }
+        public ObjectId Id { get; set; }
 
         public string User { get; set; }
 
@@ -14,8 +18,12 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         public decimal Qty { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
         public OrderSide Side { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
         public OrderType Type { get; set; }
 
         public decimal FilledQty { get; set; }
@@ -35,6 +43,8 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         public decimal? Duration { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
         public OrderStatus Status { get; set; }
     }
 }
