@@ -20,7 +20,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             TradeExecutor = tradeExecutor;
         }
 
-        public Task PersistOrder(string user, string accountId, string instrument, decimal? quantity, string side, string type, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, Func<string, Task> reportInvalidMessage)
+        public Task PersistOrder(string user, string accountId, string instrument, decimal quantity, string side, string type, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, Func<string, Task> reportInvalidMessage)
         {
             var orderSideOptional = ParseSide(side);
             if (orderSideOptional.HasValue)
@@ -29,20 +29,20 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             }
             var orderSide = orderSideOptional.Value;
 
-            // This includes type check assertions
+            // This includes value check assertions
             switch (type)
             {
                 case OrderTypes.LimitOrder:
                     return TradeExecutor.Limit(ActivityHistoryService.PersistLimitOrder(
-                       user, accountId, instrument, quantity.Value, orderSide, limitPrice.Value, durationType, duration, stopLoss, takeProfit));
+                       user, accountId, instrument, quantity, orderSide, limitPrice.Value, durationType, duration, stopLoss, takeProfit));
 
                 case OrderTypes.StopOrder:
                     return TradeExecutor.Stop(ActivityHistoryService.PersistStopOrder(
-                        user, accountId, instrument, quantity.Value, orderSide, stopPrice.Value, durationType, duration, stopLoss, takeProfit));
+                        user, accountId, instrument, quantity, orderSide, stopPrice.Value, durationType, duration, stopLoss, takeProfit));
 
                 case OrderTypes.MarketOrder:
                     return TradeExecutor.Market(ActivityHistoryService.PersistMarketOrder(
-                        user, accountId, instrument, quantity.Value, orderSide, durationType, duration, stopLoss, takeProfit));
+                        user, accountId, instrument, quantity, orderSide, durationType, duration, stopLoss, takeProfit));
 
                 default:
                     return reportInvalidMessage($"Unrecognized order type {type}");

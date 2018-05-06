@@ -19,7 +19,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Caching
 
         public List<Execution> GetExecutions(string user, string instrument, int? maxCount)
         {
-            return (List<Execution>)TradingRepository
+            return TradingRepository
                 .TransactionHistory()
                 .Find(e => e.User.Equals(user) && e.Instrument.Equals(instrument))
                 .Limit(maxCount)
@@ -32,7 +32,8 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Caching
                     Time = e.EntryTime.ToBinary(),
                     Qty = e.FilledQty,
                     Side = MapSide(e.Side),
-                });
+                })
+                .ToList();
         }
 
         private SideEnum MapSide(OrderSide side)

@@ -26,7 +26,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
             var user = (string)message.UserProperties[ParameterNames.User];
             var accountId = (string)message.UserProperties[ParameterNames.AccountId];
             var instrument = (string)message.UserProperties[ParameterNames.Instrument];
-            var quantity = (decimal?)message.UserProperties[ParameterNames.Quantity];
+            var quantity = (decimal)message.UserProperties[ParameterNames.Quantity];
             var side = (string)message.UserProperties[ParameterNames.Side];
             var type = (string)message.UserProperties[ParameterNames.Type];
             var limitPrice = (decimal?)message.UserProperties[ParameterNames.LimitPrice];

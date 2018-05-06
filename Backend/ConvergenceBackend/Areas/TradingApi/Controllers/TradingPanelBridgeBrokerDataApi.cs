@@ -15,11 +15,6 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/tradingapi/")]
     public class TradingPanelBridgeBrokerDataApi : Controller
     {
-        /// <summary>
-        /// TODO: replace everywhere with an actual authenticated username.
-        /// </summary>
-        private const string TestingMockUser = "9testing5user9";
-
         private readonly OrderService _orderService;
 
         /// <summary>

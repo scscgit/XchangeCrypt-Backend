@@ -284,17 +284,17 @@ namespace IO.Swagger.Controllers
                 {
                     case OrderTypes.MarketOrder:
                         orderTask = OrderService.CreateMarketOrder(
-                            user, accountId, instrument, qty, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
                         orderTask = OrderService.CreateStopOrder(
-                            user, accountId, instrument, qty, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
                         orderTask = OrderService.CreateLimitOrder(
-                            user, accountId, instrument, qty, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "stoplimit":

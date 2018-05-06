@@ -10,6 +10,7 @@ using XchangeCrypt.Backend.TradingBackend.Services;
 namespace XchangeCrypt.Backend.TradingBackend.Controllers
 {
     [Route("api/v1/monitorapi/")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class MonitorController : Controller
     {
         private readonly MonitorService _monitorService;
