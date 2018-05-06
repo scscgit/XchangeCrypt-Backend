@@ -1,7 +1,5 @@
 using IO.Swagger.Filters;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
+using System.Text;
+using System.Threading.Tasks;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend
@@ -45,14 +44,17 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
             {
-                sharedOptions.DefaultScheme =
-                $"{CookieAuthenticationDefaults.AuthenticationScheme}"
-                + $",{JwtBearerDefaults.AuthenticationScheme}"
-                + $",{OpenIdConnectDefaults.AuthenticationScheme}";
-                sharedOptions.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+                sharedOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddAzureAdB2C(options => Configuration.Bind("Authentication:AzureAdB2C", options))
-            .AddCookie();
+            .AddJwtBearer(jwtOptions =>
+            {
+                jwtOptions.Authority = $"https://login.microsoftonline.com/tfp/{Configuration["Authentication:AzureAdB2C:Tenant"]}/{Configuration["Authentication:AzureAdB2C:Policy"]}/v2.0/";
+                jwtOptions.Audience = Configuration["Authentication:AzureAdB2C:ClientId"];
+                jwtOptions.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = AuthenticationFailed
+                };
+            });
 
             // Framework services
             services
@@ -139,6 +141,15 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 //TODO: Enable production exception handling (https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling)
                 // app.UseExceptionHandler("/Home/Error");
             }
+        }
+
+        private Task AuthenticationFailed(AuthenticationFailedContext arg)
+        {
+            // For debugging purposes only!
+            var s = $"AuthenticationFailed: {arg.Exception.Message}";
+            arg.Response.ContentLength = s.Length;
+            arg.Response.Body.Write(Encoding.UTF8.GetBytes(s), 0, s.Length);
+            return Task.FromResult(0);
         }
     }
 }
