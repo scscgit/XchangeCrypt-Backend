@@ -7,6 +7,8 @@ using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
 {
+    [Route("Session/")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class SessionController : Controller
     {
         private AzureAdB2COptions _azureAdB2COptions;
@@ -17,6 +19,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         [HttpGet]
+        [Route("SignIn")]
         public IActionResult SignIn()
         {
             var redirectUrl = Url.Action(nameof(LoginController.Login), "Login");
@@ -26,6 +29,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         [HttpGet]
+        [Route("ResetPassword")]
         public IActionResult ResetPassword()
         {
             var redirectUrl = Url.Action(nameof(LoginController.Login), "Login");
@@ -35,6 +39,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         [HttpGet]
+        [Route("EditProfile")]
         public IActionResult EditProfile()
         {
             var redirectUrl = Url.Action(nameof(LoginController.Login), "Login");
@@ -44,6 +49,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         [HttpGet]
+        [Route("SignOut")]
         public IActionResult SignOut()
         {
             var callbackUrl = Url.Action(nameof(SignedOut), "Session", values: null, protocol: Request.Scheme);
@@ -52,6 +58,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         }
 
         [HttpGet]
+        [Route("SignedOut")]
         public IActionResult SignedOut()
         {
             if (User.Identity.IsAuthenticated)

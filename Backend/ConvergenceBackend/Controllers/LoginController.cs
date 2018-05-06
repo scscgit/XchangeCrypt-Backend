@@ -16,7 +16,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
     /// <summary>
     /// Handles local authorization.
     /// </summary>
-    [Route("/")]
     [ApiExplorerSettings(IgnoreApi = true)]
     public class LoginController : Controller
     {
@@ -42,6 +41,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Controllers
         /// Redirects the user to a log in page and prints a response.
         /// </summary>
         [Route("api")]
+        [Route("signin-oidc")]
         [Authorize]
         public async Task<IActionResult> Api()
         {

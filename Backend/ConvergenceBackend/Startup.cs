@@ -45,14 +45,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
             {
-                sharedOptions.DefaultScheme = $"{CookieAuthenticationDefaults.AuthenticationScheme},{JwtBearerDefaults.AuthenticationScheme}";
+                sharedOptions.DefaultScheme =
+                $"{CookieAuthenticationDefaults.AuthenticationScheme}"
+                + $",{JwtBearerDefaults.AuthenticationScheme}"
+                + $",{OpenIdConnectDefaults.AuthenticationScheme}";
                 sharedOptions.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
             })
             .AddAzureAdB2C(options => Configuration.Bind("Authentication:AzureAdB2C", options))
             .AddCookie();
-
-            // Custom authentication services
-            services.AddTransient<UserService>();
 
             // Framework services
             services
@@ -115,7 +115,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 {
                     routes.MapRoute(
                       name: "areas",
-                      template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
+                      template: "{area:exists}/{controller}/{action=Index}/{id?}"
                     );
                 })
                 .UseDefaultFiles()
