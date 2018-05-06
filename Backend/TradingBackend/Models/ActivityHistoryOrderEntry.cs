@@ -44,5 +44,9 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
         public decimal? StopLoss { get; set; }
 
         public decimal? TakeProfit { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public CommitState CommitState { get; set; } = CommitState.Initial;
     }
 }

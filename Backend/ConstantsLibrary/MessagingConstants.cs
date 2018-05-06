@@ -9,9 +9,9 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
 
             public const string User = "User";
             public const string AccountId = "AccountId";
-            public const string Instrument = "Instrument";
 
-            // Trading
+            // Trade order
+            public const string Instrument = "Instrument";
             public const string Quantity = "Quantity";
 
             public const string Side = "Side";
@@ -23,13 +23,20 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string StopLoss = "StopLoss";
             public const string TakeProfit = "TakeProfit";
 
-            // Misc trading
+            // Wallet operation
+            public const string CoinSymbol = "CoinSymbol";
+            public const string DepositType = "DepositType";
+            public const string WithdrawalType = "WithdrawalType";
+            public const string Amount = "Amount";
+
+            // Misc
             public const string RequestId = "RequestId";
         }
 
         public class MessageTypes
         {
-            public const string TradingOrder = "TradingOrder";
+            public const string TradeOrder = "TradeOrder";
+            public const string WalletOperation = "WalletOperation";
         }
 
         public class OrderTypes

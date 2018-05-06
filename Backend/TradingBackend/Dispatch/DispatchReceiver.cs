@@ -19,10 +19,10 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
         private const string QueueName = "TradeRequests";
 
         private readonly MonitorService _monitorService;
-        private readonly TradingOrderDispatch _tradingOrderDispatch;
+        private readonly TradeOrderDispatch _tradingOrderDispatch;
         private IQueueClient _queueClient;
 
-        public DispatchReceiver(MonitorService monitorService, TradingOrderDispatch tradingOrderDispatch)
+        public DispatchReceiver(MonitorService monitorService, TradeOrderDispatch tradingOrderDispatch)
         {
             _monitorService = monitorService;
             _tradingOrderDispatch = tradingOrderDispatch;
@@ -75,7 +75,11 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
                 Task dispatchedTask;
                 switch (message.UserProperties[ParameterNames.MessageType])
                 {
-                    case MessageTypes.TradingOrder:
+                    case MessageTypes.TradeOrder:
+                        dispatchedTask = _tradingOrderDispatch.Dispatch(message, errorMessage => ReportInvalidMessage(message, errorMessage));
+                        break;
+
+                    case MessageTypes.WalletOperation:
                         dispatchedTask = _tradingOrderDispatch.Dispatch(message, errorMessage => ReportInvalidMessage(message, errorMessage));
                         break;
 

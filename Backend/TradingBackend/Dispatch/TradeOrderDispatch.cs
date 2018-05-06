@@ -2,26 +2,21 @@ using Microsoft.Azure.ServiceBus;
 using System;
 using System.Threading.Tasks;
 using XchangeCrypt.Backend.TradingBackend.Processors;
-using XchangeCrypt.Backend.TradingBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
 namespace XchangeCrypt.Backend.TradingBackend.Dispatch
 {
-    public class TradingOrderDispatch
+    public class TradeOrderDispatch
     {
-        public ActivityHistoryService ActivityHistoryService { get; }
-        public OrderPersistenceProcessor OrderPersistenceProcessor { get; }
+        public ProcessorFactory ProcessorFactory { get; }
 
-        public TradingOrderDispatch(
-            ActivityHistoryService activityHistoryService,
-            OrderPersistenceProcessor orderPersistenceProcessor)
+        public TradeOrderDispatch(ProcessorFactory processorFactory)
         {
-            ActivityHistoryService = activityHistoryService;
-            OrderPersistenceProcessor = orderPersistenceProcessor;
+            ProcessorFactory = processorFactory;
         }
 
         /// <summary>
-        /// Dispatches proper handlers to handle a trading order operation.
+        /// Dispatches proper handlers to handle a trade order operation.
         /// Tries to schedule persistence operations so that they execute in parallel as much as possible.
         /// </summary>
         /// <param name="message">Message to be procesed</param>
@@ -44,7 +39,8 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 
-            return OrderPersistenceProcessor.PersistOrder(user, accountId, instrument, quantity, side, type, limitPrice, stopPrice, durationType, duration, stopLoss, takeProfit, reportInvalidMessage);
+            return ProcessorFactory.CreateTradeOrderPersistenceProcessor().PersistOrder(
+                user, accountId, instrument, quantity, side, type, limitPrice, stopPrice, durationType, duration, stopLoss, takeProfit, reportInvalidMessage);
         }
     }
 }

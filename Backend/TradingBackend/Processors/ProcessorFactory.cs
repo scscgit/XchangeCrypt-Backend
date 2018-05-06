@@ -13,9 +13,14 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             TradeExecutor = tradeExecutor;
         }
 
-        public OrderPersistenceProcessor CreateOrderPersistenceProcessor()
+        public TradeOrderPersistenceProcessor CreateTradeOrderPersistenceProcessor()
         {
-            return new OrderPersistenceProcessor(ActivityHistoryService);
+            return new TradeOrderPersistenceProcessor(ActivityHistoryService, TradeExecutor);
+        }
+
+        public WalletOperationPersistenceProcessor CreateWalletOperationPersistenceProcessor()
+        {
+            return new WalletOperationPersistenceProcessor(ActivityHistoryService);
         }
     }
 }

@@ -6,7 +6,7 @@ using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
 namespace XchangeCrypt.Backend.TradingBackend.Processors
 {
-    public class OrderPersistenceProcessor
+    public class TradeOrderPersistenceProcessor
     {
         public ActivityHistoryService ActivityHistoryService { get; }
         public TradeExecutor TradeExecutor { get; }
@@ -14,7 +14,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
         /// <summary>
         /// Created via ProcessorFactory.
         /// </summary>
-        public OrderPersistenceProcessor(ActivityHistoryService activityHistoryService, TradeExecutor tradeExecutor)
+        public TradeOrderPersistenceProcessor(ActivityHistoryService activityHistoryService, TradeExecutor tradeExecutor)
         {
             ActivityHistoryService = activityHistoryService;
             TradeExecutor = tradeExecutor;
@@ -31,6 +31,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
 
             switch (type)
             {
+                //todo
                 case OrderTypes.LimitOrder:
                     return ActivityHistoryService.PersistLimitOrder(
                         user, accountId, instrument, quantity, orderSide, limitPrice, durationType, duration, stopLoss, takeProfit);

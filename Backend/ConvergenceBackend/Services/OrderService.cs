@@ -38,7 +38,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
-                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
+                    { ParameterNames.MessageType, MessageTypes.TradeOrder},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
@@ -75,7 +75,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
-                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
+                    { ParameterNames.MessageType, MessageTypes.TradeOrder},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
@@ -111,7 +111,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
             await _queueWriter.SendMessageAsync(
                 new Dictionary<string, object>()
                 {
-                    { ParameterNames.MessageType, MessageTypes.TradingOrder},
+                    { ParameterNames.MessageType, MessageTypes.TradeOrder},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},

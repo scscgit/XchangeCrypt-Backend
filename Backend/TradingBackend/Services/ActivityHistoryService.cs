@@ -30,6 +30,22 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
             return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, null, null, durationType, duration, stopLoss, takeProfit);
         }
 
+        public async Task<ActivityHistoryWalletOperationEntry> PersistWalletOperation(string user, string accountId, string coinSymbol, string depositType, string withdrawalType, decimal amount)
+        {
+            var entry = new ActivityHistoryWalletOperationEntry
+            {
+                EntryTime = DateTime.Now,
+                User = user,
+                AccountId = accountId,
+                CoinSymbol = coinSymbol,
+                DepositType = depositType,
+                WithdrawalType = withdrawalType,
+                Amount = amount,
+            };
+            await ActivityHistoryRepository.WalletOperations().InsertOneAsync(entry);
+            return entry;
+        }
+
         private async Task<ActivityHistoryOrderEntry> PersistOrder(string user, string accountId, string instrument, decimal? quantity, OrderSide orderSide, OrderType orderType, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
         {
             var entry = new ActivityHistoryOrderEntry

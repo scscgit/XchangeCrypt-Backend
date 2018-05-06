@@ -38,7 +38,8 @@ namespace XchangeCrypt.Backend.TradingBackend
             services.AddSingleton<MonitorService>();
 
             // Shared dispatch
-            services.AddSingleton<TradingOrderDispatch>();
+            services.AddSingleton<TradeOrderDispatch>();
+            services.AddSingleton<WalletOperationDispatch>();
 
             // Processors are made ad-hoc via factory
             services.AddTransient<ProcessorFactory>();
@@ -46,7 +47,7 @@ namespace XchangeCrypt.Backend.TradingBackend
             services.AddTransient<TradeExecutor>();
 
             // Custom services
-            services.AddTransient<TradingOrderDispatch>();
+            services.AddTransient<TradeOrderDispatch>();
             services.AddTransient<ActivityHistoryService>();
             services.AddTransient<LimitOrderService>();
             services.AddTransient<MarketOrderService>();
