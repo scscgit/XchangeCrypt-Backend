@@ -85,9 +85,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                         TermsOfService = ""
                     });
                     c.AddSecurityDefinition("Bearer", new ApiKeyScheme { In = "header", Description = "Please enter JWT with Bearer into field", Name = "Authorization", Type = "apiKey" });
-                    c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>> {
-                        { "Bearer", Enumerable.Empty<string>() },
-                    });
+
                     c.CustomSchemaIds(type => type.FriendlyId(true));
                     c.DescribeAllEnumsAsStrings();
                     c.IncludeXmlComments($"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
