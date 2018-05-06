@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System;
 using XchangeCrypt.Backend.TradingBackend.Models.Enums;
 
 namespace XchangeCrypt.Backend.TradingBackend.Models
@@ -9,6 +10,10 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
     public class OrderHistoryEntry
     {
         public ObjectId Id { get; set; }
+
+        public DateTime CreateTime { get; set; }
+
+        public DateTime CloseTime { get; set; }
 
         public string User { get; set; }
 
