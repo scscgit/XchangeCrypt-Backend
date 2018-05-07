@@ -26,7 +26,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
         /// <summary>
         /// Optional.
         /// </summary>
-        public string OrderId { get; set; }
+        public ObjectId OrderId { get; set; }
 
         public decimal FilledQty { get; set; }
 
