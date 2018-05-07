@@ -112,7 +112,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
                 new Dictionary<string, object>()
                 {
                     { ParameterNames.MessageType, MessageTypes.TradeOrder},
-                    { ParameterNames.AccountId, accountId},
                     { ParameterNames.User, user},
                     { ParameterNames.AccountId, accountId},
                     { ParameterNames.Instrument, instrument},
