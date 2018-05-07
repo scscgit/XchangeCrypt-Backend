@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models;
+using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
 {
@@ -23,9 +25,10 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         {
             return new ProfileDetails
             {
-                Login = "testingUser",
-                EmailAddress = "testingUser@fake-address.com",
-                RealName = "Dr. Testing User",
+                Id = User.GetIdentifier(),
+                Login = "",
+                EmailAddress = User.FindFirst(ClaimTypes.Email).Value,
+                RealName = User.FindFirst(ClaimTypes.Name).Value,
             };
         }
 
@@ -41,19 +44,19 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
                 {
                     CoinSymbol="BTC",
                     WalletPublicKey="B65983299",
-                    Balance=5000000,
+                    Balance=0.0013185m,
                 },
                 new WalletDetails
                 {
                     CoinSymbol="LTC",
                     WalletPublicKey="L88183299",
-                    Balance=10000000,
+                    Balance=103350.23358m,
                 },
                 new WalletDetails
                 {
                     CoinSymbol="QBC",
                     WalletPublicKey="Q4018",
-                    Balance=800000000000000,
+                    Balance=800_059_900_000,
                 },
             };
         }
@@ -90,7 +93,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         {
             return new Dictionary<string, string>()
             {
-                { "something", "error" },
+                { "response", "error" },
                 { "message", "Balance insufficient for the withdrawal" },
             };
         }

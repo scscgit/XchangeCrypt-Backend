@@ -57,7 +57,7 @@ namespace IO.Swagger.Controllers
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = OrderCaching.GetExecutions(User.GetIdentifier(), instrument, maxCount),
+                    D = OrderCaching.GetExecutions(User.GetIdentifier(), accountId, instrument, maxCount),
                 }
             );
         }
@@ -110,20 +110,21 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
         public virtual IActionResult AccountsAccountIdOrdersGet([FromRoute][Required]string accountId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse2004));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.912133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.952133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
-            : default(InlineResponse2004);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            var realData = new InlineResponse2004()
+            {
+                S = Status.OkEnum,
+                Errmsg = null,
+                D = OrderCaching.GetOrders(User.GetIdentifier(), accountId),
+            };
+            var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>("{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
+              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.912133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n }, " +
+              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.952133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
+              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}");
+            exampleAndRealData.D.AddRange(realData.D);
+            return StatusCode(
+              200,
+              exampleAndRealData
+          );
         }
 
         /// <summary>
@@ -174,8 +175,8 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
-            : default(InlineResponse2007);
+                ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
+                : default(InlineResponse2007);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -194,17 +195,15 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2006), description: "Order")]
         public virtual IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute][Required]string accountId, [FromRoute][Required]string orderId)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse2006));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 5.962133916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"instrument\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2006>(exampleJson)
-            : default(InlineResponse2006);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new InlineResponse2006()
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = OrderCaching.GetOrder(User.GetIdentifier(), accountId, orderId),
+                }
+            );
         }
 
         /// <summary>

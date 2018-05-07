@@ -5,12 +5,13 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
         public class ParameterNames
         {
             // Main
-            public const string MessageType = "MessageType";
 
+            public const string MessageType = "MessageType";
             public const string User = "User";
             public const string AccountId = "AccountId";
 
             // Trade order
+
             public const string Instrument = "Instrument";
             public const string Quantity = "Quantity";
 
@@ -24,12 +25,14 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string TakeProfit = "TakeProfit";
 
             // Wallet operation
+
             public const string CoinSymbol = "CoinSymbol";
             public const string DepositType = "DepositType";
             public const string WithdrawalType = "WithdrawalType";
             public const string Amount = "Amount";
 
             // Misc
+
             public const string RequestId = "RequestId";
         }
 

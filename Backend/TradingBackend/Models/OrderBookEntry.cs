@@ -30,6 +30,12 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         public decimal? LimitPrice { get; set; }
 
+        public string ParentId { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public ParentOrderType? ParentType { get; set; }
+
         /// <summary>
         /// Many to many reverse side.
         /// </summary>

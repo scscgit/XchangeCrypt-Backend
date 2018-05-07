@@ -33,7 +33,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Models
 
         [JsonConverter(typeof(StringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
-        public ParentOrderType ParentType { get; set; }
+        public ParentOrderType? ParentType { get; set; }
 
         /// <summary>
         /// Many to many reverse side.

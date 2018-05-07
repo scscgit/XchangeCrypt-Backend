@@ -20,6 +20,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models
         /// <summary>
         /// User balance of the wallet represented in multiplies of the lowest tradable amount, which is specified by the wallet.
         /// </summary>
-        public long Balance;
+        public decimal Balance;
     }
 }
