@@ -230,7 +230,7 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string orderId, [FromForm][Required()]decimal? qty, [FromForm]decimal? limitPrice, [FromForm]decimal? stopPrice, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit, [FromForm]string digitalSignature)
+        public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string orderId, [FromBody][Required()]decimal? qty, [FromBody]decimal? limitPrice, [FromBody]decimal? stopPrice, [FromBody]decimal? stopLoss, [FromBody]decimal? takeProfit, [FromBody]string digitalSignature)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -271,17 +271,17 @@ namespace IO.Swagger.Controllers
         [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersPost(
             [FromRoute][Required]string accountId,
-            [FromForm][Required]string instrument,
-            [FromForm][Required]decimal? qty,
-            [FromForm][Required]string side,
-            [FromForm][Required]string type,
-            [FromForm]decimal? limitPrice,
-            [FromForm]decimal? stopPrice,
-            [FromForm]string durationType,
-            [FromForm]decimal? durationDateTime,
-            [FromForm]decimal? stopLoss,
-            [FromForm]decimal? takeProfit,
-            [FromForm]string digitalSignature,
+            [FromBody][Required]string instrument,
+            [FromBody][Required]decimal? qty,
+            [FromBody][Required]string side,
+            [FromBody][Required]string type,
+            [FromBody]decimal? limitPrice,
+            [FromBody]decimal? stopPrice,
+            [FromBody]string durationType,
+            [FromBody]decimal? durationDateTime,
+            [FromBody]decimal? stopLoss,
+            [FromBody]decimal? takeProfit,
+            [FromBody]string digitalSignature,
             [FromQuery]string requestId)
         {
             Task orderTask;
@@ -321,7 +321,7 @@ namespace IO.Swagger.Controllers
                             new InlineResponse2005()
                             {
                                 S = Status.ErrorEnum,
-                                Errmsg = "Invalid type parameter"
+                                Errmsg = $"Invalid type parameter: {type}"
                             }
                         );
                 }
@@ -451,7 +451,7 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string positionId, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit)
+        public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string positionId, [FromBody]decimal? stopLoss, [FromBody]decimal? takeProfit)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -531,7 +531,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AuthorizePost")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200), description: "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
-        public virtual IActionResult AuthorizePost([FromForm][Required()]string login, [FromForm][Required()]string password)
+        public virtual IActionResult AuthorizePost([FromBody][Required()]string login, [FromBody][Required()]string password)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse200));
