@@ -23,12 +23,18 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         [HttpGet("profile")]
         public ProfileDetails Profile()
         {
+            var email = "";
+            var emailClaim = User.FindFirst(ClaimTypes.Email);
+            if (emailClaim != null)
+            {
+                email = emailClaim.Value;
+            }
             return new ProfileDetails
             {
                 Id = User.GetIdentifier(),
                 Login = "",
-                EmailAddress = User.FindFirst(ClaimTypes.Email).Value,
-                RealName = User.FindFirst(ClaimTypes.Name).Value,
+                EmailAddress = email,
+                RealName = User.FindFirst(ClaimTypes.GivenName).Value,
             };
         }
 

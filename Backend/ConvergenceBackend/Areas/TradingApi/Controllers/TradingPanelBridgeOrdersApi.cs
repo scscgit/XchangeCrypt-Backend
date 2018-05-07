@@ -73,6 +73,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdInstrumentsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute][Required]string accountId)
         {
             var instruments = new List<Instrument>();
@@ -108,6 +109,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersGet([FromRoute][Required]string accountId)
         {
             var realData = new InlineResponse2004()
@@ -139,6 +141,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersHistoryGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of orders")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute][Required]string accountId, [FromQuery]decimal? maxCount)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -166,6 +169,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute][Required]string accountId, [FromRoute][Required]string orderId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -193,6 +197,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2006), description: "Order")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute][Required]string accountId, [FromRoute][Required]string orderId)
         {
             return StatusCode(
@@ -224,6 +229,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string orderId, [FromForm][Required()]decimal? qty, [FromForm]decimal? limitPrice, [FromForm]decimal? stopPrice, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit, [FromForm]string digitalSignature)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -358,6 +364,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2008), description: "Array of positions")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdPositionsGet([FromRoute][Required]string accountId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -385,6 +392,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdPositionsPositionIdDelete([FromRoute][Required]string accountId, [FromRoute][Required]string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -412,6 +420,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2009), description: "Position object")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdPositionsPositionIdGet([FromRoute][Required]string accountId, [FromRoute][Required]string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -441,6 +450,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string positionId, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -468,6 +478,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdStateGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2003), description: "OK")]
+        [Authorize]
         public virtual IActionResult AccountsAccountIdStateGet([FromRoute][Required]string accountId, [FromQuery][Required()]string locale)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -493,6 +504,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2002), description: "Accounts list")]
+        [Authorize]
         public virtual IActionResult AccountsGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -573,17 +585,28 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20013), description: "Depth of market")]
         public virtual IActionResult DepthGet([FromQuery][Required()]string symbol)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse20013));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"asks\" : [ 0.000003, 1.98582 ],\n    \"bids\" : [ 0.000005, 2.5855 ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse20013>(exampleJson)
-            : default(InlineResponse20013);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new InlineResponse20013
+                {
+                    S = Status.OkEnum,
+                    D = new Depth
+                    {
+                        Asks = new List<DepthItem>
+                        {
+                            new DepthItem{0.000033m, 1.98582m},
+                            new DepthItem{0.000045m, 1.554112m},
+                            new DepthItem{0.000665m, 40.113m},
+                        },
+                        Bids = new List<DepthItem>
+                        {
+                            new DepthItem{0.000001m, 50m},
+                            new DepthItem{0.000005m, 2.585m},
+                            new DepthItem{0.000022m, 4.897m},
+                            new DepthItem{0.000023m, 1.432m},
+                        }
+                    }
+                });
         }
 
         /// <summary>
