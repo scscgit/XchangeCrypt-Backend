@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace IO.Swagger.Controllers
 {

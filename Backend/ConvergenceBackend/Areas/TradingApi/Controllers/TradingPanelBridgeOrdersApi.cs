@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Swashbuckle.AspNetCore.Annotations;
 using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;

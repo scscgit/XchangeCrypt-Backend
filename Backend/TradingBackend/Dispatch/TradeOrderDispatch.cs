@@ -19,7 +19,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
         /// Dispatches proper handlers to handle a trade order operation.
         /// Tries to schedule persistence operations so that they execute in parallel as much as possible.
         /// </summary>
-        /// <param name="message">Message to be procesed</param>
+        /// <param name="message">Message to be processed</param>
         /// <param name="reportInvalidMessage">Error handler to call if the intended handler experienced error. Parameter is error message</param>
         internal Task Dispatch(Message message, Func<string, Task> reportInvalidMessage)
         {
