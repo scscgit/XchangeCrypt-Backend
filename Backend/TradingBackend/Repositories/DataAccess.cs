@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using System.Security.Authentication;
+using Microsoft.Extensions.Configuration;
 
 namespace XchangeCrypt.Backend.TradingBackend.Repositories
 {
@@ -8,13 +9,12 @@ namespace XchangeCrypt.Backend.TradingBackend.Repositories
         public IMongoClient MongoClient { get; }
         public IMongoDatabase Database { get; }
 
-        public DataAccess()
+        public DataAccess(IConfiguration configuration)
         {
-            string connectionString = @"mongodb://xchangecrypt-test:nPtzeE05tNvlf0xNisV9erizFn8EtiAT3WknfGNxlyduMLZAzObdcyppah0Y23MIcRT83euXhcv36dW66ltNdA==@xchangecrypt-test.documents.azure.com:10255/?ssl=true&replicaSet=globaldb";
-            MongoClientSettings settings = MongoClientSettings.FromUrl(
-                new MongoUrl(connectionString)
+            var settings = MongoClientSettings.FromUrl(
+                new MongoUrl(configuration["Database:ConnectionString"])
             );
-            settings.SslSettings = new SslSettings() { EnabledSslProtocols = SslProtocols.Tls12 };
+            settings.SslSettings = new SslSettings {EnabledSslProtocols = SslProtocols.Tls12};
             MongoClient = new MongoClient(settings);
             Database = MongoClient.GetDatabase("XchangeCrypt");
         }

@@ -15,6 +15,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using XchangeCrypt.Backend.ConvergenceBackend.Caching;
+using XchangeCrypt.Backend.ConvergenceBackend.Filters.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend
@@ -130,12 +131,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             app.UseAuthentication();
+            // Fake user for testing purposes only!
+            app.UseMiddleware<AuthenticatedTestRequestMiddleware>();
             app
                 .UseMvc(routes =>
                 {
                     routes.MapRoute(
-                      name: "areas",
-                      template: "{area:exists}/{controller}/{action=Index}/{id?}"
+                        name: "areas",
+                        template: "{area:exists}/{controller}/{action=Index}/{id?}"
                     );
                 })
                 .UseDefaultFiles()

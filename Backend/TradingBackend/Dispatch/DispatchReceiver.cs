@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using XchangeCrypt.Backend.TradingBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
@@ -12,18 +13,14 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
 {
     public class DispatchReceiver : IHostedService
     {
-        // Connection String for the namespace can be obtained from the Azure portal under the
-        // 'Shared Access policies' section.
-        private const string ServiceBusConnectionString = "Endpoint=sb://xchangecrypttest.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=//VIMVDa0Mi9zs0nPZGQvyk0yueSL4L8QOhfqF2Bd1k=";
-
-        private const string QueueName = "TradeRequests";
-
+        private readonly IConfiguration _configuration;
         private readonly MonitorService _monitorService;
         private readonly TradeOrderDispatch _tradingOrderDispatch;
         private IQueueClient _queueClient;
 
-        public DispatchReceiver(MonitorService monitorService, TradeOrderDispatch tradingOrderDispatch)
+        public DispatchReceiver(IConfiguration configuration, MonitorService monitorService, TradeOrderDispatch tradingOrderDispatch)
         {
+            _configuration = configuration;
             _monitorService = monitorService;
             _tradingOrderDispatch = tradingOrderDispatch;
         }
@@ -33,7 +30,11 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
         /// </summary>
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _queueClient = new QueueClient(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
+            _queueClient = new QueueClient(
+                _configuration["Queue:ConnectionString"],
+                _configuration["Queue:Name"],
+                ReceiveMode.PeekLock
+            );
             RegisterReceiveMessagesHandler();
             return Task.CompletedTask;
         }
@@ -141,7 +142,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
             return Task.CompletedTask;
         }
 
-        public class InvalidMessageException : Exception
+        private class InvalidMessageException : Exception
         {
             public InvalidMessageException(string message) : base(message)
             {

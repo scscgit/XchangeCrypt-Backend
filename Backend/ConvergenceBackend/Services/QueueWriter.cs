@@ -12,11 +12,11 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
     /// </summary>
     public abstract class QueueWriter : IDisposable
     {
-        private IQueueClient _queueClient;
+        private readonly IQueueClient _queueClient;
 
         /// <summary>
         /// </summary>
-        public QueueWriter(string serviceBusConnectionString, string queueName)
+        protected QueueWriter(string serviceBusConnectionString, string queueName)
         {
             //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
             _queueClient = new QueueClient(serviceBusConnectionString, queueName);
@@ -57,24 +57,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
         public void Dispose()
         {
             _queueClient.CloseAsync().Wait();
-        }
-    }
-
-    /// <summary>
-    /// TradingBackend instance of QueueWriter.
-    /// </summary>
-    public class TradingBackendQueueWriter : QueueWriter
-    {
-        // Connection String for the namespace can be obtained from the Azure portal under the
-        // 'Shared Access policies' section.
-        private const string ServiceBusConnectionString = "Endpoint=sb://xchangecrypttest.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=//VIMVDa0Mi9zs0nPZGQvyk0yueSL4L8QOhfqF2Bd1k=";
-
-        private const string QueueName = "TradeRequests";
-
-        /// <summary>
-        /// </summary>
-        public TradingBackendQueueWriter() : base(ServiceBusConnectionString, QueueName)
-        {
         }
     }
 }
