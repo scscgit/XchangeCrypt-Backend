@@ -41,6 +41,7 @@ Global
 		{FB28499F-9B92-4A8C-AD47-F49F33F87B30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FB28499F-9B92-4A8C-AD47-F49F33F87B30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB28499F-9B92-4A8C-AD47-F49F33F87B30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB28499F-9B92-4A8C-AD47-F49F33F87B30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

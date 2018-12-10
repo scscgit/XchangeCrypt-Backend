@@ -40,11 +40,10 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             var limitOrder = await LimitOrderService.Insert(activityEntry);
             if (activityEntry.Side == OrderSide.Buy)
             {
-                List<OrderBookEntry> sellers;
-                do
+                List<OrderBookEntry> sellers = await LimitOrderService.MatchSellers(limitOrder.LimitPrice.Value);
+                Console.WriteLine($"Limit order matched {sellers.Count} sellers");
+                while (sellers.Count > 0)
                 {
-                    sellers = await LimitOrderService.MatchSellers(limitOrder.LimitPrice.Value);
-                    Console.WriteLine($"Limit order matched {sellers.Count} sellers");
                     // TODO sort
                     // TODO match
                     var seller = sellers[0];
@@ -70,8 +69,9 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
                             Builders<OrderBookEntry>.Filter.Where(e => e.Id.Equals(seller.Id)),
                             seller);
                     }
+
+                    sellers = await LimitOrderService.MatchSellers(limitOrder.LimitPrice.Value);
                 }
-                while (sellers.Count > 0);
             }
             else if (activityEntry.Side == OrderSide.Sell)
             {

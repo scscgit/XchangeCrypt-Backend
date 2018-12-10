@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
+using XchangeCrypt.Backend.ConstantsLibrary.Extensions;
 using XchangeCrypt.Backend.TradingBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
@@ -82,7 +83,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
                 {
                     var message = await ProcessMessagesAsync(queueMessage);
                     var messageDescription =
-                        $"{message[ParameterNames.MessageType]} ID {queueMessage.Id}, body: {message["Body"]}";
+                        $"{message[ParameterNames.MessageType]} ID {queueMessage.Id}, body: {message.GetValueOrDefault("Body")}";
                     _logger.LogInformation($"Consumed message {messageDescription}");
                     _monitorService.LastMessage = messageDescription;
                 }
@@ -98,17 +99,23 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
         {
             try
             {
-                if (queueMessage.DequeueCount > 0)
+                if (queueMessage.DequeueCount > 1)
                 {
                     throw new Exception("Message was already dequeued, and thus the potential duplicate is invalid");
                 }
 
-                var message = JsonConvert.DeserializeObject<IDictionary<string, object>>(queueMessage.AsString);
+                var message = JsonConvert.DeserializeObject<IDictionary<string, object>>(
+                    queueMessage.AsString,
+                    new JsonSerializerSettings
+                    {
+                        FloatParseHandling = FloatParseHandling.Decimal
+                    }
+                );
 
                 // Process the message
                 var messageBody = message["MessageBody"] ?? "";
                 Console.WriteLine(
-                    $"Received message: Id:{queueMessage.Id} Body:{messageBody}");
+                    $"Received message: Id: {queueMessage.Id} Body:{messageBody}");
 
                 Task dispatchedTask;
                 switch (message[ParameterNames.MessageType])

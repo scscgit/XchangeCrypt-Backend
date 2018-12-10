@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Annotations;
 using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
@@ -23,15 +24,20 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/tradingapi/")]
     public class TradingPanelBridgeOrdersApi : Controller
     {
+        private readonly ILogger<TradingPanelBridgeOrdersApi> _logger;
         public UserService UserService { get; }
         public OrderService OrderService { get; }
         public OrderCaching OrderCaching { get; }
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService,
+        public TradingPanelBridgeOrdersApi(
+            ILogger<TradingPanelBridgeOrdersApi> logger,
+            UserService userService,
+            OrderService orderService,
             OrderCaching orderCaching)
         {
+            _logger = logger;
             UserService = userService;
             OrderService = orderService;
             OrderCaching = orderCaching;
@@ -321,13 +327,15 @@ namespace IO.Swagger.Controllers
 
                     case OrderTypes.StopOrder:
                         orderTask = OrderService.CreateStopOrder(
-                            user, accountId, instrument, qty.Value, side, stopPrice, durationType, durationDateTime,
+                            user, accountId, instrument, qty.Value, side, stopPrice.Value, durationType,
+                            durationDateTime,
                             stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
                         orderTask = OrderService.CreateLimitOrder(
-                            user, accountId, instrument, qty.Value, side, limitPrice, durationType, durationDateTime,
+                            user, accountId, instrument, qty.Value, side, limitPrice.Value, durationType,
+                            durationDateTime,
                             stopLoss, takeProfit, requestId);
                         break;
 
@@ -357,12 +365,13 @@ namespace IO.Swagger.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.StackTrace);
                 return StatusCode(
                     500,
                     new InlineResponse2005()
                     {
                         S = Status.ErrorEnum,
-                        Errmsg = $"Internal error occurred: {e.Message}\n{e.StackTrace}"
+                        Errmsg = $"Internal error occurred: {e.Message}"
                     }
                 );
             }

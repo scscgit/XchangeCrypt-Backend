@@ -26,9 +26,9 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             decimal? stopLoss, decimal? takeProfit, Func<string, Task> reportInvalidMessage)
         {
             var orderSideOptional = ParseSide(side);
-            if (orderSideOptional.HasValue)
+            if (!orderSideOptional.HasValue)
             {
-                return reportInvalidMessage($"Unrecognized order side {side}");
+                return reportInvalidMessage($"Unrecognized order side: {side}");
             }
 
             var orderSide = orderSideOptional.Value;
@@ -52,7 +52,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
                         takeProfit));
 
                 default:
-                    return reportInvalidMessage($"Unrecognized order type {type}");
+                    return reportInvalidMessage($"Unrecognized order type: {type}");
             }
         }
 
