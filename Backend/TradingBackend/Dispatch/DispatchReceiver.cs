@@ -1,11 +1,13 @@
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Newtonsoft.Json;
 using XchangeCrypt.Backend.TradingBackend.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
@@ -13,133 +15,173 @@ namespace XchangeCrypt.Backend.TradingBackend.Dispatch
 {
     public class DispatchReceiver : IHostedService
     {
+        private readonly ILogger<DispatchReceiver> _logger;
         private readonly IConfiguration _configuration;
         private readonly MonitorService _monitorService;
-        private readonly TradeOrderDispatch _tradingOrderDispatch;
-        private IQueueClient _queueClient;
+        private readonly TradeOrderDispatch _tradeOrderDispatch;
+        private readonly WalletOperationDispatch _walletOperationDispatch;
+        private CloudQueue _queue;
+        private CloudQueue _queueDeadLetter;
+        private bool _stopped;
 
-        public DispatchReceiver(IConfiguration configuration, MonitorService monitorService, TradeOrderDispatch tradingOrderDispatch)
+        public DispatchReceiver(
+            ILogger<DispatchReceiver> logger,
+            IConfiguration configuration,
+            MonitorService monitorService,
+            TradeOrderDispatch tradeOrderDispatch,
+            WalletOperationDispatch walletOperationDispatch
+        )
         {
+            _logger = logger;
             _configuration = configuration;
             _monitorService = monitorService;
-            _tradingOrderDispatch = tradingOrderDispatch;
+            _tradeOrderDispatch = tradeOrderDispatch;
+            _walletOperationDispatch = walletOperationDispatch;
         }
 
         /// <summary>
         /// Handler registration.
         /// </summary>
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _queueClient = new QueueClient(
-                _configuration["Queue:ConnectionString"],
-                _configuration["Queue:Name"],
-                ReceiveMode.PeekLock
-            );
-            RegisterReceiveMessagesHandler();
-            return Task.CompletedTask;
+            var storageAccount = CloudStorageAccount.Parse(_configuration["Queue:ConnectionString"]);
+            var queueClient = storageAccount.CreateCloudQueueClient();
+            _queue = queueClient.GetQueueReference(_configuration["Queue:Name"]);
+            if (await _queue.CreateIfNotExistsAsync())
+            {
+                _logger.LogInformation($"Created queue {_configuration["Queue:Name"]}");
+            }
+
+            _queueDeadLetter = queueClient.GetQueueReference(_configuration["Queue:DeadLetter"]);
+            if (await _queueDeadLetter.CreateIfNotExistsAsync())
+            {
+                _logger.LogInformation($"Created queue {_configuration["Queue:DeadLetter"]}");
+            }
+
+            while (!_stopped)
+            {
+                await ReceiveMessagesAsync();
+                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+            }
         }
 
         /// <summary>
         /// Cleanup.
         /// </summary>
-        public async Task StopAsync(CancellationToken cancellationToken)
+        public Task StopAsync(CancellationToken cancellationToken)
         {
-            await _queueClient.CloseAsync();
+            _stopped = true;
+            return Task.CompletedTask;
         }
 
-        private void RegisterReceiveMessagesHandler()
+        private async Task ReceiveMessagesAsync()
         {
-            // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
-            var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+            foreach (var queueMessage in await _queue.GetMessagesAsync(32))
             {
-                // Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
-                // Set it according to how many messages the application wants to process in parallel.
-                MaxConcurrentCalls = 1,
-
-                // Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
-                // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.
-                AutoComplete = false
-            };
-
-            // Register the function that will process messages
-            _queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+                try
+                {
+                    var message = await ProcessMessagesAsync(queueMessage);
+                    var messageDescription =
+                        $"{message[ParameterNames.MessageType]} ID {queueMessage.Id}, body: {message["Body"]}";
+                    _logger.LogInformation($"Consumed message {messageDescription}");
+                    _monitorService.LastMessage = messageDescription;
+                }
+                catch (InvalidMessageException e)
+                {
+                    _logger.LogError(e.Message);
+                    _monitorService.ReportError(e.Message);
+                }
+            }
         }
 
-        private async Task ProcessMessagesAsync(Message message, CancellationToken token)
+        private async Task<IDictionary<string, object>> ProcessMessagesAsync(CloudQueueMessage queueMessage)
         {
             try
             {
+                if (queueMessage.DequeueCount > 0)
+                {
+                    throw new Exception("Message was already dequeued, and thus the potential duplicate is invalid");
+                }
+
+                var message = JsonConvert.DeserializeObject<IDictionary<string, object>>(queueMessage.AsString);
+
                 // Process the message
-                var messageBody = message.Body == null ? "" : Encoding.UTF8.GetString(message.Body);
-                Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{messageBody}");
+                var messageBody = message["MessageBody"] ?? "";
+                Console.WriteLine(
+                    $"Received message: Id:{queueMessage.Id} Body:{messageBody}");
 
                 Task dispatchedTask;
-                switch (message.UserProperties[ParameterNames.MessageType])
+                switch (message[ParameterNames.MessageType])
                 {
                     case MessageTypes.TradeOrder:
-                        dispatchedTask = _tradingOrderDispatch.Dispatch(message, errorMessage => ReportInvalidMessage(message, errorMessage));
+                        dispatchedTask = _tradeOrderDispatch.Dispatch(message,
+                            errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
                         break;
 
                     case MessageTypes.WalletOperation:
-                        dispatchedTask = _tradingOrderDispatch.Dispatch(message, errorMessage => ReportInvalidMessage(message, errorMessage));
+                        dispatchedTask = _walletOperationDispatch.Dispatch(message,
+                            errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
                         break;
 
                     default:
-                        await ReportInvalidMessage(message, $"Unrecognized MessageType {message.UserProperties[ParameterNames.MessageType]}");
-                        return;
+                        await ReportInvalidMessage(queueMessage,
+                            $"Unrecognized MessageType {message[ParameterNames.MessageType]}");
+                        throw new Exception("This never occurs");
                 }
+
                 // Throws invalid message exception on error
                 await dispatchedTask;
 
                 // Complete the message so that it is not received again.
-                // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-                await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
-                var messageDescription = $"{message.UserProperties[ParameterNames.MessageType]} ID {message.MessageId}, body: {messageBody}";
-                Console.WriteLine($"Consumed message {messageDescription}");
-                _monitorService.LastMessage = messageDescription;
-
-                // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
-                // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls
-                // to avoid unnecessary exceptions.
+                await _queue.DeleteMessageAsync(queueMessage);
+                return message;
             }
-            catch (InvalidMessageException e)
+            catch (InvalidMessageException)
             {
                 // Invalid message exception isn't avoided, but it mustn't cause the report of yet another invalid message
-                throw e;
+                throw;
             }
             catch (Exception e)
             {
                 await ReportInvalidMessage(
-                    message,
+                    queueMessage,
                     $"{e.GetType().Name} was thrown inside {typeof(DispatchReceiver).Name} during message processing. " +
-                    $"Exception message: {e.Message}. StackTrace: {e.StackTrace}");
+                    $"Exception message: {e.Message}. StackTrace:\n{e.StackTrace}");
+                throw new Exception("This never occurs");
             }
         }
 
-        private async Task ReportInvalidMessage(Message message, string errorMessage)
+        private async Task ReportInvalidMessage(CloudQueueMessage queueMessage, string errorMessage)
         {
-            var deadLetterTask = _queueClient.DeadLetterAsync(message.SystemProperties.LockToken, new Dictionary<string, object>() { { "errorMessage", errorMessage } });
+            if (queueMessage == null)
+            {
+                _logger.LogError("Attempted to report invalid message, which was actually null.");
+                return;
+            }
 
-            var error = $"Message handler couldn't handle a message with ID {message.MessageId}.\n";
-            error += $"{errorMessage}\n";
-            Console.Write(error);
-            _monitorService.ReportError(error);
-            await deadLetterTask;
-            throw new InvalidMessageException(error);
-        }
+            IDictionary<string, object> dictionary;
+            try
+            {
+                dictionary = JsonConvert.DeserializeObject<IDictionary<string, object>>(queueMessage.AsString);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(
+                    $"ErrorMessageFormat in message ID {queueMessage.Id}, caused by: {e.Message}");
+                dictionary = new Dictionary<string, object> {{"ErrorMessageFormat", e.Message + "\n" + e.StackTrace}};
+            }
 
-        // Use this Handler to look at the exceptions received on the MessagePump
-        private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
-        {
-            var error = $"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.\n";
-            var context = exceptionReceivedEventArgs.ExceptionReceivedContext;
-            error += "Exception context for troubleshooting:\n";
-            error += $"- Endpoint: {context.Endpoint}\n";
-            error += $"- Entity Path: {context.EntityPath}\n";
-            error += $"- Executing Action: {context.Action}\n";
-            Console.Write(error);
-            _monitorService.ReportError(error);
-            return Task.CompletedTask;
+            dictionary.Add("Id", queueMessage.Id);
+            dictionary.Add("ErrorMessage", errorMessage);
+            var deadLetterMessage = new CloudQueueMessage(JsonConvert.SerializeObject(dictionary));
+            await _queueDeadLetter.AddMessageAsync(deadLetterMessage);
+            // Complete the message so that it is not received again.
+            await _queue.DeleteMessageAsync(queueMessage);
+
+            throw new InvalidMessageException(
+                $"Message handler couldn't handle a message with ID {queueMessage.Id}. "
+                + $"Reported as a DeadLetter message ID {deadLetterMessage.Id}. Error was: {errorMessage}"
+            );
         }
 
         private class InvalidMessageException : Exception

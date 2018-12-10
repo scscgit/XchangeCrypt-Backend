@@ -17,6 +17,12 @@
     <PrepareForBuildDependsOn>
     </PrepareForBuildDependsOn>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
   <Import Condition=" Exists('Deployment.targets') " Project="Deployment.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
   <!-- vertag<:>start tokens<:>maj.min -->

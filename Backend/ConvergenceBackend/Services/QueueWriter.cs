@@ -1,8 +1,9 @@
-using Microsoft.Azure.ServiceBus;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
+using Newtonsoft.Json;
 
 namespace XchangeCrypt.Backend.ConvergenceBackend.Services
 {
@@ -12,14 +13,20 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
     /// </summary>
     public abstract class QueueWriter : IDisposable
     {
-        private readonly IQueueClient _queueClient;
+        private readonly CloudQueue _queue;
 
         /// <summary>
         /// </summary>
         protected QueueWriter(string serviceBusConnectionString, string queueName)
         {
             //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
-            _queueClient = new QueueClient(serviceBusConnectionString, queueName);
+            var storageAccount = CloudStorageAccount.Parse(serviceBusConnectionString);
+            var queueClient = storageAccount.CreateCloudQueueClient();
+            _queue = queueClient.GetQueueReference(queueName);
+            if (_queue.CreateIfNotExistsAsync().Result)
+            {
+                Console.WriteLine($"Created queue {queueName}");
+            }
         }
 
         /// <summary>
@@ -31,18 +38,16 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
         {
             try
             {
-                var message = messageBody == null ? new Message() : new Message(Encoding.UTF8.GetBytes(messageBody));
-
-                foreach (KeyValuePair<string, object> entry in userProperties)
-                {
-                    message.UserProperties.Add(entry.Key, entry.Value);
-                }
-
                 // Write the body of the message to the console
-                Console.WriteLine($"Sending message with {userProperties.Count} properties: {messageBody ?? "no body"}");
+                Console.WriteLine(
+                    $"Sending message with {userProperties.Count} properties: {messageBody ?? "no body"}");
+
+                // Prepare the message
+                userProperties.Add("MessageBody", messageBody);
+                var message = new CloudQueueMessage(JsonConvert.SerializeObject(userProperties));
 
                 // Send the message to the queue
-                await _queueClient.SendAsync(message);
+                await _queue.AddMessageAsync(message);
             }
             catch (Exception e)
             {
@@ -56,7 +61,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Services
         /// </summary>
         public void Dispose()
         {
-            _queueClient.CloseAsync().Wait();
         }
     }
 }

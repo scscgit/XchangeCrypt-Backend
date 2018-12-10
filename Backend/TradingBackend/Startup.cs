@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,7 @@ namespace XchangeCrypt.Backend.TradingBackend
         /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging();
             services.AddMvc();
 
             // Persistently running queue message handler
@@ -67,6 +69,14 @@ namespace XchangeCrypt.Backend.TradingBackend
         /// </summary>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            // Enabling dot as a decimal separator symbol
+            var cultureInfo = new CultureInfo("en-US")
+            {
+                NumberFormat = {CurrencySymbol = "€"}
+            };
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

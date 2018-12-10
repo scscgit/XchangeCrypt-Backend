@@ -11,9 +11,11 @@ using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Localization;
 using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Filters.Authentication;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
@@ -42,32 +44,34 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging();
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
-            {
-                sharedOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(jwtOptions =>
-            {
-                jwtOptions.Authority = $"https://login.microsoftonline.com/tfp/{Configuration["Authentication:AzureAdB2C:Tenant"]}/{Configuration["Authentication:AzureAdB2C:Policy"]}/v2.0/";
-                jwtOptions.Audience = Configuration["Authentication:AzureAdB2C:ClientId"];
-                jwtOptions.Events = new JwtBearerEvents
                 {
-                    OnAuthenticationFailed = AuthenticationFailed
-                };
-            });
+                    sharedOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(jwtOptions =>
+                {
+                    jwtOptions.Authority =
+                        $"https://login.microsoftonline.com/tfp/{Configuration["Authentication:AzureAdB2C:Tenant"]}/{Configuration["Authentication:AzureAdB2C:Policy"]}/v2.0/";
+                    jwtOptions.Audience = Configuration["Authentication:AzureAdB2C:ClientId"];
+                    jwtOptions.Events = new JwtBearerEvents
+                    {
+                        OnAuthenticationFailed = AuthenticationFailed
+                    };
+                });
 
             // Framework services
             services
                 .AddMvc()
                 .AddJsonOptions(opts =>
+            {
+                opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                opts.SerializerSettings.Converters.Add(new StringEnumConverter
                 {
-                    opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    opts.SerializerSettings.Converters.Add(new StringEnumConverter
-                    {
-                        CamelCaseText = true
-                    });
+                    CamelCaseText = true
                 });
+            });
             services
                 .AddSwaggerGen(c =>
                 {
@@ -94,12 +98,13 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     // Required for Swagger 2
                     c.AddSecurityRequirement(new Dictionary<string, IEnumerable<string>>
                     {
-                        { "Bearer", new string[] { } }
+                        {"Bearer", new string[] { }}
                     });
 
                     c.CustomSchemaIds(type => type.FriendlyId(true));
                     c.DescribeAllEnumsAsStrings();
-                    c.IncludeXmlComments($"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
+                    c.IncludeXmlComments(
+                        $"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
                     // Sets the basePath property in the Swagger document generated
                     c.DocumentFilter<BasePathFilter>("/api/v1");
 
@@ -130,6 +135,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         /// </summary>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            // Enabling dot as a decimal separator symbol
+            var cultureInfo = new CultureInfo("en-US")
+            {
+                NumberFormat = {CurrencySymbol = "€"}
+            };
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
             app.UseAuthentication();
             // Fake user for testing purposes only!
             app.UseMiddleware<AuthenticatedTestRequestMiddleware>();
@@ -152,7 +165,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     //TODO: Or alternatively use the original Swagger contract that's included in the static files
                     // c.SwaggerEndpoint("/swagger-original.json", "TradingView REST API Specification for Brokers Original");
                 });
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
