@@ -35,18 +35,23 @@ namespace IO.Swagger.Controllers
         [Route("marks")]
         [ValidateModelState]
         [SwaggerOperation("MarksGet")]
-        [SwaggerResponse(statusCode: 200, type: typeof(MarksArrays), description: "Response is expected to be an object with properties listed below. Each property is an array")]
-        public virtual IActionResult MarksGet([FromQuery][Required()]string symbol, [FromQuery][Required()]string resolution, [FromQuery][Required()]decimal? from, [FromQuery][Required()]decimal? to)
+        [SwaggerResponse(statusCode: 200, type: typeof(MarksArrays),
+            description:
+            "Response is expected to be an object with properties listed below. Each property is an array")]
+        public virtual IActionResult MarksGet([FromQuery] [Required()] string symbol,
+            [FromQuery] [Required()] string resolution, [FromQuery] [Required()] decimal? from,
+            [FromQuery] [Required()] decimal? to)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(MarksArrays));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"color\" : [ \"color\", \"color\" ],\n  \"labelFontColor\" : [ \"labelFontColor\", \"labelFontColor\" ],\n  \"minSize\" : [ 1.46581298050294517310021547018550336360931396484375, 1.46581298050294517310021547018550336360931396484375 ],\n  \"id\" : [ 0.80082819046101150206595775671303272247314453125, 0.80082819046101150206595775671303272247314453125 ],\n  \"time\" : [ 6.02745618307040320615897144307382404804229736328125, 6.02745618307040320615897144307382404804229736328125 ],\n  \"text\" : [ \"text\", \"text\" ],\n  \"label\" : [ \"label\", \"label\" ]\n}";
+            exampleJson =
+                "{\n  \"color\" : [ \"color\", \"color\" ],\n  \"labelFontColor\" : [ \"labelFontColor\", \"labelFontColor\" ],\n  \"minSize\" : [ 1.46581298050294517310021547018550336360931396484375, 1.46581298050294517310021547018550336360931396484375 ],\n  \"id\" : [ 0.80082819046101150206595775671303272247314453125, 0.80082819046101150206595775671303272247314453125 ],\n  \"time\" : [ 6.02745618307040320615897144307382404804229736328125, 6.02745618307040320615897144307382404804229736328125 ],\n  \"text\" : [ \"text\", \"text\" ],\n  \"label\" : [ \"label\", \"label\" ]\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<MarksArrays>(exampleJson)
-            : default(MarksArrays);
+                ? JsonConvert.DeserializeObject<MarksArrays>(exampleJson)
+                : default(MarksArrays);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -64,18 +69,22 @@ namespace IO.Swagger.Controllers
         [Route("timescale_marks")]
         [ValidateModelState]
         [SwaggerOperation("TimescaleMarksGet")]
-        [SwaggerResponse(statusCode: 200, type: typeof(List<TimescaleMark>), description: "Response is expected to be an array.")]
-        public virtual IActionResult TimescaleMarksGet([FromQuery][Required()]string symbol, [FromQuery][Required()]string resolution, [FromQuery][Required()]decimal? from, [FromQuery][Required()]decimal? to)
+        [SwaggerResponse(statusCode: 200, type: typeof(List<TimescaleMark>),
+            description: "Response is expected to be an array.")]
+        public virtual IActionResult TimescaleMarksGet([FromQuery] [Required()] string symbol,
+            [FromQuery] [Required()] string resolution, [FromQuery] [Required()] decimal? from,
+            [FromQuery] [Required()] decimal? to)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(List<TimescaleMark>));
 
             string exampleJson = null;
-            exampleJson = "[ {\n  \"color\" : \"red\",\n  \"tooltip\" : \"tooltip\",\n  \"id\" : \"id\",\n  \"time\" : 0.80082819046101150206595775671303272247314453125,\n  \"label\" : \"label\"\n}, {\n  \"color\" : \"red\",\n  \"tooltip\" : \"tooltip\",\n  \"id\" : \"id\",\n  \"time\" : 0.80082819046101150206595775671303272247314453125,\n  \"label\" : \"label\"\n} ]";
+            exampleJson =
+                "[ {\n  \"color\" : \"red\",\n  \"tooltip\" : \"tooltip\",\n  \"id\" : \"id\",\n  \"time\" : 0.80082819046101150206595775671303272247314453125,\n  \"label\" : \"label\"\n}, {\n  \"color\" : \"red\",\n  \"tooltip\" : \"tooltip\",\n  \"id\" : \"id\",\n  \"time\" : 0.80082819046101150206595775671303272247314453125,\n  \"label\" : \"label\"\n} ]";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<List<TimescaleMark>>(exampleJson)
-            : default(List<TimescaleMark>);
+                ? JsonConvert.DeserializeObject<List<TimescaleMark>>(exampleJson)
+                : default(List<TimescaleMark>);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }

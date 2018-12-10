@@ -14,19 +14,23 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
         /// <summary>
         /// Created via ProcessorFactory.
         /// </summary>
-        public TradeOrderPersistenceProcessor(ActivityHistoryService activityHistoryService, TradeExecutor tradeExecutor)
+        public TradeOrderPersistenceProcessor(ActivityHistoryService activityHistoryService,
+            TradeExecutor tradeExecutor)
         {
             ActivityHistoryService = activityHistoryService;
             TradeExecutor = tradeExecutor;
         }
 
-        public Task PersistOrder(string user, string accountId, string instrument, decimal quantity, string side, string type, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, Func<string, Task> reportInvalidMessage)
+        public Task PersistOrder(string user, string accountId, string instrument, decimal quantity, string side,
+            string type, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration,
+            decimal? stopLoss, decimal? takeProfit, Func<string, Task> reportInvalidMessage)
         {
             var orderSideOptional = ParseSide(side);
             if (orderSideOptional.HasValue)
             {
                 return reportInvalidMessage($"Unrecognized order side {side}");
             }
+
             var orderSide = orderSideOptional.Value;
 
             // This includes value check assertions
@@ -34,15 +38,18 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             {
                 case OrderTypes.LimitOrder:
                     return TradeExecutor.Limit(ActivityHistoryService.PersistLimitOrder(
-                       user, accountId, instrument, quantity, orderSide, limitPrice.Value, durationType, duration, stopLoss, takeProfit));
+                        user, accountId, instrument, quantity, orderSide, limitPrice.Value, durationType, duration,
+                        stopLoss, takeProfit));
 
                 case OrderTypes.StopOrder:
                     return TradeExecutor.Stop(ActivityHistoryService.PersistStopOrder(
-                        user, accountId, instrument, quantity, orderSide, stopPrice.Value, durationType, duration, stopLoss, takeProfit));
+                        user, accountId, instrument, quantity, orderSide, stopPrice.Value, durationType, duration,
+                        stopLoss, takeProfit));
 
                 case OrderTypes.MarketOrder:
                     return TradeExecutor.Market(ActivityHistoryService.PersistMarketOrder(
-                        user, accountId, instrument, quantity, orderSide, durationType, duration, stopLoss, takeProfit));
+                        user, accountId, instrument, quantity, orderSide, durationType, duration, stopLoss,
+                        takeProfit));
 
                 default:
                     return reportInvalidMessage($"Unrecognized order type {type}");

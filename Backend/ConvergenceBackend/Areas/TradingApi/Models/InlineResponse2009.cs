@@ -76,7 +76,7 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((InlineResponse2009)obj);
+            return obj.GetType() == GetType() && Equals((InlineResponse2009) obj);
         }
 
         /// <summary>

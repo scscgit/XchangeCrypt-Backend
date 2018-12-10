@@ -44,21 +44,21 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
             {
                 new WalletDetails
                 {
-                    CoinSymbol="BTC",
-                    WalletPublicKey="B65983299",
-                    Balance=0.0013185m,
+                    CoinSymbol = "BTC",
+                    WalletPublicKey = "B65983299",
+                    Balance = 0.0013185m,
                 },
                 new WalletDetails
                 {
-                    CoinSymbol="LTC",
-                    WalletPublicKey="L88183299",
-                    Balance=103350.23358m,
+                    CoinSymbol = "LTC",
+                    WalletPublicKey = "L88183299",
+                    Balance = 103350.23358m,
                 },
                 new WalletDetails
                 {
-                    CoinSymbol="QBC",
-                    WalletPublicKey="Q4018",
-                    Balance=800_059_900_000,
+                    CoinSymbol = "QBC",
+                    WalletPublicKey = "Q4018",
+                    Balance = 800_059_900_000,
                 },
             };
         }
@@ -69,7 +69,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         /// <param name="coinSymbol">Unique symbol identification of a coin</param>
         [HttpGet("wallets/{coinSymbol}")]
         public WalletDetails Wallet(
-            [FromRoute][Required]string coinSymbol)
+            [FromRoute] [Required] string coinSymbol)
         {
             foreach (var wallet in Wallets())
             {
@@ -78,6 +78,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
                     return wallet;
                 }
             }
+
             return null;
         }
 
@@ -89,14 +90,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         /// <param name="withdrawalAmount">Amount of balance to withdraw, represented in multiplies of the lowest tradable amount, which is specified by the wallet</param>
         [HttpPost("wallets/{coinSymbol}/withdraw")]
         public IDictionary<string, string> Wallet(
-            [FromRoute][Required]string coinSymbol,
-            [FromBody][Required]string recipientPublicKey,
-            [FromBody][Required]long withdrawalAmount)
+            [FromRoute] [Required] string coinSymbol,
+            [FromBody] [Required] string recipientPublicKey,
+            [FromBody] [Required] long withdrawalAmount)
         {
             return new Dictionary<string, string>()
             {
-                { "response", "error" },
-                { "message", "Balance insufficient for the withdrawal" },
+                {"response", "error"},
+                {"message", "Balance insufficient for the withdrawal"},
             };
         }
     }

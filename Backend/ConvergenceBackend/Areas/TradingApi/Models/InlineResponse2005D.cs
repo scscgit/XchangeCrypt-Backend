@@ -58,7 +58,7 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((InlineResponse2005D)obj);
+            return obj.GetType() == GetType() && Equals((InlineResponse2005D) obj);
         }
 
         /// <summary>
@@ -72,11 +72,11 @@ namespace IO.Swagger.Models
             if (ReferenceEquals(this, other)) return true;
 
             return
-                (
-                    OrderId == other.OrderId ||
-                    OrderId != null &&
-                    OrderId.Equals(other.OrderId)
-                );
+            (
+                OrderId == other.OrderId ||
+                OrderId != null &&
+                OrderId.Equals(other.OrderId)
+            );
         }
 
         /// <summary>

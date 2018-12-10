@@ -36,7 +36,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Controllers
 
         [HttpGet("order_history")]
         public IEnumerable<ActivityHistoryOrderEntry> OrderHistory(
-            [FromQuery]int? count)
+            [FromQuery] int? count)
         {
             // Debug testing
             _activityHistoryRepository.Orders().InsertOne(new ActivityHistoryOrderEntry
@@ -61,7 +61,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Controllers
 
         [HttpGet("account_history")]
         public IEnumerable<ActivityHistoryWalletOperationEntry> AccountHistory(
-            [FromQuery]int? count)
+            [FromQuery] int? count)
         {
             // Debug testing
             _activityHistoryRepository.WalletOperations().InsertOne(new ActivityHistoryWalletOperationEntry
@@ -88,10 +88,13 @@ namespace XchangeCrypt.Backend.TradingBackend.Controllers
         {
             _activityHistoryRepository
                 .Orders()
-                .DeleteMany(ActivityHistoryRepository.OrdersFilter & Builders<ActivityHistoryOrderEntry>.Filter.Where(e => e.User.Equals("test@testuser")));
+                .DeleteMany(ActivityHistoryRepository.OrdersFilter &
+                            Builders<ActivityHistoryOrderEntry>.Filter.Where(e => e.User.Equals("test@testuser")));
             _activityHistoryRepository
                 .WalletOperations()
-                .DeleteMany(ActivityHistoryRepository.WalletOperationsFilter & Builders<ActivityHistoryWalletOperationEntry>.Filter.Where(e => e.User.Equals("test@testuser")));
+                .DeleteMany(ActivityHistoryRepository.WalletOperationsFilter &
+                            Builders<ActivityHistoryWalletOperationEntry>.Filter.Where(e =>
+                                e.User.Equals("test@testuser")));
         }
     }
 }

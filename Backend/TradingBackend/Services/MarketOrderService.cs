@@ -16,12 +16,14 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
             TradingRepository = tradingRepository;
         }
 
-        internal Task Buy(string user, string accountId, string instrument, decimal? quantity, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
+        internal Task Buy(string user, string accountId, string instrument, decimal? quantity, string durationType,
+            decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
         {
             throw new NotImplementedException();
         }
 
-        internal Task Sell(string user, string accountId, string instrument, decimal? quantity, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
+        internal Task Sell(string user, string accountId, string instrument, decimal? quantity, string durationType,
+            decimal? duration, decimal? stopLoss, decimal? takeProfit, string requestId)
         {
             throw new NotImplementedException();
         }

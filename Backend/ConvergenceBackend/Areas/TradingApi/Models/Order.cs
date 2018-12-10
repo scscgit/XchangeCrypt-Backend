@@ -165,7 +165,7 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((Order)obj);
+            return obj.GetType() == GetType() && Equals((Order) obj);
         }
 
         /// <summary>

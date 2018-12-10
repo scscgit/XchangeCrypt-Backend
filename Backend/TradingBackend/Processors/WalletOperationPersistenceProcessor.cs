@@ -16,9 +16,11 @@ namespace XchangeCrypt.Backend.TradingBackend.Processors
             ActivityHistoryService = activityHistoryService;
         }
 
-        public Task PersistWalletOperation(string user, string accountId, string coinSymbol, string depositType, string withdrawalType, decimal amount, Func<string, Task> reportInvalidMessage)
+        public Task PersistWalletOperation(string user, string accountId, string coinSymbol, string depositType,
+            string withdrawalType, decimal amount, Func<string, Task> reportInvalidMessage)
         {
-            return ActivityHistoryService.PersistWalletOperation(user, accountId, coinSymbol, depositType, withdrawalType, amount);
+            return ActivityHistoryService.PersistWalletOperation(user, accountId, coinSymbol, depositType,
+                withdrawalType, amount);
         }
     }
 }

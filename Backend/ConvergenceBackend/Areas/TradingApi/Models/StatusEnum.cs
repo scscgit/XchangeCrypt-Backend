@@ -11,37 +11,31 @@ namespace IO.Swagger.Models
         /// <summary>
         /// Enum PlacingEnum for placing
         /// </summary>
-        [EnumMember(Value = "placing")]
-        PlacingEnum = 1,
+        [EnumMember(Value = "placing")] PlacingEnum = 1,
 
         /// <summary>
         /// Enum InactiveEnum for inactive
         /// </summary>
-        [EnumMember(Value = "inactive")]
-        InactiveEnum = 2,
+        [EnumMember(Value = "inactive")] InactiveEnum = 2,
 
         /// <summary>
         /// Enum WorkingEnum for working
         /// </summary>
-        [EnumMember(Value = "working")]
-        WorkingEnum = 3,
+        [EnumMember(Value = "working")] WorkingEnum = 3,
 
         /// <summary>
         /// Enum RejectedEnum for rejected
         /// </summary>
-        [EnumMember(Value = "rejected")]
-        RejectedEnum = 4,
+        [EnumMember(Value = "rejected")] RejectedEnum = 4,
 
         /// <summary>
         /// Enum FilledEnum for filled
         /// </summary>
-        [EnumMember(Value = "filled")]
-        FilledEnum = 5,
+        [EnumMember(Value = "filled")] FilledEnum = 5,
 
         /// <summary>
         /// Enum CancelledEnum for cancelled
         /// </summary>
-        [EnumMember(Value = "cancelled")]
-        CancelledEnum = 6
+        [EnumMember(Value = "cancelled")] CancelledEnum = 6
     }
 }

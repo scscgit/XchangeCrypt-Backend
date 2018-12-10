@@ -19,21 +19,27 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
         }
 
         public Task<ActivityHistoryOrderEntry> PersistLimitOrder(
-            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, decimal limitPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, decimal limitPrice,
+            string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
         {
-            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, limitPrice, null, durationType, duration, stopLoss, takeProfit);
+            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, limitPrice, null,
+                durationType, duration, stopLoss, takeProfit);
         }
 
         public Task<ActivityHistoryOrderEntry> PersistStopOrder(
-            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, decimal stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, decimal stopPrice,
+            string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
         {
-            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, null, stopPrice, durationType, duration, stopLoss, takeProfit);
+            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, null, stopPrice,
+                durationType, duration, stopLoss, takeProfit);
         }
 
         public Task<ActivityHistoryOrderEntry> PersistMarketOrder(
-            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide,
+            string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
         {
-            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, null, null, durationType, duration, stopLoss, takeProfit);
+            return PersistOrder(user, accountId, instrument, quantity, orderSide, OrderType.Market, null, null,
+                durationType, duration, stopLoss, takeProfit);
         }
 
         public async Task<ActivityHistoryWalletOperationEntry> PersistWalletOperation(
@@ -54,7 +60,9 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
         }
 
         private async Task<ActivityHistoryOrderEntry> PersistOrder(
-            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, OrderType orderType, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit)
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide,
+            OrderType orderType, decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration,
+            decimal? stopLoss, decimal? takeProfit)
         {
             var entry = new ActivityHistoryOrderEntry
             {

@@ -11,13 +11,11 @@ namespace IO.Swagger.Models
         /// <summary>
         /// Enum OrderEnum for order
         /// </summary>
-        [EnumMember(Value = "order")]
-        OrderEnum = 1,
+        [EnumMember(Value = "order")] OrderEnum = 1,
 
         /// <summary>
         /// Enum PositionEnum for position
         /// </summary>
-        [EnumMember(Value = "position")]
-        PositionEnum = 2
+        [EnumMember(Value = "position")] PositionEnum = 2
     }
 }

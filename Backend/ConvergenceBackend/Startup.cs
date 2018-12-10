@@ -65,13 +65,13 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             services
                 .AddMvc()
                 .AddJsonOptions(opts =>
-            {
-                opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                opts.SerializerSettings.Converters.Add(new StringEnumConverter
                 {
-                    CamelCaseText = true
+                    opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    opts.SerializerSettings.Converters.Add(new StringEnumConverter
+                    {
+                        CamelCaseText = true
+                    });
                 });
-            });
             services
                 .AddSwaggerGen(c =>
                 {

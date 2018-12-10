@@ -11,25 +11,21 @@ namespace IO.Swagger.Models
         /// <summary>
         /// Enum MarketEnum for market
         /// </summary>
-        [EnumMember(Value = "market")]
-        MarketEnum = 1,
+        [EnumMember(Value = "market")] MarketEnum = 1,
 
         /// <summary>
         /// Enum StopEnum for stop
         /// </summary>
-        [EnumMember(Value = "stop")]
-        StopEnum = 2,
+        [EnumMember(Value = "stop")] StopEnum = 2,
 
         /// <summary>
         /// Enum LimitEnum for limit
         /// </summary>
-        [EnumMember(Value = "limit")]
-        LimitEnum = 3,
+        [EnumMember(Value = "limit")] LimitEnum = 3,
 
         /// <summary>
         /// Enum StoplimitEnum for stoplimit
         /// </summary>
-        [EnumMember(Value = "stoplimit")]
-        StoplimitEnum = 4
+        [EnumMember(Value = "stoplimit")] StoplimitEnum = 4
     }
 }

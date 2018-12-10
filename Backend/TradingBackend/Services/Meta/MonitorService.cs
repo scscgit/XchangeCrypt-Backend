@@ -23,6 +23,7 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
             {
                 return;
             }
+
             _errors.Add(error);
             if (_errors.Count > MaxErrors)
             {

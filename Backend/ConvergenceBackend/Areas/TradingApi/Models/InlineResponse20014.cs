@@ -61,26 +61,22 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum AEnum for a
             /// </summary>
-            [EnumMember(Value = "a")]
-            AEnum = 1,
+            [EnumMember(Value = "a")] AEnum = 1,
 
             /// <summary>
             /// Enum BEnum for b
             /// </summary>
-            [EnumMember(Value = "b")]
-            BEnum = 2,
+            [EnumMember(Value = "b")] BEnum = 2,
 
             /// <summary>
             /// Enum DEnum for d
             /// </summary>
-            [EnumMember(Value = "d")]
-            DEnum = 3,
+            [EnumMember(Value = "d")] DEnum = 3,
 
             /// <summary>
             /// Enum TEnum for t
             /// </summary>
-            [EnumMember(Value = "t")]
-            TEnum = 4
+            [EnumMember(Value = "t")] TEnum = 4
         }
 
         /// <summary>
@@ -165,7 +161,7 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((InlineResponse20014)obj);
+            return obj.GetType() == GetType() && Equals((InlineResponse20014) obj);
         }
 
         /// <summary>

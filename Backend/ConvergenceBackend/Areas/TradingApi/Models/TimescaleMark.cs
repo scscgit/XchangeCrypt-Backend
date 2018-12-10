@@ -47,26 +47,22 @@ namespace IO.Swagger.Models
             /// <summary>
             /// Enum RedEnum for red
             /// </summary>
-            [EnumMember(Value = "red")]
-            RedEnum = 1,
+            [EnumMember(Value = "red")] RedEnum = 1,
 
             /// <summary>
             /// Enum GreenEnum for green
             /// </summary>
-            [EnumMember(Value = "green")]
-            GreenEnum = 2,
+            [EnumMember(Value = "green")] GreenEnum = 2,
 
             /// <summary>
             /// Enum BlueEnum for blue
             /// </summary>
-            [EnumMember(Value = "blue")]
-            BlueEnum = 3,
+            [EnumMember(Value = "blue")] BlueEnum = 3,
 
             /// <summary>
             /// Enum YellowEnum for yellow
             /// </summary>
-            [EnumMember(Value = "yellow")]
-            YellowEnum = 4
+            [EnumMember(Value = "yellow")] YellowEnum = 4
         }
 
         /// <summary>
@@ -126,7 +122,7 @@ namespace IO.Swagger.Models
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            return obj.GetType() == GetType() && Equals((TimescaleMark)obj);
+            return obj.GetType() == GetType() && Equals((TimescaleMark) obj);
         }
 
         /// <summary>

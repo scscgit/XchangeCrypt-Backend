@@ -45,12 +45,16 @@ namespace XchangeCrypt.Backend.TradingBackend.Services
 
         internal Task<List<OrderBookEntry>> MatchSellers(decimal below)
         {
-            return OrderBook.Find(e => e.Side == OrderSide.Sell && e.Status == OrderStatus.Working && e.LimitPrice <= below).ToListAsync();
+            return OrderBook
+                .Find(e => e.Side == OrderSide.Sell && e.Status == OrderStatus.Working && e.LimitPrice <= below)
+                .ToListAsync();
         }
 
         internal Task<List<OrderBookEntry>> MatchBuyers(decimal above)
         {
-            return OrderBook.Find(e => e.Side == OrderSide.Sell && e.Status == OrderStatus.Working && e.LimitPrice >= above).ToListAsync();
+            return OrderBook
+                .Find(e => e.Side == OrderSide.Sell && e.Status == OrderStatus.Working && e.LimitPrice >= above)
+                .ToListAsync();
         }
     }
 }

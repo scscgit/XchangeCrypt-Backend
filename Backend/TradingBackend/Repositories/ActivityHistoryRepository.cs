@@ -27,7 +27,8 @@ namespace XchangeCrypt.Backend.TradingBackend.Repositories
         {
             get
             {
-                return Builders<ActivityHistoryOrderEntry>.Filter.Where(e => e.EntryType == ActivityHistoryEntryType.TradeOrder);
+                return Builders<ActivityHistoryOrderEntry>.Filter.Where(e =>
+                    e.EntryType == ActivityHistoryEntryType.TradeOrder);
             }
         }
 
@@ -35,7 +36,8 @@ namespace XchangeCrypt.Backend.TradingBackend.Repositories
         {
             get
             {
-                return Builders<ActivityHistoryWalletOperationEntry>.Filter.Where(e => e.EntryType == ActivityHistoryEntryType.WalletOperation);
+                return Builders<ActivityHistoryWalletOperationEntry>.Filter.Where(e =>
+                    e.EntryType == ActivityHistoryEntryType.WalletOperation);
             }
         }
     }

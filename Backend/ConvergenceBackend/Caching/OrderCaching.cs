@@ -65,33 +65,33 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Caching
                 .ToList()
                 .Union(
                     TradingRepository
-                    .HiddenOrders()
-                    .Find(e => e.User.Equals(user) && e.AccountId.Equals(accountId))
-                    .ToList()
-                    .Select(e => new Order
-                    {
-                        Id = e.Id.ToString(),
-                        Instrument = e.Instrument,
-                        Qty = e.Qty,
-                        Side = MapSide(e.Side),
-                        Type = TypeEnum.StopEnum,
-                        // Stop order is never active until it becomes a market order
-                        FilledQty = 0,
-                        // TODO reconsider avg
-                        AvgPrice = e.StopPrice,
-                        LimitPrice = null,
-                        StopPrice = e.StopPrice,
-                        ParentId = e.ParentId,
-                        ParentType = MapParentType(e.ParentType),
-                        Duration = new OrderDuration
+                        .HiddenOrders()
+                        .Find(e => e.User.Equals(user) && e.AccountId.Equals(accountId))
+                        .ToList()
+                        .Select(e => new Order
                         {
-                            Type = e.DurationType,
-                            Datetime = e.Duration,
-                        },
-                        // Is always valid if placed within hidden orders
-                        Status = StatusEnum.WorkingEnum,
-                    })
-                    .ToList()
+                            Id = e.Id.ToString(),
+                            Instrument = e.Instrument,
+                            Qty = e.Qty,
+                            Side = MapSide(e.Side),
+                            Type = TypeEnum.StopEnum,
+                            // Stop order is never active until it becomes a market order
+                            FilledQty = 0,
+                            // TODO reconsider avg
+                            AvgPrice = e.StopPrice,
+                            LimitPrice = null,
+                            StopPrice = e.StopPrice,
+                            ParentId = e.ParentId,
+                            ParentType = MapParentType(e.ParentType),
+                            Duration = new OrderDuration
+                            {
+                                Type = e.DurationType,
+                                Datetime = e.Duration,
+                            },
+                            // Is always valid if placed within hidden orders
+                            Status = StatusEnum.WorkingEnum,
+                        })
+                        .ToList()
                 ).ToList();
         }
 
@@ -122,6 +122,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Caching
             {
                 return null;
             }
+
             switch (parentType)
             {
                 case ParentOrderType.Order:

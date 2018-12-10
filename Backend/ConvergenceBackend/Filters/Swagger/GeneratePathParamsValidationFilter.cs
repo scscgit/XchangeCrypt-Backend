@@ -24,12 +24,15 @@ namespace IO.Swagger.Filters
             {
                 var swaggerParam = operation.Parameters.SingleOrDefault(p => p.Name == par.Name);
 
-                var parameterDescriptor = ((ControllerParameterDescriptor)par.ParameterDescriptor);
+                var parameterDescriptor = ((ControllerParameterDescriptor) par.ParameterDescriptor);
                 if (parameterDescriptor == null)
                 {
-                    throw new System.Exception($"Swagger validation error: Problem with your Controller's parameter named {par.Name}, it is missing a descriptor.");
+                    throw new System.Exception(
+                        $"Swagger validation error: Problem with your Controller's parameter named {par.Name}, it is missing a descriptor.");
                 }
-                var attributes = ((ControllerParameterDescriptor)par.ParameterDescriptor).ParameterInfo.CustomAttributes;
+
+                var attributes = ((ControllerParameterDescriptor) par.ParameterDescriptor).ParameterInfo
+                    .CustomAttributes;
 
                 if (attributes != null && attributes.Count() > 0 && swaggerParam != null)
                 {
@@ -41,57 +44,61 @@ namespace IO.Swagger.Filters
                     }
 
                     // Regex Pattern [RegularExpression]
-                    var regexAttr = attributes.FirstOrDefault(p => p.AttributeType == typeof(RegularExpressionAttribute));
+                    var regexAttr =
+                        attributes.FirstOrDefault(p => p.AttributeType == typeof(RegularExpressionAttribute));
                     if (regexAttr != null)
                     {
-                        string regex = (string)regexAttr.ConstructorArguments[0].Value;
+                        string regex = (string) regexAttr.ConstructorArguments[0].Value;
                         if (swaggerParam is NonBodyParameter)
                         {
-                            ((NonBodyParameter)swaggerParam).Pattern = regex;
+                            ((NonBodyParameter) swaggerParam).Pattern = regex;
                         }
                     }
 
                     // String Length [StringLength]
                     int? minLenght = null, maxLength = null;
-                    var stringLengthAttr = attributes.FirstOrDefault(p => p.AttributeType == typeof(StringLengthAttribute));
+                    var stringLengthAttr =
+                        attributes.FirstOrDefault(p => p.AttributeType == typeof(StringLengthAttribute));
                     if (stringLengthAttr != null)
                     {
                         if (stringLengthAttr.NamedArguments.Count == 1)
                         {
-                            minLenght = (int)stringLengthAttr.NamedArguments.Single(p => p.MemberName == "MinimumLength").TypedValue.Value;
+                            minLenght = (int) stringLengthAttr.NamedArguments
+                                .Single(p => p.MemberName == "MinimumLength").TypedValue.Value;
                         }
-                        maxLength = (int)stringLengthAttr.ConstructorArguments[0].Value;
+
+                        maxLength = (int) stringLengthAttr.ConstructorArguments[0].Value;
                     }
 
                     var minLengthAttr = attributes.FirstOrDefault(p => p.AttributeType == typeof(MinLengthAttribute));
                     if (minLengthAttr != null)
                     {
-                        minLenght = (int)minLengthAttr.ConstructorArguments[0].Value;
+                        minLenght = (int) minLengthAttr.ConstructorArguments[0].Value;
                     }
 
                     var maxLengthAttr = attributes.FirstOrDefault(p => p.AttributeType == typeof(MaxLengthAttribute));
                     if (maxLengthAttr != null)
                     {
-                        maxLength = (int)maxLengthAttr.ConstructorArguments[0].Value;
+                        maxLength = (int) maxLengthAttr.ConstructorArguments[0].Value;
                     }
 
                     if (swaggerParam is NonBodyParameter)
                     {
-                        ((NonBodyParameter)swaggerParam).MinLength = minLenght;
-                        ((NonBodyParameter)swaggerParam).MaxLength = maxLength;
+                        ((NonBodyParameter) swaggerParam).MinLength = minLenght;
+                        ((NonBodyParameter) swaggerParam).MaxLength = maxLength;
                     }
 
                     // Range [Range]
                     var rangeAttr = attributes.FirstOrDefault(p => p.AttributeType == typeof(RangeAttribute));
                     if (rangeAttr != null)
                     {
-                        int rangeMin = (int)rangeAttr.ConstructorArguments[0].Value;
-                        int rangeMax = (int)rangeAttr.ConstructorArguments[1].Value;
+                        int rangeMin = (int) rangeAttr.ConstructorArguments[0].Value;
+                        int rangeMax = (int) rangeAttr.ConstructorArguments[1].Value;
 
                         if (swaggerParam is NonBodyParameter)
                         {
-                            ((NonBodyParameter)swaggerParam).Minimum = rangeMin;
-                            ((NonBodyParameter)swaggerParam).Maximum = rangeMax;
+                            ((NonBodyParameter) swaggerParam).Minimum = rangeMin;
+                            ((NonBodyParameter) swaggerParam).Maximum = rangeMax;
                         }
                     }
                 }

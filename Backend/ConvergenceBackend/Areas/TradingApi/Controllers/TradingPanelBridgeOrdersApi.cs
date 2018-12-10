@@ -29,7 +29,8 @@ namespace IO.Swagger.Controllers
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService, OrderCaching orderCaching)
+        public TradingPanelBridgeOrdersApi(UserService userService, OrderService orderService,
+            OrderCaching orderCaching)
         {
             UserService = userService;
             OrderService = orderService;
@@ -50,7 +51,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdExecutionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20010), description: "List of executions")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdExecutionsGet([FromRoute][Required]string accountId, [FromQuery][Required()]string instrument, [FromQuery]int? maxCount)
+        public virtual IActionResult AccountsAccountIdExecutionsGet([FromRoute] [Required] string accountId,
+            [FromQuery] [Required()] string instrument, [FromQuery] int? maxCount)
         {
             return StatusCode(
                 200,
@@ -75,7 +77,7 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdInstrumentsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute][Required]string accountId)
+        public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
         {
             var instruments = new List<Instrument>();
             instruments.Add(new Instrument()
@@ -109,9 +111,11 @@ namespace IO.Swagger.Controllers
         [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersGet")]
-        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
+        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004),
+            description:
+            "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersGet([FromRoute][Required]string accountId)
+        public virtual IActionResult AccountsAccountIdOrdersGet([FromRoute] [Required] string accountId)
         {
             var realData = new InlineResponse2004()
             {
@@ -119,17 +123,18 @@ namespace IO.Swagger.Controllers
                 Errmsg = null,
                 D = OrderCaching.GetOrders(User.GetIdentifier(), accountId),
             };
-            var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>("{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
-              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.0000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.10082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n }, " +
-              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.22082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.25082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.56082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-              "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}");
+            var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>(
+                "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
+                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.0000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.10082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n }, " +
+                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.22082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
+                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.25082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
+                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.56082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
+                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}");
             exampleAndRealData.D.AddRange(realData.D);
             return StatusCode(
-              200,
-              exampleAndRealData
-          );
+                200,
+                exampleAndRealData
+            );
         }
 
         /// <summary>
@@ -145,24 +150,25 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersHistoryGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of orders")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute][Required]string accountId, [FromQuery]decimal? maxCount)
+        public virtual IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute] [Required] string accountId,
+            [FromQuery] decimal? maxCount)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2004));
 
             string exampleJson = null;
             exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000006683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.60012819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00233916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.90062819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00002433916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80172819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.00002533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80162819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 8.81082819146101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.034533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 10.8104259046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                " ],\n  \"errmsg\" : \"errmsg\"\n}";
+                          "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000006683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.60012819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00233916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.90062819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00002433916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80172819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.00002533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80162819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 8.81082819146101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.034533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 10.8104259046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
+                          " ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
-            : default(InlineResponse2004);
+                ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
+                : default(InlineResponse2004);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -180,7 +186,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute][Required]string accountId, [FromRoute][Required]string orderId)
+        public virtual IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string orderId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -208,7 +215,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2006), description: "Order")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute][Required]string accountId, [FromRoute][Required]string orderId)
+        public virtual IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string orderId)
         {
             return StatusCode(
                 200,
@@ -240,7 +248,10 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string orderId, [FromForm][Required()]decimal? qty, [FromForm]decimal? limitPrice, [FromForm]decimal? stopPrice, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit, [FromForm]string digitalSignature)
+        public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string orderId, [FromForm] [Required()] decimal? qty, [FromForm] decimal? limitPrice,
+            [FromForm] decimal? stopPrice, [FromForm] decimal? stopLoss, [FromForm] decimal? takeProfit,
+            [FromForm] string digitalSignature)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -249,8 +260,8 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
-            : default(InlineResponse2007);
+                ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
+                : default(InlineResponse2007);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -277,22 +288,24 @@ namespace IO.Swagger.Controllers
         [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdOrdersPost")]
-        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2005), description: "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
+        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2005),
+            description:
+            "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
         [Authorize]
         public virtual IActionResult AccountsAccountIdOrdersPost(
-            [FromRoute][Required]string accountId,
-            [FromForm][Required]string instrument,
-            [FromForm][Required]decimal? qty,
-            [FromForm][Required]string side,
-            [FromForm][Required]string type,
-            [FromForm]decimal? limitPrice,
-            [FromForm]decimal? stopPrice,
-            [FromForm]string durationType,
-            [FromForm]decimal? durationDateTime,
-            [FromForm]decimal? stopLoss,
-            [FromForm]decimal? takeProfit,
-            [FromForm]string digitalSignature,
-            [FromQuery]string requestId)
+            [FromRoute] [Required] string accountId,
+            [FromForm] [Required] string instrument,
+            [FromForm] [Required] decimal? qty,
+            [FromForm] [Required] string side,
+            [FromForm] [Required] string type,
+            [FromForm] decimal? limitPrice,
+            [FromForm] decimal? stopPrice,
+            [FromForm] string durationType,
+            [FromForm] decimal? durationDateTime,
+            [FromForm] decimal? stopLoss,
+            [FromForm] decimal? takeProfit,
+            [FromForm] string digitalSignature,
+            [FromQuery] string requestId)
         {
             Task orderTask;
             try
@@ -302,17 +315,20 @@ namespace IO.Swagger.Controllers
                 {
                     case OrderTypes.MarketOrder:
                         orderTask = OrderService.CreateMarketOrder(
-                            user, accountId, instrument, qty.Value, side, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, durationType, durationDateTime, stopLoss,
+                            takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
                         orderTask = OrderService.CreateStopOrder(
-                            user, accountId, instrument, qty.Value, side, stopPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, stopPrice, durationType, durationDateTime,
+                            stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
                         orderTask = OrderService.CreateLimitOrder(
-                            user, accountId, instrument, qty.Value, side, limitPrice, durationType, durationDateTime, stopLoss, takeProfit, requestId);
+                            user, accountId, instrument, qty.Value, side, limitPrice, durationType, durationDateTime,
+                            stopLoss, takeProfit, requestId);
                         break;
 
                     case "stoplimit":
@@ -335,6 +351,7 @@ namespace IO.Swagger.Controllers
                             }
                         );
                 }
+
                 // Finish sending in order to catch exceptions
                 orderTask.Wait();
             }
@@ -349,6 +366,7 @@ namespace IO.Swagger.Controllers
                     }
                 );
             }
+
             return StatusCode(
                 200,
                 new InlineResponse2005()
@@ -375,17 +393,18 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdPositionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2008), description: "Array of positions")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsGet([FromRoute][Required]string accountId)
+        public virtual IActionResult AccountsAccountIdPositionsGet([FromRoute] [Required] string accountId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2008));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  }, {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  }, {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2008>(exampleJson)
-            : default(InlineResponse2008);
+                ? JsonConvert.DeserializeObject<InlineResponse2008>(exampleJson)
+                : default(InlineResponse2008);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -403,7 +422,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdDelete")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdDelete([FromRoute][Required]string accountId, [FromRoute][Required]string positionId)
+        public virtual IActionResult AccountsAccountIdPositionsPositionIdDelete([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -412,8 +432,8 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
-            : default(InlineResponse2007);
+                ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
+                : default(InlineResponse2007);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -431,17 +451,19 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2009), description: "Position object")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdGet([FromRoute][Required]string accountId, [FromRoute][Required]string positionId)
+        public virtual IActionResult AccountsAccountIdPositionsPositionIdGet([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2009));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"side\" : \"buy\",\n    \"unrealizedPl\" : 1.46581298050294517310021547018550336360931396484375,\n    \"avgPrice\" : 6.02745618307040320615897144307382404804229736328125,\n    \"qty\" : 0.80082819046101150206595775671303272247314453125,\n    \"instrument\" : \"instrument\",\n    \"id\" : \"id\"\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2009>(exampleJson)
-            : default(InlineResponse2009);
+                ? JsonConvert.DeserializeObject<InlineResponse2009>(exampleJson)
+                : default(InlineResponse2009);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -461,7 +483,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute][Required]string accountId, [FromRoute][Required]string positionId, [FromForm]decimal? stopLoss, [FromForm]decimal? takeProfit)
+        public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string positionId, [FromForm] decimal? stopLoss, [FromForm] decimal? takeProfit)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
@@ -470,8 +493,8 @@ namespace IO.Swagger.Controllers
             exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
-            : default(InlineResponse2007);
+                ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
+                : default(InlineResponse2007);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -489,17 +512,19 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdStateGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2003), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdStateGet([FromRoute][Required]string accountId, [FromQuery][Required()]string locale)
+        public virtual IActionResult AccountsAccountIdStateGet([FromRoute] [Required] string accountId,
+            [FromQuery] [Required()] string locale)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2003));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"amData\" : [ [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ], [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ] ],\n    \"unrealizedPl\" : 6.02745618307040320615897144307382404804229736328125,\n    \"balance\" : 0.80082819046101150206595775671303272247314453125,\n    \"equity\" : 1.46581298050294517310021547018550336360931396484375\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"amData\" : [ [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ], [ [ \"amData\", \"amData\" ], [ \"amData\", \"amData\" ] ] ],\n    \"unrealizedPl\" : 6.02745618307040320615897144307382404804229736328125,\n    \"balance\" : 0.80082819046101150206595775671303272247314453125,\n    \"equity\" : 1.46581298050294517310021547018550336360931396484375\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2003>(exampleJson)
-            : default(InlineResponse2003);
+                ? JsonConvert.DeserializeObject<InlineResponse2003>(exampleJson)
+                : default(InlineResponse2003);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -520,11 +545,12 @@ namespace IO.Swagger.Controllers
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2002));
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  }, {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  }, {\n    \"currencySign\" : \"currencySign\",\n    \"name\" : \"name\",\n    \"currency\" : \"currency\",\n    \"id\" : \"id\",\n    \"config\" : {\n      \"supportLevel2Data\" : true,\n      \"supportBrackets\" : true,\n      \"supportPLUpdate\" : true,\n      \"supportClosePosition\" : true,\n      \"supportExecutions\" : true,\n      \"supportEditAmount\" : true,\n      \"supportPositionBrackets\" : true,\n      \"supportReducePosition\" : true,\n      \"showQuantityInsteadOfAmount\" : true,\n      \"supportOrderBrackets\" : true,\n      \"supportDigitalSignature\" : true,\n      \"supportStopLimitOrders\" : true,\n      \"supportMultiposition\" : true,\n      \"supportDOM\" : true,\n      \"supportOrdersHistory\" : true\n    }\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2002>(exampleJson)
-            : default(InlineResponse2002);
+                ? JsonConvert.DeserializeObject<InlineResponse2002>(exampleJson)
+                : default(InlineResponse2002);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -540,18 +566,22 @@ namespace IO.Swagger.Controllers
         [Route("authorize")]
         [ValidateModelState]
         [SwaggerOperation("AuthorizePost")]
-        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200), description: "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
-        public virtual IActionResult AuthorizePost([FromForm][Required()]string login, [FromForm][Required()]string password)
+        [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200),
+            description:
+            "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
+        public virtual IActionResult AuthorizePost([FromForm] [Required()] string login,
+            [FromForm] [Required()] string password)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse200));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"access_token\" : \"access_token\",\n    \"expiration\" : 0.80082819046101150206595775671303272247314453125\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"access_token\" : \"access_token\",\n    \"expiration\" : 0.80082819046101150206595775671303272247314453125\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse200>(exampleJson)
-            : default(InlineResponse200);
+                ? JsonConvert.DeserializeObject<InlineResponse200>(exampleJson)
+                : default(InlineResponse200);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -567,17 +597,18 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ConfigGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2001), description: "Configuration")]
-        public virtual IActionResult ConfigGet([FromQuery][Required()]string locale)
+        public virtual IActionResult ConfigGet([FromQuery] [Required()] string locale)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2001));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"pullingInterval\" : {\n      \"accountManager\" : 5.63737665663332876420099637471139430999755859375,\n      \"orders\" : 1.46581298050294517310021547018550336360931396484375,\n      \"positions\" : 5.962133916683182377482808078639209270477294921875,\n      \"history\" : 0.80082819046101150206595775671303272247314453125,\n      \"quotes\" : 6.02745618307040320615897144307382404804229736328125\n    },\n    \"accountManager\" : [ {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ],\n    \"durations\" : [ {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"pullingInterval\" : {\n      \"accountManager\" : 5.63737665663332876420099637471139430999755859375,\n      \"orders\" : 1.46581298050294517310021547018550336360931396484375,\n      \"positions\" : 5.962133916683182377482808078639209270477294921875,\n      \"history\" : 0.80082819046101150206595775671303272247314453125,\n      \"quotes\" : 6.02745618307040320615897144307382404804229736328125\n    },\n    \"accountManager\" : [ {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"columns\" : [ {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      }, {\n        \"fixedWidth\" : true,\n        \"tooltip\" : \"tooltip\",\n        \"id\" : \"id\",\n        \"sortable\" : true,\n        \"title\" : \"title\"\n      } ],\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ],\n    \"durations\" : [ {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    }, {\n      \"hasTimePicker\" : true,\n      \"hasDatePicker\" : true,\n      \"id\" : \"id\",\n      \"title\" : \"title\"\n    } ]\n  },\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse2001>(exampleJson)
-            : default(InlineResponse2001);
+                ? JsonConvert.DeserializeObject<InlineResponse2001>(exampleJson)
+                : default(InlineResponse2001);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -593,7 +624,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("DepthGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20013), description: "Depth of market")]
-        public virtual IActionResult DepthGet([FromQuery][Required()]string symbol)
+        public virtual IActionResult DepthGet([FromQuery] [Required()] string symbol)
         {
             return StatusCode(
                 200,
@@ -604,29 +635,29 @@ namespace IO.Swagger.Controllers
                     {
                         Asks = new List<DepthItem>
                         {
-                            new DepthItem{0.000033m, 1.98582m},
-                            new DepthItem{0.000045m, 1.554112m},
-                            new DepthItem{0.000165m, 40.113m},
-                            new DepthItem{0.000043m, 5.95112m},
-                            new DepthItem{0.000052m, 2.551212m},
-                            new DepthItem{0.000261m, 25.126m},
-                            new DepthItem{0.000041m, 4.12112m},
-                            new DepthItem{0.000055m, 1.552512m},
-                            new DepthItem{0.000098m, 10.12256m},
-                            new DepthItem{0.000077m, 5.19856m},
+                            new DepthItem {0.000033m, 1.98582m},
+                            new DepthItem {0.000045m, 1.554112m},
+                            new DepthItem {0.000165m, 40.113m},
+                            new DepthItem {0.000043m, 5.95112m},
+                            new DepthItem {0.000052m, 2.551212m},
+                            new DepthItem {0.000261m, 25.126m},
+                            new DepthItem {0.000041m, 4.12112m},
+                            new DepthItem {0.000055m, 1.552512m},
+                            new DepthItem {0.000098m, 10.12256m},
+                            new DepthItem {0.000077m, 5.19856m},
                         },
                         Bids = new List<DepthItem>
                         {
-                            new DepthItem{0.000001m, 50m},
-                            new DepthItem{0.000005m, 2.585m},
-                            new DepthItem{0.000021m, 4.895m},
-                            new DepthItem{0.000022m, 2.435m},
-                            new DepthItem{0.000042m, 2.555212m},
-                            new DepthItem{0.000211m, 21.156m},
-                            new DepthItem{0.000031m, 4.12512m},
-                            new DepthItem{0.000065m, 2.551512m},
-                            new DepthItem{0.000078m, 11.11256m},
-                            new DepthItem{0.000076m, 7.19856m},
+                            new DepthItem {0.000001m, 50m},
+                            new DepthItem {0.000005m, 2.585m},
+                            new DepthItem {0.000021m, 4.895m},
+                            new DepthItem {0.000022m, 2.435m},
+                            new DepthItem {0.000042m, 2.555212m},
+                            new DepthItem {0.000211m, 21.156m},
+                            new DepthItem {0.000031m, 4.12512m},
+                            new DepthItem {0.000065m, 2.551512m},
+                            new DepthItem {0.000078m, 11.11256m},
+                            new DepthItem {0.000076m, 7.19856m},
                         }
                     }
                 });
@@ -641,18 +672,20 @@ namespace IO.Swagger.Controllers
         [Route("mapping")]
         [ValidateModelState]
         [SwaggerOperation("MappingGet")]
-        [SwaggerResponse(statusCode: 200, type: typeof(SymbolMapping), description: "Broker &amp;ndash; TradingView instruments map")]
+        [SwaggerResponse(statusCode: 200, type: typeof(SymbolMapping),
+            description: "Broker &amp;ndash; TradingView instruments map")]
         public virtual IActionResult MappingGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(SymbolMapping));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"fields\" : [ \"brokerSymbol\" ],\n  \"symbols\" : [ {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  }, {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  } ]\n}";
+            exampleJson =
+                "{\n  \"fields\" : [ \"brokerSymbol\" ],\n  \"symbols\" : [ {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  }, {\n    \"s\" : \"s\",\n    \"f\" : [ \"f\", \"f\" ]\n  } ]\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<SymbolMapping>(exampleJson)
-            : default(SymbolMapping);
+                ? JsonConvert.DeserializeObject<SymbolMapping>(exampleJson)
+                : default(SymbolMapping);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
@@ -668,17 +701,18 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("QuotesGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20012), description: "Current prices")]
-        public virtual IActionResult QuotesGet([FromQuery][Required()]string symbols)
+        public virtual IActionResult QuotesGet([FromQuery] [Required()] string symbols)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse20012));
 
             string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  }, {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
+            exampleJson =
+                "{\n  \"s\" : \"ok\",\n  \"d\" : [ {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  }, {\n    \"s\" : null,\n    \"v\" : {\n      \"volume\" : 2.027123023002321833274663731572218239307403564453125,\n      \"lp\" : 1.46581298050294517310021547018550336360931396484375,\n      \"ch\" : 0.80082819046101150206595775671303272247314453125,\n      \"ask\" : 5.962133916683182377482808078639209270477294921875,\n      \"high_price\" : 7.061401241503109105224211816675961017608642578125,\n      \"chp\" : 6.02745618307040320615897144307382404804229736328125,\n      \"bid\" : 5.63737665663332876420099637471139430999755859375,\n      \"open_price\" : 2.3021358869347654518833223846741020679473876953125,\n      \"low_price\" : 9.301444243932575517419536481611430644989013671875,\n      \"prev_close_price\" : 3.61607674925191080461672754609026014804840087890625\n    },\n    \"n\" : \"n\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}";
 
             var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<InlineResponse20012>(exampleJson)
-            : default(InlineResponse20012);
+                ? JsonConvert.DeserializeObject<InlineResponse20012>(exampleJson)
+                : default(InlineResponse20012);
             //TODO: Change the data returned
             return new ObjectResult(example);
         }
