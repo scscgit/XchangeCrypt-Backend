@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using XchangeCrypt.Backend.ConvergenceBackend.Extensions;
 using XchangeCrypt.Backend.TradingBackend.Models.Enums;
 using XchangeCrypt.Backend.TradingBackend.Repositories;
 
@@ -29,7 +30,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Caching
                     Id = e.Id.ToString(),
                     Instrument = e.Instrument,
                     Price = e.Price,
-                    Time = e.EntryTime.ToBinary(),
+                    Time = e.EntryTime.GetUnixEpochMillis(),
                     Qty = e.FilledQty,
                     Side = MapSide(e.Side),
                 })
