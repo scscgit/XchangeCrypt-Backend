@@ -1,14 +1,13 @@
-using IO.Swagger.Attributes;
-using IO.Swagger.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using IO.Swagger.Attributes;
+using IO.Swagger.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using XchangeCrypt.Backend.ConvergenceBackend.Caching;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
@@ -17,22 +16,23 @@ using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
 namespace IO.Swagger.Controllers
 {
+    /// <inheritdoc />
     /// <summary>
     /// Trading panel bridge for orders.
     /// </summary>
     [Area("Trading")]
     [Route("api/v1/trading/")]
-    public class TradingPanelBridgeOrdersApi : Controller
+    public sealed class TradingPanelOrdersBridge : Controller
     {
-        private readonly ILogger<TradingPanelBridgeOrdersApi> _logger;
+        private readonly ILogger<TradingPanelOrdersBridge> _logger;
         public UserService UserService { get; }
         public OrderService OrderService { get; }
         public OrderCaching OrderCaching { get; }
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeOrdersApi(
-            ILogger<TradingPanelBridgeOrdersApi> logger,
+        public TradingPanelOrdersBridge(
+            ILogger<TradingPanelOrdersBridge> logger,
             UserService userService,
             OrderService orderService,
             OrderCaching orderCaching)
@@ -57,16 +57,16 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdExecutionsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20010), description: "List of executions")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdExecutionsGet([FromRoute] [Required] string accountId,
-            [FromQuery] [Required()] string instrument, [FromQuery] int? maxCount)
+        public IActionResult AccountsAccountIdExecutionsGet([FromRoute] [Required] string accountId,
+            [FromQuery] [Required] string instrument, [FromQuery] int? maxCount)
         {
             return StatusCode(
                 200,
-                new InlineResponse20010()
+                new InlineResponse20010
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = OrderCaching.GetExecutions(User.GetIdentifier(), accountId, instrument, maxCount),
+                    D = OrderCaching.GetExecutions(User.GetIdentifier(), accountId, instrument, maxCount)
                 }
             );
         }
@@ -83,20 +83,20 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdInstrumentsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
+        public IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
         {
             var instruments = new List<Instrument>
             {
-                new Instrument {Name = "QBC_BTC", Description = "QBC_BTC",},
-                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC",}
+                new Instrument {Name = "QBC_BTC", Description = "QBC_BTC"},
+                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC"}
             };
             return StatusCode(
                 200,
-                new InlineResponse20011()
+                new InlineResponse20011
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = instruments,
+                    D = instruments
                 }
             );
         }
@@ -110,18 +110,18 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersGet")]
+        [SwaggerOperation("AccountsAccountIdOrdersGet", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004),
             description:
             "List of pending orders. It is also expected that broker returns orders filled/cancelled/rejected during current session.")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersGet([FromRoute] [Required] string accountId)
+        public IActionResult AccountsAccountIdOrdersGet([FromRoute] [Required] string accountId)
         {
-            var realData = new InlineResponse2004()
+            var realData = new InlineResponse2004
             {
                 S = Status.OkEnum,
                 Errmsg = null,
-                D = OrderCaching.GetOrders(User.GetIdentifier(), accountId),
+                D = OrderCaching.GetOrders(User.GetIdentifier(), accountId)
             };
             var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>(
                 "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
@@ -147,10 +147,10 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("accounts/{accountId}/ordersHistory")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersHistoryGet")]
+        [SwaggerOperation("AccountsAccountIdOrdersHistoryGet", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of orders")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute] [Required] string accountId,
             [FromQuery] decimal? maxCount)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -183,10 +183,10 @@ namespace IO.Swagger.Controllers
         [HttpDelete]
         [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete")]
+        [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string orderId)
         {
             _logger.LogInformation("Mocking request to delete order ID " + orderId);
@@ -213,19 +213,19 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersOrderIdGet")]
+        [SwaggerOperation("AccountsAccountIdOrdersOrderIdGet", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2006), description: "Order")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdOrdersOrderIdGet([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string orderId)
         {
             return StatusCode(
                 200,
-                new InlineResponse2006()
+                new InlineResponse2006
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = OrderCaching.GetOrder(User.GetIdentifier(), accountId, orderId),
+                    D = OrderCaching.GetOrder(User.GetIdentifier(), accountId, orderId)
                 }
             );
         }
@@ -246,11 +246,11 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("accounts/{accountId}/orders/{orderId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut")]
+        [SwaggerOperation("AccountsAccountIdOrdersOrderIdPut", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute] [Required] string accountId,
-            [FromRoute] [Required] string orderId, [FromForm] [Required()] decimal? qty, [FromForm] decimal? limitPrice,
+        public IActionResult AccountsAccountIdOrdersOrderIdPut([FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string orderId, [FromForm] [Required] decimal? qty, [FromForm] decimal? limitPrice,
             [FromForm] decimal? stopPrice, [FromForm] decimal? stopLoss, [FromForm] decimal? takeProfit,
             [FromForm] string digitalSignature)
         {
@@ -288,12 +288,12 @@ namespace IO.Swagger.Controllers
         [HttpPost]
         [Route("accounts/{accountId}/orders")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdOrdersPost")]
+        [SwaggerOperation("AccountsAccountIdOrdersPost", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2005),
             description:
             "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdOrdersPost(
+        public IActionResult AccountsAccountIdOrdersPost(
             [FromRoute] [Required] string accountId,
             [FromForm] [Required] string instrument,
             [FromForm] [Required] decimal? qty,
@@ -337,7 +337,7 @@ namespace IO.Swagger.Controllers
                     case "stoplimit":
                         return StatusCode(
                             400,
-                            new InlineResponse2005()
+                            new InlineResponse2005
                             {
                                 S = Status.ErrorEnum,
                                 Errmsg = "Invalid type parameter: stoplimit not supported yet"
@@ -347,7 +347,7 @@ namespace IO.Swagger.Controllers
                     default:
                         return StatusCode(
                             400,
-                            new InlineResponse2005()
+                            new InlineResponse2005
                             {
                                 S = Status.ErrorEnum,
                                 Errmsg = $"Invalid type parameter: {type}"
@@ -363,7 +363,7 @@ namespace IO.Swagger.Controllers
                 _logger.LogError(e.StackTrace);
                 return StatusCode(
                     500,
-                    new InlineResponse2005()
+                    new InlineResponse2005
                     {
                         S = Status.ErrorEnum,
                         Errmsg = $"Internal error occurred: {e.Message}"
@@ -373,10 +373,10 @@ namespace IO.Swagger.Controllers
 
             return StatusCode(
                 200,
-                new InlineResponse2005()
+                new InlineResponse2005
                 {
                     S = Status.OkEnum,
-                    D = new InlineResponse2005D()
+                    D = new InlineResponse2005D
                     {
                         // Currently the OrderId is not supported, as the request is asynchronous
                         OrderId = requestId
@@ -394,10 +394,10 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("accounts/{accountId}/positions")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdPositionsGet")]
+        [SwaggerOperation("AccountsAccountIdPositionsGet", Tags = new[] {"Positions"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2008), description: "Array of positions")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsGet([FromRoute] [Required] string accountId)
+        public IActionResult AccountsAccountIdPositionsGet([FromRoute] [Required] string accountId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2008));
@@ -423,10 +423,10 @@ namespace IO.Swagger.Controllers
         [HttpDelete]
         [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdPositionsPositionIdDelete")]
+        [SwaggerOperation("AccountsAccountIdPositionsPositionIdDelete", Tags = new[] {"Positions"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdDelete([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdPositionsPositionIdDelete([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -452,10 +452,10 @@ namespace IO.Swagger.Controllers
         [HttpGet]
         [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdPositionsPositionIdGet")]
+        [SwaggerOperation("AccountsAccountIdPositionsPositionIdGet", Tags = new[] {"Positions"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2009), description: "Position object")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdGet([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdPositionsPositionIdGet([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string positionId)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -484,10 +484,10 @@ namespace IO.Swagger.Controllers
         [HttpPut]
         [Route("accounts/{accountId}/positions/{positionId}")]
         [ValidateModelState]
-        [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut")]
+        [SwaggerOperation("AccountsAccountIdPositionsPositionIdPut", Tags = new[] {"Positions"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdPositionsPositionIdPut([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string positionId, [FromForm] decimal? stopLoss, [FromForm] decimal? takeProfit)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
@@ -516,8 +516,8 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdStateGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2003), description: "OK")]
         [Authorize]
-        public virtual IActionResult AccountsAccountIdStateGet([FromRoute] [Required] string accountId,
-            [FromQuery] [Required()] string locale)
+        public IActionResult AccountsAccountIdStateGet([FromRoute] [Required] string accountId,
+            [FromQuery] [Required] string locale)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2003));
@@ -544,7 +544,7 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2002), description: "Accounts list")]
         [Authorize]
-        public virtual IActionResult AccountsGet()
+        public IActionResult AccountsGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2002));
@@ -573,8 +573,8 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200),
             description:
             "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
-        public virtual IActionResult AuthorizePost([FromForm] [Required()] string login,
-            [FromForm] [Required()] string password)
+        public IActionResult AuthorizePost([FromForm] [Required] string login,
+            [FromForm] [Required] string password)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse200));
@@ -601,7 +601,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("ConfigGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2001), description: "Configuration")]
-        public virtual IActionResult ConfigGet([FromQuery] [Required()] string locale)
+        public IActionResult ConfigGet([FromQuery] [Required] string locale)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2001));
@@ -628,7 +628,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("DepthGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20013), description: "Depth of market")]
-        public virtual IActionResult DepthGet([FromQuery] [Required()] string symbol)
+        public IActionResult DepthGet([FromQuery] [Required] string symbol)
         {
             return StatusCode(
                 200,
@@ -648,7 +648,7 @@ namespace IO.Swagger.Controllers
                             new DepthItem {0.000041m, 4.12112m},
                             new DepthItem {0.000055m, 1.552512m},
                             new DepthItem {0.000098m, 10.12256m},
-                            new DepthItem {0.000077m, 5.19856m},
+                            new DepthItem {0.000077m, 5.19856m}
                         },
                         Bids = new List<DepthItem>
                         {
@@ -661,7 +661,7 @@ namespace IO.Swagger.Controllers
                             new DepthItem {0.000031m, 4.12512m},
                             new DepthItem {0.000065m, 2.551512m},
                             new DepthItem {0.000078m, 11.11256m},
-                            new DepthItem {0.000076m, 7.19856m},
+                            new DepthItem {0.000076m, 7.19856m}
                         }
                     }
                 });
@@ -678,7 +678,7 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("MappingGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(SymbolMapping),
             description: "Broker &amp;ndash; TradingView instruments map")]
-        public virtual IActionResult MappingGet()
+        public IActionResult MappingGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(SymbolMapping));
@@ -705,7 +705,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("QuotesGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20012), description: "Current prices")]
-        public virtual IActionResult QuotesGet([FromQuery] [Required()] string symbols)
+        public IActionResult QuotesGet([FromQuery] [Required] string symbols)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse20012));

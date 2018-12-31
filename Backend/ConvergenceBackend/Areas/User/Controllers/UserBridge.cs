@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Controllers
     [Area("User")]
     [Route("api/v1/user/")]
     [Authorize]
-    public class UserApi : Controller
+    public class UserBridge : Controller
     {
         /// <summary>
         /// Receives all profile details related to an account of the authorized user.
@@ -65,35 +66,27 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Controllers
         }
 
         /// <summary>
-        /// Receives details of a specific wallet of the authorized user.
+        /// Receives details of a single specific wallet of the authorized user.
         /// </summary>
-        /// <param name="coinSymbol">Unique symbol identification of a coin</param>
-        [HttpGet("wallets/{coinSymbol}")]
+        /// <param name="accountId">The account identifier. A unique symbol identification of a coin</param>
+        [HttpGet("accounts/{accountId}/wallet")]
         public WalletDetails Wallet(
-            [FromRoute] [Required] string coinSymbol)
+            [FromRoute] [Required] string accountId)
         {
-            foreach (var wallet in Wallets())
-            {
-                if (wallet.CoinSymbol.Equals(coinSymbol))
-                {
-                    return wallet;
-                }
-            }
-
-            return null;
+            return Wallets().Single(wallet => wallet.CoinSymbol.Equals(accountId));
         }
 
         /// <summary>
         /// Requests a coin withdrawal from a specific wallet of the authorized user.
         /// </summary>
-        /// <param name="coinSymbol">Unique symbol identification of a coin</param>
+        /// <param name="accountId">The account identifier. A unique symbol identification of a coin</param>
         /// <param name="recipientPublicKey">Recipient address of a wallet for coins to be sent to</param>
         /// <param name="withdrawalAmount">Amount of balance to withdraw, represented in multiplies of the lowest tradable amount, which is specified by the wallet</param>
-        [HttpPost("wallets/{coinSymbol}/withdraw")]
+        [HttpPost("accounts/{accountId}/withdraw")]
         public IDictionary<string, string> Wallet(
-            [FromRoute] [Required] string coinSymbol,
+            [FromRoute] [Required] string accountId,
             [FromBody] [Required] string recipientPublicKey,
-            [FromBody] [Required] long withdrawalAmount)
+            [FromBody] [Required] decimal withdrawalAmount)
         {
             return new Dictionary<string, string>
             {
@@ -101,5 +94,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Controllers
                 {"message", "Balance insufficient for the withdrawal"}
             };
         }
+
+        // TODO: withdrawal history with state, cancel pending
     }
 }

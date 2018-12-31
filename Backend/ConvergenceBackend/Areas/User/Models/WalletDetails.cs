@@ -6,7 +6,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Models
     public class WalletDetails
     {
         /// <summary>
-        /// Short and unique coin name, used as a part of instrument trading pair name.
+        /// Short and unique coin name, used as a part of instrument trading pair name. Also used as account identifier.
         /// </summary>
         public string CoinSymbol;
 

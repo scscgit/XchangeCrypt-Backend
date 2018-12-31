@@ -1,27 +1,21 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace IO.Swagger.Controllers
 {
+    /// <inheritdoc />
     /// <summary>
     /// Trading terminal integration, only mappings not covered by other controllers.
     /// </summary>
     [Area("Trading")]
     [Route("api/v1/trading/")]
-    public class TradingTerminalIntegrationApi : Controller
+    public sealed class TradingTerminalIntegration : Controller
     {
-        /// <summary>
-        /// </summary>
-        public TradingTerminalIntegrationApi()
-        {
-        }
-
         /// <summary>
         ///
         /// </summary>
@@ -38,9 +32,9 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(MarksArrays),
             description:
             "Response is expected to be an object with properties listed below. Each property is an array")]
-        public virtual IActionResult MarksGet([FromQuery] [Required()] string symbol,
-            [FromQuery] [Required()] string resolution, [FromQuery] [Required()] decimal? from,
-            [FromQuery] [Required()] decimal? to)
+        public IActionResult MarksGet([FromQuery] [Required] string symbol,
+            [FromQuery] [Required] string resolution, [FromQuery] [Required] decimal? from,
+            [FromQuery] [Required] decimal? to)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(MarksArrays));
@@ -71,9 +65,9 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("TimescaleMarksGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<TimescaleMark>),
             description: "Response is expected to be an array.")]
-        public virtual IActionResult TimescaleMarksGet([FromQuery] [Required()] string symbol,
-            [FromQuery] [Required()] string resolution, [FromQuery] [Required()] decimal? from,
-            [FromQuery] [Required()] decimal? to)
+        public IActionResult TimescaleMarksGet([FromQuery] [Required] string symbol,
+            [FromQuery] [Required] string resolution, [FromQuery] [Required] decimal? from,
+            [FromQuery] [Required] decimal? to)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(List<TimescaleMark>));

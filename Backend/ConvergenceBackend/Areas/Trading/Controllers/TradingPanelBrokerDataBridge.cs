@@ -1,26 +1,27 @@
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
 using XchangeCrypt.Backend.ConvergenceBackend.Services;
 
 namespace IO.Swagger.Controllers
 {
+    /// <inheritdoc />
     /// <summary>
     /// Trading panel bridge for broker data, only mappings not covered by other controllers.
     /// </summary>
     [Area("Trading")]
     [Route("api/v1/trading/")]
-    public class TradingPanelBridgeBrokerDataApi : Controller
+    public sealed class TradingPanelBrokerDataBridge : Controller
     {
         private readonly OrderService _orderService;
 
         /// <summary>
         /// </summary>
-        public TradingPanelBridgeBrokerDataApi(OrderService orderService)
+        public TradingPanelBrokerDataBridge(OrderService orderService)
         {
             _orderService = orderService;
         }
@@ -42,9 +43,9 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(BarsArrays),
             description:
             "Response is expected to be an object with properties listed below. Each property is treated as a table column")]
-        public virtual IActionResult HistoryGet([FromQuery] [Required()] string symbol,
-            [FromQuery] [Required()] string resolution, [FromQuery] [Required()] decimal? from,
-            [FromQuery] [Required()] decimal? to, [FromQuery] decimal? countback)
+        public IActionResult HistoryGet([FromQuery] [Required] string symbol,
+            [FromQuery] [Required] string resolution, [FromQuery] [Required] decimal? from,
+            [FromQuery] [Required] decimal? to, [FromQuery] decimal? countback)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(BarsArrays));
@@ -72,7 +73,7 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20014),
             description:
             "Data feed should provide ticks (trades, asks, bids) and daily bars. If there is no trades the data feed should set trades to bids. If there is only ask/bid implementation you must also set the trade (same as bid but it's size must be >= 1). Size for trades is always >= 1 except for a correction. In case of correction size can be 0. All times should be UNIX time UTC. Daily bars are required if they cannot be built from ticks (has_dwm should be set to true in the symbol information). Fields for asks, bids and trades: `id`, `p`, `s` (optional for asks and bids), `t`, `f`. Fields for daily bars: `id`, `t`, `o`, `h`, `l`, `c`, `v`. Messages: 1. trade `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time}` 2. ask `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time,\"f\":\"a\"}` 3. bid `{\"id\":\"symbol\",\"p\":price,\"s\":size,\"t\":time,\"f\":\"b\"}` 4. daily bar `{\"id\":\"symbol\",\"o\":open,\"h\":high,\"l\":low,\"c\":close,\"v\":volume,\"t\":time,\"f\":\"d\"}`")]
-        public virtual IActionResult StreamingGet()
+        public IActionResult StreamingGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse20014));
@@ -98,7 +99,7 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("SymbolInfoGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(SymbolInfoArrays), description: "List of instruments")]
-        public virtual IActionResult SymbolInfoGet()
+        public IActionResult SymbolInfoGet()
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(SymbolInfoArrays));
