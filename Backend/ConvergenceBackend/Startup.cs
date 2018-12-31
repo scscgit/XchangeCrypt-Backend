@@ -45,6 +45,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddLogging();
+
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
                 {
@@ -53,7 +54,10 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 .AddJwtBearer(jwtOptions =>
                 {
                     jwtOptions.Authority =
-                        $"https://login.microsoftonline.com/tfp/{Configuration["Authentication:AzureAdB2C:Tenant"]}/{Configuration["Authentication:AzureAdB2C:Policy"]}/v2.0/";
+                        $"{Configuration["Authentication:AzureAdB2C:AuthorityPrefix"]}/" +
+                        $"{Configuration["Authentication:AzureAdB2C:Tenant"]}/" +
+                        $"{Configuration["Authentication:AzureAdB2C:Policy"]}/" +
+                        $"{Configuration["Authentication:AzureAdB2C:AuthorityPrefix"]}/";
                     jwtOptions.Audience = Configuration["Authentication:AzureAdB2C:ClientId"];
                     jwtOptions.Events = new JwtBearerEvents
                     {
@@ -67,24 +71,28 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 .AddJsonOptions(opts =>
                 {
                     opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    opts.SerializerSettings.Converters.Add(new StringEnumConverter
-                    {
-                        CamelCaseText = true
-                    });
+                    opts.SerializerSettings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy()));
                 });
+
+            // API documentation
             services
                 .AddSwaggerGen(c =>
                 {
                     c.SwaggerDoc("v1", new Info
                     {
                         Version = "v1",
-                        Title = "TradingView REST API Specification for Brokers",
+                        Title = "XchangeCrypt REST API Specification",
                         Description = "TradingView REST API Specification for Brokers (ASP.NET Core 2.0)",
-                        Contact = new Contact()
+                        Contact = new Contact
                         {
-                            Name = "Swagger Codegen Contributors",
-                            Url = "https://github.com/swagger-api/swagger-codegen",
+                            Name = "Steve",
+                            Url = "https://localhost/",
                             Email = ""
+                        },
+                        License = new License
+                        {
+                            Name = "Apache License Version 2.0",
+                            Url = "https://www.apache.org/licenses/LICENSE-2.0"
                         },
                         TermsOfService = ""
                     });
@@ -100,8 +108,6 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     {
                         {"Bearer", new string[] { }}
                     });
-
-                    c.CustomSchemaIds(type => type.FriendlyId(true));
                     c.DescribeAllEnumsAsStrings();
                     c.IncludeXmlComments(
                         $"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
@@ -143,6 +149,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
+            // Authentication
             app.UseAuthentication();
             // Fake user for testing purposes only!
             app.UseMiddleware<AuthenticatedTestRequestMiddleware>();
@@ -159,12 +166,18 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 .UseSwagger()
                 .UseSwaggerUI(c =>
                 {
-                    //TODO: Either use the SwaggerGen generated Swagger contract (generated from C# classes)
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TradingView REST API Specification for Brokers");
-
-                    //TODO: Or alternatively use the original Swagger contract that's included in the static files
-                    // c.SwaggerEndpoint("/swagger-original.json", "TradingView REST API Specification for Brokers Original");
+                    c.SwaggerEndpoint(
+                        "/swagger/v1/swagger.json",
+                        "XchangeCrypt REST API Specification"
+                    );
+                    // Or alternatively use the original Swagger contract that's included in the static files
+                    c.SwaggerEndpoint(
+                        "/swagger-original.json",
+                        "TradingView REST API Specification for Brokers Original"
+                    );
                 });
+
+            // Error handling
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

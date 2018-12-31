@@ -17,10 +17,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Areas\AccountApi\Data\" />
-    <Folder Include="Areas\AccountApi\Views\" />
-    <Folder Include="Areas\TradingApi\Data\" />
-    <Folder Include="Areas\TradingApi\Views\" />
+    <Folder Include="Areas\Trading" />
+    <Folder Include="Areas\User" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

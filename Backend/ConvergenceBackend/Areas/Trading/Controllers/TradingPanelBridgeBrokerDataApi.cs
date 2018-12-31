@@ -12,8 +12,8 @@ namespace IO.Swagger.Controllers
     /// <summary>
     /// Trading panel bridge for broker data, only mappings not covered by other controllers.
     /// </summary>
-    [Area("TradingApi")]
-    [Route("api/v1/tradingapi/")]
+    [Area("Trading")]
+    [Route("api/v1/trading/")]
     public class TradingPanelBridgeBrokerDataApi : Controller
     {
         private readonly OrderService _orderService;

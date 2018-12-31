@@ -20,8 +20,8 @@ namespace IO.Swagger.Controllers
     /// <summary>
     /// Trading panel bridge for orders.
     /// </summary>
-    [Area("TradingApi")]
-    [Route("api/v1/tradingapi/")]
+    [Area("Trading")]
+    [Route("api/v1/trading/")]
     public class TradingPanelBridgeOrdersApi : Controller
     {
         private readonly ILogger<TradingPanelBridgeOrdersApi> _logger;
@@ -85,17 +85,11 @@ namespace IO.Swagger.Controllers
         [Authorize]
         public virtual IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
         {
-            var instruments = new List<Instrument>();
-            instruments.Add(new Instrument()
+            var instruments = new List<Instrument>
             {
-                Name = "QBC_BTC",
-                Description = "QBC_BTC",
-            });
-            instruments.Add(new Instrument()
-            {
-                Name = "LTC_BTC",
-                Description = "QBC_BTC",
-            });
+                new Instrument {Name = "QBC_BTC", Description = "QBC_BTC",},
+                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC",}
+            };
             return StatusCode(
                 200,
                 new InlineResponse20011()
@@ -195,6 +189,7 @@ namespace IO.Swagger.Controllers
         public virtual IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute] [Required] string accountId,
             [FromRoute] [Required] string orderId)
         {
+            _logger.LogInformation("Mocking request to delete order ID " + orderId);
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
             // return StatusCode(200, default(InlineResponse2007));
 

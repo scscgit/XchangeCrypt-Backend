@@ -1,4 +1,4 @@
-namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models
+namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Models
 {
     public class ProfileDetails
     {

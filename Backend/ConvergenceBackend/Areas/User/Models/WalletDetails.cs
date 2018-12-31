@@ -1,4 +1,4 @@
-namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models
+namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Models
 {
     /// <summary>
     /// Details of a single wallet representing a balance of a single coin of one user.

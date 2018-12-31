@@ -12,8 +12,8 @@ namespace IO.Swagger.Controllers
     /// <summary>
     /// Trading terminal integration, only mappings not covered by other controllers.
     /// </summary>
-    [Area("TradingApi")]
-    [Route("api/v1/tradingapi/")]
+    [Area("Trading")]
+    [Route("api/v1/trading/")]
     public class TradingTerminalIntegrationApi : Controller
     {
         /// <summary>

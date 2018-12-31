@@ -1,21 +1,22 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
-using XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceBackend.Extensions.Authentication;
 
-namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
+namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Controllers
 {
+    /// <inheritdoc />
     /// <summary>
     /// Accessor for management operations over a user's private account.
     /// </summary>
     [Produces("application/json")]
-    [Area("AccountApi")]
-    [Route("api/v1/accountapi/")]
+    [Area("User")]
+    [Route("api/v1/user/")]
     [Authorize]
-    public class AccountApi : Controller
+    public class UserApi : Controller
     {
         /// <summary>
         /// Receives all profile details related to an account of the authorized user.
@@ -30,7 +31,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
                 Id = User.GetIdentifier(),
                 Login = "",
                 EmailAddress = emailClaim != null ? emailClaim.Value : "no-email",
-                RealName = realNameClaim != null ? realNameClaim.Value : "no-real-name",
+                RealName = realNameClaim != null ? realNameClaim.Value : "no-real-name"
             };
         }
 
@@ -40,26 +41,26 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
         [HttpGet("wallets")]
         public IEnumerable<WalletDetails> Wallets()
         {
-            return new List<WalletDetails>()
+            return new List<WalletDetails>
             {
                 new WalletDetails
                 {
                     CoinSymbol = "BTC",
                     WalletPublicKey = "B65983299",
-                    Balance = 0.0013185m,
+                    Balance = 0.0013185m
                 },
                 new WalletDetails
                 {
                     CoinSymbol = "LTC",
                     WalletPublicKey = "L88183299",
-                    Balance = 103350.23358m,
+                    Balance = 103350.23358m
                 },
                 new WalletDetails
                 {
                     CoinSymbol = "QBC",
                     WalletPublicKey = "Q4018",
-                    Balance = 800_059_900_000,
-                },
+                    Balance = 800_059_900_000
+                }
             };
         }
 
@@ -94,10 +95,10 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.AccountApi.Controllers
             [FromBody] [Required] string recipientPublicKey,
             [FromBody] [Required] long withdrawalAmount)
         {
-            return new Dictionary<string, string>()
+            return new Dictionary<string, string>
             {
                 {"response", "error"},
-                {"message", "Balance insufficient for the withdrawal"},
+                {"message", "Balance insufficient for the withdrawal"}
             };
         }
     }

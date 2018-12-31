@@ -1,8 +1,0 @@
-# top-most EditorConfig file
-root = true
-
-[*]
-charset = utf-8
-
-[{*.cs,*.json}]
-trim_trailing_whitespace = true
