@@ -12,15 +12,14 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         /// </summary>
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            CreateWebHostBuilder(args).Build().Run();
         }
 
         /// <summary>
         /// </summary>
-        private static IWebHost BuildWebHost(string[] args) =>
+        private static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseApplicationInsights()
-                .UseStartup<Startup>()
-                .Build();
+                .UseStartup<Startup>();
     }
 }

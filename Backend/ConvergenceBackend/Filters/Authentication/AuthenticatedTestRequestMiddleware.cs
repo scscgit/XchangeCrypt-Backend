@@ -8,9 +8,9 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Filters.Authentication
 {
     public class AuthenticatedTestRequestMiddleware
     {
+        private const bool AnyValue = false;
         private const string TestingCookieAuthentication = "TestCookieAuthentication";
         private const string AuthorizationHeader = "Authorization";
-        private const bool AnyValue = true;
         private const string TestingHeaderValue = "Bearer: test";
 
         private const string TestUserName = "Testing user";
@@ -26,7 +26,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Filters.Authentication
         public async Task Invoke(HttpContext context)
         {
             if (context.Request.Headers.Keys.Contains(AuthorizationHeader) &&
-                (AnyValue || context.Request.Headers[AuthorizationHeader].First().Equals(TestingHeaderValue)))
+                (AnyValue || context.Request.Headers[AuthorizationHeader][0].Equals(TestingHeaderValue)))
             {
                 var claimsIdentity = new ClaimsIdentity(new List<Claim>
                 {

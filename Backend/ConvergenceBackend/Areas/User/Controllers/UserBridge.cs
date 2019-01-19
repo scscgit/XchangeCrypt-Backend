@@ -83,7 +83,7 @@ namespace XchangeCrypt.Backend.ConvergenceBackend.Areas.User.Controllers
         /// <param name="recipientPublicKey">Recipient address of a wallet for coins to be sent to</param>
         /// <param name="withdrawalAmount">Amount of balance to withdraw, represented in multiplies of the lowest tradable amount, which is specified by the wallet</param>
         [HttpPost("accounts/{accountId}/withdraw")]
-        public IDictionary<string, string> Wallet(
+        public IDictionary<string, string> WalletWithdraw(
             [FromRoute] [Required] string accountId,
             [FromBody] [Required] string recipientPublicKey,
             [FromBody] [Required] decimal withdrawalAmount)

@@ -8,17 +8,17 @@ namespace XchangeCrypt.Backend.TradingBackend
     {
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            CreateWebHostBuilder(args).Build().Run();
         }
 
-        private static IWebHost BuildWebHost(string[] args) =>
+        private static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
+                .UseStartup<Startup>();
+
 //                .ConfigureLogging(logging =>
 //                {
 //                    logging.ClearProviders();
 //                    logging.AddConsole();
 //                })
-                .Build();
     }
 }

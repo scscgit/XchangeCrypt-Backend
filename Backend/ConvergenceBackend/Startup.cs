@@ -44,6 +44,8 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
         {
             services.AddLogging();
 
+            services.AddHttpsRedirection(options => options.HttpsPort = 443);
+
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
                 {
@@ -51,12 +53,13 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                 })
                 .AddJwtBearer(jwtOptions =>
                 {
-                    jwtOptions.Authority =
-                        $"{Configuration["Authentication:AzureAdB2C:AuthorityPrefix"]}/" +
-                        $"{Configuration["Authentication:AzureAdB2C:Tenant"]}/" +
-                        $"{Configuration["Authentication:AzureAdB2C:Policy"]}/" +
-                        $"{Configuration["Authentication:AzureAdB2C:AuthorityPrefix"]}/";
-                    jwtOptions.Audience = Configuration["Authentication:AzureAdB2C:ClientId"];
+                    jwtOptions.Authority = Configuration["Authentication:AzureAD:Authority"];
+//                    jwtOptions.Authority =
+//                        $"{Configuration["Authentication:AzureAD:AuthorityPrefix"]}/" +
+//                        $"{Configuration["Authentication:AzureAD:Tenant"]}/" +
+//                        $"{Configuration["Authentication:AzureAD:Policy"]}/" +
+//                        $"{Configuration["Authentication:AzureAD:AuthorityPostfix"]}/";
+                    jwtOptions.Audience = Configuration["Authentication:AzureAD:ClientId"];
                     jwtOptions.Events = new JwtBearerEvents
                     {
                         OnAuthenticationFailed = AuthenticationFailed
@@ -175,13 +178,18 @@ namespace XchangeCrypt.Backend.ConvergenceBackend
                     );
                 });
 
-            // Error handling
+            // Security
+            app.UseHttpsRedirection();
+
             if (env.IsDevelopment())
             {
+                // Error handling
                 app.UseDeveloperExceptionPage();
             }
             else
             {
+                app.UseHsts();
+                // Error handling
                 //TODO: Enable production exception handling (https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling)
                 // app.UseExceptionHandler("/Home/Error");
             }

@@ -8,6 +8,7 @@ using XchangeCrypt.Backend.TradingBackend.Dispatch;
 using XchangeCrypt.Backend.TradingBackend.Processors;
 using XchangeCrypt.Backend.TradingBackend.Repositories;
 using XchangeCrypt.Backend.TradingBackend.Services;
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace XchangeCrypt.Backend.TradingBackend
 {
