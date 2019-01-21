@@ -264,7 +264,7 @@ paket-files/
 .fake/
 
 # JetBrains Rider
-.idea/
+.idea/*
 *.sln.iml
 
 # CodeRush
@@ -293,3 +293,13 @@ __pycache__/
 
 # LocalHistory VS extension
 /*/.localhistory
+
+# Dockerfile copied to working directory by Rider on every launch
+/Dockerfile
+
+# JetBrains Rider Shared Run Configurations
+!.idea/.idea.Backend/
+.idea/.idea.Backend/*
+!.idea/.idea.Backend/.idea/
+.idea/.idea.Backend/.idea/*
+!.idea/.idea.Backend/.idea/runConfigurations/

@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  convergenceservice:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      #- ASPNETCORE_URLS=https://0.0.0.0:443;http://0.0.0.0:80
+      #- ASPNETCORE_Kestrel__Certificates__Default__Password=LocalhostPassword
+      #- ASPNETCORE_Kestrel__Certificates__Default__Path=/root/.dotnet/https/localhost.pfx
+    ports:
+      - "8000:80"
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+  tradingservice:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+    ports:
+      - "8001:80"
+  viewservice:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+    ports:
+      - "8002:80"
+  walletservice:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+    ports:
+      - "8003:80"
+
+networks:
+  default:
+    external:
+      name: nat
+

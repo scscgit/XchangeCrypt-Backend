@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  convergenceservice:
+    image: convergenceservice
+    build:
+      context: .
+      dockerfile: ConvergenceService/Dockerfile
+
+  tradingservice:
+    image: tradingservice
+    build:
+      context: .
+      dockerfile: TradingService/Dockerfile
+
+  walletservice:
+    image: walletservice
+    build:
+      context: .
+      dockerfile: WalletService/Dockerfile
+
+  viewservice:
+    image: viewservice
+    build:
+      context: .
+      dockerfile: ViewService/Dockerfile
+
