@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Docker compound" type="CompoundRunConfigurationType">
+    <toRun name="ViewService/Dockerfile" type="docker-deploy" />
+    <toRun name="TradingService/Dockerfile" type="docker-deploy" />
+    <toRun name="WalletService/Dockerfile" type="docker-deploy" />
+    <toRun name="ConvergenceService/Dockerfile" type="docker-deploy" />
+    <method v="2" />
+  </configuration>
+</component>

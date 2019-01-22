@@ -15,7 +15,15 @@
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
               <option name="name" value="ASPNETCORE_URLS" />
-              <option name="value" value="http://0.0.0.0:80" />
+              <option name="value" value="https://0.0.0.0:443;http://0.0.0.0:80" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="ASPNETCORE_Kestrel__Certificates__Default__Password" />
+              <option name="value" value="crypticpassword" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="ASPNETCORE_Kestrel__Certificates__Default__Path" />
+              <option name="value" value="/https/aspnetapp.pfx" />
             </DockerEnvVarImpl>
           </list>
         </option>
@@ -23,13 +31,22 @@
         <option name="portBindings">
           <list>
             <DockerPortBindingImpl>
-              <option name="containerPort" value="80" />
+              <option name="containerPort" value="443" />
               <option name="hostPort" value="8000" />
             </DockerPortBindingImpl>
           </list>
         </option>
         <option name="commandLineOptions" value="" />
         <option name="sourceFilePath" value="ConvergenceService/Dockerfile" />
+        <option name="volumeBindings">
+          <list>
+            <DockerVolumeBindingImpl>
+              <option name="containerPath" value="/https/" />
+              <option name="hostPath" value="/c/Users/Steve/.aspnet/https" />
+              <option name="readOnly" value="true" />
+            </DockerVolumeBindingImpl>
+          </list>
+        </option>
       </settings>
     </deployment>
     <method v="2" />
