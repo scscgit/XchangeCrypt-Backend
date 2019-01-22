@@ -1,8 +1,8 @@
+using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System.Collections.Generic;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 
 namespace XchangeCrypt.Backend.DatabaseAccess.Models

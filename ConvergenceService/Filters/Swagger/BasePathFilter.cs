@@ -1,7 +1,7 @@
-using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace IO.Swagger.Filters
 {
@@ -32,15 +32,15 @@ namespace IO.Swagger.Filters
         /// <param name="context">FilterContext</param>
         public void Apply(SwaggerDocument swaggerDoc, DocumentFilterContext context)
         {
-            swaggerDoc.BasePath = this.BasePath;
+            swaggerDoc.BasePath = BasePath;
 
-            var pathsToModify = swaggerDoc.Paths.Where(p => p.Key.StartsWith(this.BasePath)).ToList();
+            var pathsToModify = swaggerDoc.Paths.Where(p => p.Key.StartsWith(BasePath)).ToList();
 
             foreach (var path in pathsToModify)
             {
-                if (path.Key.StartsWith(this.BasePath))
+                if (path.Key.StartsWith(BasePath))
                 {
-                    string newKey = Regex.Replace(path.Key, $"^{this.BasePath}", string.Empty);
+                    string newKey = Regex.Replace(path.Key, $"^{BasePath}", string.Empty);
                     swaggerDoc.Paths.Remove(path.Key);
                     swaggerDoc.Paths.Add(newKey, path.Value);
                 }

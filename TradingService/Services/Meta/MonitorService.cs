@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace XchangeCrypt.Backend.TradingService.Services
+namespace XchangeCrypt.Backend.TradingService.Services.Meta
 {
     public class MonitorService
     {

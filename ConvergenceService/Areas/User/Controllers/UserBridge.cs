@@ -4,8 +4,8 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
+using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
 
 namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
 {

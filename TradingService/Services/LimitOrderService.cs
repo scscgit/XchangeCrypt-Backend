@@ -1,6 +1,6 @@
-using MongoDB.Driver;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;

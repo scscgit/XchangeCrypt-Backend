@@ -1,15 +1,15 @@
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
-using XchangeCrypt.Backend.ConstantsLibrary.Extensions;
-using XchangeCrypt.Backend.TradingService.Services;
+using XchangeCrypt.Backend.TradingService.Services.Meta;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
 namespace XchangeCrypt.Backend.TradingService.Dispatch
@@ -45,6 +45,7 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
         /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            _logger.LogInformation($"Starting {typeof(DispatchReceiver).Name}");
             var storageAccount = CloudStorageAccount.Parse(_configuration["Queue:ConnectionString"]);
             var queueClient = storageAccount.CreateCloudQueueClient();
             _queue = queueClient.GetQueueReference(_configuration["Queue:Name"]);
@@ -59,10 +60,12 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                 _logger.LogInformation($"Created queue {_configuration["Queue:DeadLetter"]}");
             }
 
+            _logger.LogInformation($"Initialized {typeof(DispatchReceiver).Name}, listening for messages");
             while (!_stopped)
             {
                 await ReceiveMessagesAsync();
-                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                _logger.LogDebug($"{typeof(DispatchReceiver).Name} still listening for messages...");
             }
         }
 
@@ -81,11 +84,8 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             {
                 try
                 {
-                    var message = await ProcessMessagesAsync(queueMessage);
-                    var messageDescription =
-                        $"{message[ParameterNames.MessageType]} ID {queueMessage.Id}, body: {message.GetValueOrDefault("Body")}";
-                    _logger.LogInformation($"Consumed message {messageDescription}");
-                    _monitorService.LastMessage = messageDescription;
+                    await ProcessMessagesAsync(queueMessage);
+                    _logger.LogInformation($"Successfully consumed message {queueMessage.Id}");
                 }
                 catch (InvalidMessageException e)
                 {
@@ -104,19 +104,19 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                     throw new Exception("Message was already dequeued, and thus the potential duplicate is invalid");
                 }
 
-                var message = JsonConvert.DeserializeObject<IDictionary<string, object>>(
-                    queueMessage.AsString,
-                    new JsonSerializerSettings
-                    {
-                        FloatParseHandling = FloatParseHandling.Decimal
-                    }
+                // Parse the message
+                var message = ParseCloudMessage(queueMessage);
+
+                // Log the message
+                var messagePairs = string.Join(
+                    Environment.NewLine, message.Select(pair => pair.Key + ": " + pair.Value.ToString())
                 );
+                var messageDescription =
+                    $"Consuming message {message[ParameterNames.MessageType]} with ID {queueMessage.Id} {{\n{messagePairs}\n}}";
+                _logger.LogInformation(messageDescription);
+                _monitorService.LastMessage = messageDescription;
 
                 // Process the message
-                var messageBody = message["MessageBody"] ?? "";
-                Console.WriteLine(
-                    $"Received message: Id: {queueMessage.Id} Body:{messageBody}");
-
                 Task dispatchedTask;
                 switch (message[ParameterNames.MessageType])
                 {
@@ -153,7 +153,7 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                 await ReportInvalidMessage(
                     queueMessage,
                     $"{e.GetType().Name} was thrown inside {typeof(DispatchReceiver).Name} during message processing. " +
-                    $"Exception message: {e.Message}. StackTrace:\n{e.StackTrace}");
+                    $"Exception message: {e.Message}\nStackTrace:\n{e.StackTrace}");
                 throw new Exception("This never occurs");
             }
         }
@@ -169,10 +169,12 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             IDictionary<string, object> dictionary;
             try
             {
-                dictionary = JsonConvert.DeserializeObject<IDictionary<string, object>>(queueMessage.AsString);
+                // Parse the old message to be added as a content of a dead letter message
+                dictionary = ParseCloudMessage(queueMessage);
             }
             catch (Exception e)
             {
+                // Report the parsing error instead
                 _logger.LogError(
                     $"ErrorMessageFormat in message ID {queueMessage.Id}, caused by: {e.Message}");
                 dictionary = new Dictionary<string, object> {{"ErrorMessageFormat", e.Message + "\n" + e.StackTrace}};
@@ -181,13 +183,25 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             dictionary.Add("Id", queueMessage.Id);
             dictionary.Add("ErrorMessage", errorMessage);
             var deadLetterMessage = new CloudQueueMessage(JsonConvert.SerializeObject(dictionary));
+            // Send the dead letter message
             await _queueDeadLetter.AddMessageAsync(deadLetterMessage);
-            // Complete the message so that it is not received again.
+            // Mark the message as completed, so that it is not received again
             await _queue.DeleteMessageAsync(queueMessage);
 
             throw new InvalidMessageException(
                 $"Message handler couldn't handle a message with ID {queueMessage.Id}. "
                 + $"Reported as a DeadLetter message ID {deadLetterMessage.Id}. Error was: {errorMessage}"
+            );
+        }
+
+        private static IDictionary<string, object> ParseCloudMessage(CloudQueueMessage queueMessage)
+        {
+            return JsonConvert.DeserializeObject<IDictionary<string, object>>(
+                queueMessage.AsString,
+                new JsonSerializerSettings
+                {
+                    FloatParseHandling = FloatParseHandling.Decimal
+                }
             );
         }
 

@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
-using XchangeCrypt.Backend.TradingService.Services;
+using XchangeCrypt.Backend.TradingService.Services.Meta;
 
 namespace XchangeCrypt.Backend.TradingService.Controllers
 {
@@ -15,11 +16,14 @@ namespace XchangeCrypt.Backend.TradingService.Controllers
     {
         private readonly MonitorService _monitorService;
         private readonly ActivityHistoryRepository _activityHistoryRepository;
+        private readonly ILogger<MonitorController> _logger;
 
-        public MonitorController(MonitorService monitorService, ActivityHistoryRepository activityHistoryRepository)
+        public MonitorController(MonitorService monitorService, ActivityHistoryRepository activityHistoryRepository,
+            ILogger<MonitorController> logger)
         {
             _monitorService = monitorService;
             _activityHistoryRepository = activityHistoryRepository;
+            _logger = logger;
         }
 
         [HttpGet("errors")]

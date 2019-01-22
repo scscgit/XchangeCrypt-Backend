@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace ViewService
+namespace XchangeCrypt.Backend.ViewService
 {
     public class Program
     {

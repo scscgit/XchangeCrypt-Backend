@@ -1,7 +1,7 @@
-using MongoDB.Driver;
 using System.Security.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 
 namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
 {

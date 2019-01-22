@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 
-namespace WalletService
+namespace XchangeCrypt.Backend.WalletService
 {
     public class Program
     {

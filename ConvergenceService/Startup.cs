@@ -1,49 +1,41 @@
-using IO.Swagger.Filters;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using IO.Swagger.Filters;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using Swashbuckle.AspNetCore.Swagger;
 using XchangeCrypt.Backend.ConvergenceService.Filters.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceService
 {
-    /// <summary>
-    /// Startup of ConvergenceService.
-    /// </summary>
     public class Startup
     {
-        private readonly IHostingEnvironment _hostingEnv;
-
-        private IConfiguration Configuration { get; }
-
-        /// <summary>
-        /// </summary>
         public Startup(IHostingEnvironment env, IConfiguration configuration)
         {
             _hostingEnv = env;
             Configuration = configuration;
         }
 
+        private readonly IHostingEnvironment _hostingEnv;
+        private IConfiguration Configuration { get; }
+
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging();
-
-            services.AddHttpsRedirection(options => options.HttpsPort = 443);
+            //services.AddHttpsRedirection(options => options.HttpsPort = 443);
 
             // Azure AD B2C authentication
             services.AddAuthentication(sharedOptions =>
@@ -68,6 +60,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
             // Framework services
             services
                 .AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .AddJsonOptions(opts =>
                 {
                     opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
@@ -133,7 +126,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
         /// <summary>
         /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         /// </summary>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             // Enabling dot as a decimal separator symbol
             var cultureInfo = new CultureInfo("en-US")
@@ -147,6 +140,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
             app.UseAuthentication();
             // Fake user for testing purposes only!
             app.UseMiddleware<AuthenticatedTestRequestMiddleware>();
+
             app
                 .UseMvc(routes =>
                 {

@@ -6,7 +6,7 @@
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>
       <env name="ASPNETCORE_ENVIRONMENT" value="Development" />
-      <env name="ASPNETCORE_URLS" value="https://0.0.0.0:443;http://0.0.0.0:80" />
+      <env name="ASPNETCORE_URLS" value="https://0.0.0.0:4432" />
     </envs>
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
     <option name="USE_MONO" value="0" />
@@ -17,7 +17,7 @@
     <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="1" />
     <option name="PROJECT_KIND" value="DotNetCore" />
     <option name="PROJECT_TFM" value=".NETCoreApp,Version=v2.2" />
-    <browser url="https://localhost:443" />
+    <browser url="https://localhost:4432" />
     <method v="2">
       <option name="Build" enabled="true" />
     </method>

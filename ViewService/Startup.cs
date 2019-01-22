@@ -1,13 +1,15 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ViewService.Services;
+using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.ViewService.Services;
 
-namespace ViewService
+namespace XchangeCrypt.Backend.ViewService
 {
     public class Startup
     {
@@ -16,9 +18,11 @@ namespace ViewService
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to add services to the container.
+        /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
@@ -29,15 +33,25 @@ namespace ViewService
             services.AddTransient<OrderCaching>();
 
             // Database caching
-            services.AddTransient<XchangeCrypt.Backend.DatabaseAccess.Repositories.AccountRepository>();
-            services.AddTransient<XchangeCrypt.Backend.DatabaseAccess.Repositories.ActivityHistoryRepository>();
-            services.AddTransient<XchangeCrypt.Backend.DatabaseAccess.Repositories.TradingRepository>();
-            services.AddSingleton<XchangeCrypt.Backend.DatabaseAccess.Repositories.DataAccess>();
+            services.AddTransient<AccountRepository>();
+            services.AddTransient<ActivityHistoryRepository>();
+            services.AddTransient<TradingRepository>();
+            services.AddSingleton<DataAccess>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        /// </summary>
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            // Enabling dot as a decimal separator symbol
+            var cultureInfo = new CultureInfo("en-US")
+            {
+                NumberFormat = {CurrencySymbol = "€"}
+            };
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

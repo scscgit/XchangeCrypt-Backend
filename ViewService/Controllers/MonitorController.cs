@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ViewService.Controllers
+namespace XchangeCrypt.Backend.ViewService.Controllers
 {
     [Route("api/v1/monitor/")]
     [ApiController]

@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
-using ViewService.Services;
+using XchangeCrypt.Backend.ViewService.Services;
 
-namespace ViewService.Controllers
+namespace XchangeCrypt.Backend.ViewService.Controllers
 {
     [Route("api/v1/view/")]
     [ApiController]

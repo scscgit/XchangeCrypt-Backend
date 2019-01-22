@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
-namespace WalletService.Controllers
+namespace XchangeCrypt.Backend.WalletService.Controllers
 {
     [Route("api/v1/monitor/")]
     [ApiController]

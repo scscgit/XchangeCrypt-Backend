@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,31 +9,27 @@ using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.TradingService.Dispatch;
 using XchangeCrypt.Backend.TradingService.Processors;
 using XchangeCrypt.Backend.TradingService.Services;
+using XchangeCrypt.Backend.TradingService.Services.Meta;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace XchangeCrypt.Backend.TradingService
 {
-    /// <summary>
-    /// Startup of TradingService.
-    /// </summary>
     public class Startup
     {
-        /// <summary>
-        /// </summary>
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        private IConfiguration Configuration { get; }
 
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging();
-            services.AddMvc();
+            services.AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Persistently running queue message handler
             services.AddSingleton<IHostedService, DispatchReceiver>();
@@ -82,9 +79,14 @@ namespace XchangeCrypt.Backend.TradingService
             {
                 app.UseDeveloperExceptionPage();
             }
+            else
+            {
+                app.UseHsts();
+            }
 
-            app
-                .UseMvc()
+            app.UseHttpsRedirection();
+            app.UseAuthentication();
+            app.UseMvc()
                 // index.html for redirect
                 .UseDefaultFiles()
                 .UseStaticFiles();

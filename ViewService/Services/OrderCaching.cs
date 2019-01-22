@@ -7,7 +7,7 @@ using XchangeCrypt.Backend.ConvergenceService.Extensions;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 
-namespace ViewService.Services
+namespace XchangeCrypt.Backend.ViewService.Services
 {
     public class OrderCaching
     {

@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name=".NET compound" type="CompoundRunConfigurationType">
+    <toRun name="ViewService" type="DotNetProject" />
+    <toRun name="WalletService" type="DotNetProject" />
+    <toRun name="TradingService" type="DotNetProject" />
+    <toRun name="ConvergenceService" type="DotNetProject" />
+    <method v="2" />
+  </configuration>
+</component>
