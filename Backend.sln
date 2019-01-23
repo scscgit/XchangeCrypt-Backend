@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WalletService", "WalletServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseAccess", "DatabaseAccess\DatabaseAccess.csproj", "{FBB5EFD3-5B9F-426D-BBDF-37A35082E507}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueueAccess", "QueueAccess\QueueAccess.csproj", "{9C1C0913-D752-4CB0-8C52-70DCFE55DE6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,10 @@ Global
 		{FBB5EFD3-5B9F-426D-BBDF-37A35082E507}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBB5EFD3-5B9F-426D-BBDF-37A35082E507}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBB5EFD3-5B9F-426D-BBDF-37A35082E507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C1C0913-D752-4CB0-8C52-70DCFE55DE6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C1C0913-D752-4CB0-8C52-70DCFE55DE6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C1C0913-D752-4CB0-8C52-70DCFE55DE6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C1C0913-D752-4CB0-8C52-70DCFE55DE6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

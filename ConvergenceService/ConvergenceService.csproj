@@ -34,6 +34,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ConstantsLibrary\ConstantsLibrary.csproj" />
+        <ProjectReference Include="..\QueueAccess\QueueAccess.csproj" />
     </ItemGroup>
 
     <ItemGroup>

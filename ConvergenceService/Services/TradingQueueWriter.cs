@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using XchangeCrypt.Backend.QueueAccess;
 
 namespace XchangeCrypt.Backend.ConvergenceService.Services
 {
@@ -7,10 +9,13 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
     /// </summary>
     public class TradingQueueWriter : QueueWriter
     {
-        /// <summary>
-        /// </summary>
-        public TradingQueueWriter(IConfiguration configuration) : base(
-            configuration["Queue:Trading:ConnectionString"], configuration["Queue:Trading:Name"])
+        public TradingQueueWriter(
+            IConfiguration configuration,
+            ILogger<TradingQueueWriter> logger
+        ) : base(
+            configuration["Queue:Trading:ConnectionString"],
+            configuration["Queue:Trading:Name"],
+            logger)
         {
         }
     }

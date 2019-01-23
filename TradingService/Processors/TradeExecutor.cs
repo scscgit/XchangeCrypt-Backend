@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
@@ -13,6 +14,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors
     /// </summary>
     public class TradeExecutor
     {
+        private readonly ILogger<TradeExecutor> _logger;
         public ActivityHistoryService ActivityHistoryService { get; }
         public LimitOrderService LimitOrderService { get; }
         public StopOrderService StopOrderService { get; }
@@ -22,8 +24,10 @@ namespace XchangeCrypt.Backend.TradingService.Processors
             ActivityHistoryService activityHistoryService,
             LimitOrderService limitOrderService,
             StopOrderService stopOrderService,
-            MarketOrderService marketOrderService)
+            MarketOrderService marketOrderService,
+            ILogger<TradeExecutor> logger)
         {
+            _logger = logger;
             ActivityHistoryService = activityHistoryService;
             LimitOrderService = limitOrderService;
             StopOrderService = stopOrderService;
@@ -41,7 +45,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors
             if (activityEntry.Side == OrderSide.Buy)
             {
                 List<OrderBookEntry> sellers = await LimitOrderService.MatchSellers(limitOrder.LimitPrice.Value);
-                Console.WriteLine($"Limit order matched {sellers.Count} sellers");
+                _logger.LogInformation($"Limit order matched {sellers.Count} sellers");
                 while (sellers.Count > 0)
                 {
                     // TODO sort
@@ -76,7 +80,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors
             else if (activityEntry.Side == OrderSide.Sell)
             {
                 var buyers = await LimitOrderService.MatchBuyers(limitOrder.LimitPrice.Value);
-                Console.WriteLine($"Limit order matched {buyers.Count} buyers");
+                _logger.LogInformation($"Limit order matched {buyers.Count} buyers");
                 // TODO match
             }
         }

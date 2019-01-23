@@ -12,6 +12,7 @@ COPY ViewService/ViewService.csproj ViewService/
 COPY WalletService/WalletService.csproj WalletService/
 COPY ConstantsLibrary/ConstantsLibrary.csproj ConstantsLibrary/
 COPY DatabaseAccess/DatabaseAccess.csproj DatabaseAccess/
+COPY QueueAccess/QueueAccess.csproj QueueAccess/
 
 RUN dotnet restore -nowarn:msb3202,nu1503
 COPY . .

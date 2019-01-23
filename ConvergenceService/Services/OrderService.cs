@@ -10,13 +10,13 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
     /// </summary>
     public class OrderService
     {
-        private readonly QueueWriter _queueWriter;
+        private readonly TradingQueueWriter _tradingQueueWriter;
 
         /// <summary>
         /// </summary>
-        public OrderService(TradingQueueWriter queueWriter)
+        public OrderService(TradingQueueWriter tradingQueueWriter)
         {
-            _queueWriter = queueWriter;
+            _tradingQueueWriter = tradingQueueWriter;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             decimal? takeProfit,
             string requestId)
         {
-            await _queueWriter.SendMessageAsync(
+            await _tradingQueueWriter.SendMessageAsync(
                 new Dictionary<string, object>
                 {
                     {ParameterNames.MessageType, MessageTypes.TradeOrder},
@@ -51,8 +51,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                     {ParameterNames.Duration, durationDateTime},
                     {ParameterNames.StopLoss, stopLoss},
                     {ParameterNames.TakeProfit, takeProfit},
-                },
-                null
+                }
             );
         }
 
@@ -72,7 +71,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             decimal? takeProfit,
             string requestId)
         {
-            await _queueWriter.SendMessageAsync(
+            await _tradingQueueWriter.SendMessageAsync(
                 new Dictionary<string, object>
                 {
                     {ParameterNames.MessageType, MessageTypes.TradeOrder},
@@ -88,8 +87,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                     {ParameterNames.Duration, durationDateTime},
                     {ParameterNames.StopLoss, stopLoss},
                     {ParameterNames.TakeProfit, takeProfit},
-                },
-                null
+                }
             );
         }
 
@@ -108,7 +106,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             decimal? takeProfit,
             string requestId)
         {
-            await _queueWriter.SendMessageAsync(
+            await _tradingQueueWriter.SendMessageAsync(
                 new Dictionary<string, object>
                 {
                     {ParameterNames.MessageType, MessageTypes.TradeOrder},
@@ -123,8 +121,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                     {ParameterNames.Duration, durationDateTime},
                     {ParameterNames.StopLoss, stopLoss},
                     {ParameterNames.TakeProfit, takeProfit},
-                },
-                null
+                }
             );
         }
     }

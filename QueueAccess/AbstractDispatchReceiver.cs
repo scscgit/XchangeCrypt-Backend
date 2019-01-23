@@ -9,35 +9,23 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
-using XchangeCrypt.Backend.TradingService.Services.Meta;
-using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
-namespace XchangeCrypt.Backend.TradingService.Dispatch
+namespace XchangeCrypt.Backend.QueueAccess
 {
-    public class DispatchReceiver : IHostedService
+    public abstract class AbstractDispatchReceiver : IHostedService
     {
-        private readonly ILogger<DispatchReceiver> _logger;
+        private readonly ILogger<AbstractDispatchReceiver> _logger;
         private readonly IConfiguration _configuration;
-        private readonly MonitorService _monitorService;
-        private readonly TradeOrderDispatch _tradeOrderDispatch;
-        private readonly WalletOperationDispatch _walletOperationDispatch;
         private CloudQueue _queue;
         private CloudQueue _queueDeadLetter;
         private bool _stopped;
 
-        public DispatchReceiver(
-            ILogger<DispatchReceiver> logger,
-            IConfiguration configuration,
-            MonitorService monitorService,
-            TradeOrderDispatch tradeOrderDispatch,
-            WalletOperationDispatch walletOperationDispatch
-        )
+        protected AbstractDispatchReceiver(
+            ILogger<AbstractDispatchReceiver> logger,
+            IConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
-            _monitorService = monitorService;
-            _tradeOrderDispatch = tradeOrderDispatch;
-            _walletOperationDispatch = walletOperationDispatch;
         }
 
         /// <summary>
@@ -45,7 +33,7 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
         /// </summary>
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Starting {typeof(DispatchReceiver).Name}");
+            _logger.LogInformation($"Starting {GetType().Name}");
             var storageAccount = CloudStorageAccount.Parse(_configuration["Queue:ConnectionString"]);
             var queueClient = storageAccount.CreateCloudQueueClient();
             _queue = queueClient.GetQueueReference(_configuration["Queue:Name"]);
@@ -60,12 +48,12 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                 _logger.LogWarning($"Created queue {_configuration["Queue:DeadLetter"]}");
             }
 
-            _logger.LogInformation($"Initialized {typeof(DispatchReceiver).Name}, listening for messages");
+            _logger.LogInformation($"Initialized {GetType().Name}, listening for messages");
             while (!_stopped)
             {
                 await ReceiveMessagesAsync();
                 await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
-                _logger.LogDebug($"{typeof(DispatchReceiver).Name} still listening for messages...");
+                _logger.LogDebug($"{GetType().Name} is still listening for messages...");
             }
         }
 
@@ -90,7 +78,6 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                 catch (InvalidMessageException e)
                 {
                     _logger.LogError(e.Message);
-                    _monitorService.ReportError(e.Message);
                 }
             }
         }
@@ -114,32 +101,11 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                     )
                 );
                 var messageDescription =
-                    $"Consuming message {message[ParameterNames.MessageType]} with ID {queueMessage.Id} {{\n{messagePairs}\n}}";
+                    $"Consuming message with ID {queueMessage.Id} {{\n{messagePairs}\n}}";
                 _logger.LogInformation(messageDescription);
-                _monitorService.LastMessage = messageDescription;
 
-                // Process the message
-                Task dispatchedTask;
-                switch (message[ParameterNames.MessageType])
-                {
-                    case MessageTypes.TradeOrder:
-                        dispatchedTask = _tradeOrderDispatch.Dispatch(message,
-                            errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
-                        break;
-
-                    case MessageTypes.WalletOperation:
-                        dispatchedTask = _walletOperationDispatch.Dispatch(message,
-                            errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
-                        break;
-
-                    default:
-                        await ReportInvalidMessage(queueMessage,
-                            $"Unrecognized MessageType {message[ParameterNames.MessageType]}");
-                        throw new Exception("This never occurs");
-                }
-
-                // Throws invalid message exception on error
-                await dispatchedTask;
+                // Process the message and throw invalid message exception on error
+                await Dispatch(queueMessage, message);
 
                 // Complete the message so that it is not received again.
                 await _queue.DeleteMessageAsync(queueMessage);
@@ -154,11 +120,13 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             {
                 await ReportInvalidMessage(
                     queueMessage,
-                    $"{e.GetType().Name} was thrown inside {typeof(DispatchReceiver).Name} during message processing. " +
+                    $"{e.GetType().Name} was thrown inside {GetType().Name} during message processing. " +
                     $"Exception message: {e.Message}\nStackTrace:\n{e.StackTrace}");
                 throw new Exception("This never occurs");
             }
         }
+
+        protected abstract Task Dispatch(CloudQueueMessage queueMessage, IDictionary<string, object> message);
 
         private async Task ReportInvalidMessage(CloudQueueMessage queueMessage, string errorMessage)
         {

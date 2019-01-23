@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
 
-namespace XchangeCrypt.Backend.ConvergenceService.Services
+namespace XchangeCrypt.Backend.QueueAccess
 {
     /// <summary>
     /// Supports writing into a Service Bus Azure queue that prepares requests for all asynchronous actions
@@ -13,19 +14,19 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
     /// </summary>
     public abstract class QueueWriter : IDisposable
     {
+        private readonly ILogger<QueueWriter> _logger;
         private readonly CloudQueue _queue;
 
-        /// <summary>
-        /// </summary>
-        protected QueueWriter(string serviceBusConnectionString, string queueName)
+        protected QueueWriter(string serviceBusConnectionString, string queueName, ILogger<QueueWriter> logger)
         {
+            _logger = logger;
             //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
             var storageAccount = CloudStorageAccount.Parse(serviceBusConnectionString);
             var queueClient = storageAccount.CreateCloudQueueClient();
             _queue = queueClient.GetQueueReference(queueName);
             if (_queue.CreateIfNotExistsAsync().Result)
             {
-                Console.WriteLine($"Created queue {queueName}");
+                _logger.LogWarning($"Created queue {queueName}");
             }
         }
 
@@ -34,12 +35,12 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
         /// </summary>
         /// <param name="userProperties">Map of parameters of the queue</param>
         /// <param name="messageBody">Message to be delivered in the queue</param>
-        public async Task SendMessageAsync(IDictionary<string, object> userProperties, String messageBody = null)
+        public async Task SendMessageAsync(IDictionary<string, object> userProperties, string messageBody = null)
         {
             try
             {
                 // Write the body of the message to the console
-                Console.WriteLine(
+                _logger.LogInformation(
                     $"Sending message with {userProperties.Count} properties: {messageBody ?? "no body"}");
 
                 // Prepare the message
@@ -51,8 +52,8 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine($"{DateTime.Now} :: Exception: {e.Message}");
-                throw e;
+                _logger.LogError($"{DateTime.Now} :: Exception: {e.Message}");
+                throw;
             }
         }
 
