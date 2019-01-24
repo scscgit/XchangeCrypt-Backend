@@ -11,11 +11,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
 using XchangeCrypt.Backend.ConvergenceService.Filters.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Services;
+using XchangeCrypt.Backend.ConvergenceService.Services.Hosted;
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace XchangeCrypt.Backend.ConvergenceService
 {
@@ -103,7 +106,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
                     });
                     c.DescribeAllEnumsAsStrings();
                     c.IncludeXmlComments(
-                        $"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{_hostingEnv.ApplicationName}.xml");
+                        $"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar.ToString()}{_hostingEnv.ApplicationName}.xml");
                     // Sets the basePath property in the Swagger document generated
                     c.DocumentFilter<BasePathFilter>("/api/v1");
 
@@ -112,11 +115,18 @@ namespace XchangeCrypt.Backend.ConvergenceService
                     c.OperationFilter<GeneratePathParamsValidationFilter>();
                 });
 
+            // Answer service (Queue), it needs to be registered using this hack, so that it works
+            // both as a IHostedService, and as an injectable service, and so that they are the same instance
+            services.AddSingleton<AnswerQueueReceiver>();
+            services.AddSingleton<IHostedService, AnswerQueueReceiver>(
+                serviceProvider => serviceProvider.GetService<AnswerQueueReceiver>()
+            );
+
             // Trading services (Queue)
             services.AddTransient<OrderService>();
             services.AddTransient<UserService>();
 
-            // View services
+            // View service (Proxy)
             services.AddTransient<OrderViewService>();
 
             // Persistently running queue writer

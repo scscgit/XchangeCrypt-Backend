@@ -12,18 +12,22 @@ namespace XchangeCrypt.Backend.QueueAccess
     /// Supports writing into a Service Bus Azure queue that prepares requests for all asynchronous actions
     /// to be executed in other backend components.
     /// </summary>
-    public abstract class QueueWriter : IDisposable
+    public class QueueWriter : IDisposable
     {
         private readonly ILogger<QueueWriter> _logger;
         private readonly CloudQueue _queue;
 
-        protected QueueWriter(string serviceBusConnectionString, string queueName, ILogger<QueueWriter> logger)
+        public QueueWriter(string connectionString, string queueName, ILogger<QueueWriter> logger)
         {
             _logger = logger;
             //_messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
-            var storageAccount = CloudStorageAccount.Parse(serviceBusConnectionString);
+            var storageAccount = CloudStorageAccount.Parse(
+                connectionString ?? throw new ArgumentNullException(nameof(connectionString))
+            );
             var queueClient = storageAccount.CreateCloudQueueClient();
-            _queue = queueClient.GetQueueReference(queueName);
+            _queue = queueClient.GetQueueReference(
+                queueName ?? throw new ArgumentNullException(nameof(queueName))
+            );
             if (_queue.CreateIfNotExistsAsync().Result)
             {
                 _logger.LogWarning($"Created queue {queueName}");

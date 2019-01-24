@@ -11,11 +11,11 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
     {
         public TradingQueueWriter(
             IConfiguration configuration,
-            ILogger<TradingQueueWriter> logger
-        ) : base(
-            configuration["Queue:Trading:ConnectionString"],
-            configuration["Queue:Trading:Name"],
-            logger)
+            ILogger<TradingQueueWriter> logger)
+            : base(
+                configuration["Queue:ConnectionString"],
+                configuration["Queue:Trading:Name"],
+                logger)
         {
         }
     }

@@ -3,29 +3,40 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Newtonsoft.Json;
+using XchangeCrypt.Backend.ConstantsLibrary;
+using XchangeCrypt.Backend.ConstantsLibrary.Extensions;
 
 namespace XchangeCrypt.Backend.QueueAccess
 {
     public abstract class AbstractDispatchReceiver : IHostedService
     {
+        public string QueryNamePostfix { get; private set; }
+
+        private readonly TimeSpan _listeningInterval = TimeSpan.FromMilliseconds(2000);
         private readonly ILogger<AbstractDispatchReceiver> _logger;
-        private readonly IConfiguration _configuration;
+        private readonly string _connectionString;
+        private string _queueName;
+        private string _deadLetterQueueName;
         private CloudQueue _queue;
         private CloudQueue _queueDeadLetter;
         private bool _stopped;
 
         protected AbstractDispatchReceiver(
-            ILogger<AbstractDispatchReceiver> logger,
-            IConfiguration configuration)
+            string connectionString,
+            string queueNamePrefix,
+            string deadLetterQueueNamePrefix,
+            ILogger<AbstractDispatchReceiver> logger)
         {
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+            _queueName = queueNamePrefix ?? throw new ArgumentNullException(nameof(queueNamePrefix));
+            _deadLetterQueueName = deadLetterQueueNamePrefix ??
+                                   throw new ArgumentNullException(nameof(deadLetterQueueNamePrefix));
             _logger = logger;
-            _configuration = configuration;
         }
 
         /// <summary>
@@ -34,25 +45,61 @@ namespace XchangeCrypt.Backend.QueueAccess
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Starting {GetType().Name}");
-            var storageAccount = CloudStorageAccount.Parse(_configuration["Queue:ConnectionString"]);
+            var storageAccount = CloudStorageAccount.Parse(_connectionString);
             var queueClient = storageAccount.CreateCloudQueueClient();
-            _queue = queueClient.GetQueueReference(_configuration["Queue:Name"]);
+
+            // Stores the original queue names in case their postfix is changed later
+            var queueNamePrefix = _queueName;
+            var deadLetterQueueNamePrefix = _deadLetterQueueName;
+
+            // As long as the service is not stopped, provide a support for dispatcher reset, and listen on the queue
+            do
+            {
+                DispatcherPostfixReset(out var queryNamePostfix);
+                QueryNamePostfix = queryNamePostfix;
+                if (QueryNamePostfix != null)
+                {
+                    _queueName = queueNamePrefix + QueryNamePostfix;
+                    _deadLetterQueueName = deadLetterQueueNamePrefix + QueryNamePostfix;
+                }
+
+                try
+                {
+                    await ListenOnQueue(queueClient, cancellationToken);
+                }
+                catch (DispatcherResetJump)
+                {
+                }
+            }
+            while (!_stopped);
+        }
+
+        protected virtual void DispatcherPostfixReset(out string queueNamePostfix)
+        {
+            // The reset is implemented as a noop by default
+            queueNamePostfix = null;
+        }
+
+        private async Task ListenOnQueue(CloudQueueClient queueClient, CancellationToken cancellationToken)
+        {
+            _queue = queueClient.GetQueueReference(_queueName);
             if (await _queue.CreateIfNotExistsAsync())
             {
-                _logger.LogWarning($"Created queue {_configuration["Queue:Name"]}");
+                _logger.LogWarning($"Created queue {_queueName}");
             }
 
-            _queueDeadLetter = queueClient.GetQueueReference(_configuration["Queue:DeadLetter"]);
+            _queueDeadLetter = queueClient.GetQueueReference(_deadLetterQueueName);
             if (await _queueDeadLetter.CreateIfNotExistsAsync())
             {
-                _logger.LogWarning($"Created queue {_configuration["Queue:DeadLetter"]}");
+                _logger.LogWarning($"Created dead letter queue {_deadLetterQueueName}");
             }
 
-            _logger.LogInformation($"Initialized {GetType().Name}, listening for messages");
+            _logger.LogInformation(
+                $"Initialized {GetType().Name}, listening for messages on queue \"{_queueName}\" and storing dead letters in \"{_deadLetterQueueName}\"");
             while (!_stopped)
             {
                 await ReceiveMessagesAsync();
-                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                await Task.Delay(_listeningInterval, cancellationToken);
                 _logger.LogDebug($"{GetType().Name} is still listening for messages...");
             }
         }
@@ -70,19 +117,52 @@ namespace XchangeCrypt.Backend.QueueAccess
         {
             foreach (var queueMessage in await _queue.GetMessagesAsync(32))
             {
-                try
-                {
-                    await ProcessMessagesAsync(queueMessage);
-                    _logger.LogInformation($"Successfully consumed message {queueMessage.Id}");
-                }
-                catch (InvalidMessageException e)
-                {
-                    _logger.LogError(e.Message);
-                }
+                await ProcessMessagesAsync(queueMessage);
+                _logger.LogInformation($"Successfully consumed message {queueMessage.Id}");
             }
         }
 
-        private async Task<IDictionary<string, object>> ProcessMessagesAsync(CloudQueueMessage queueMessage)
+        private async Task AfterProcessedMessage(IDictionary<string, object> message, string errorIfAny)
+        {
+            try
+            {
+                // Only give implementor the postfix if he really asks for it!
+                // And when he does, assert to make sure it's really available. Empty string is valid too.
+                var writer = ConfigureQueueAnswerWriter(() =>
+                    (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.AnswerQueuePostfix)
+                    ?? throw new ArgumentNullException(MessagingConstants.ParameterNames.AnswerQueuePostfix));
+                if (writer != null)
+                {
+                    // Get the rest of the message answer header
+                    var user = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.User);
+                    var requestId = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.RequestId);
+                    if (user == null || requestId == null)
+                    {
+                        throw new Exception(
+                            $"Unexpected null within required fields: user {user ?? "null"}, requestId {requestId ?? "null"}");
+                    }
+
+                    await writer.SendMessageAsync(new Dictionary<string, object>
+                    {
+                        {MessagingConstants.ParameterNames.User, user},
+                        {MessagingConstants.ParameterNames.RequestId, requestId},
+                        {MessagingConstants.ParameterNames.ErrorIfAny, errorIfAny},
+                    });
+                    _logger.LogInformation(
+                        $"Successfully answered to requestId \"{requestId}\" +" +
+                        $"{(errorIfAny == null ? "success result" : "error: " + errorIfAny)}");
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(
+                    $"Failed to execute message post-processing (e.g. answer): {e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        protected abstract QueueWriter ConfigureQueueAnswerWriter(Func<string> answerQueuePostfixRequest);
+
+        private async Task ProcessMessagesAsync(CloudQueueMessage queueMessage)
         {
             try
             {
@@ -95,25 +175,36 @@ namespace XchangeCrypt.Backend.QueueAccess
                 var message = ParseCloudMessage(queueMessage);
 
                 // Log the message
-                var messagePairs = string.Join(
-                    Environment.NewLine, message.Select(pair =>
-                        pair.Key + (pair.Value == null ? " null" : ": " + pair.Value.ToString())
-                    )
-                );
                 var messageDescription =
-                    $"Consuming message with ID {queueMessage.Id} {{\n{messagePairs}\n}}";
+                    $"Consuming message with ID {queueMessage.Id} {MessagePairsToString(message)}";
                 _logger.LogInformation(messageDescription);
 
-                // Process the message and throw invalid message exception on error
-                await Dispatch(queueMessage, message);
+                try
+                {
+                    // Process the message and throw invalid message exception on error
+                    await Dispatch(queueMessage, message);
+                }
+                catch (InvalidMessageException e)
+                {
+                    // We can only reply after the header is successfully parsed
+                    await AfterProcessedMessage(message, e.OriginalErrorMessage);
+                    throw;
+                }
 
                 // Complete the message so that it is not received again.
                 await _queue.DeleteMessageAsync(queueMessage);
-                return message;
+                await AfterProcessedMessage(message, null);
             }
-            catch (InvalidMessageException)
+            catch (InvalidMessageException e)
             {
                 // Invalid message exception isn't avoided, but it mustn't cause the report of yet another invalid message
+                _logger.LogError($"{e.Message}\n{e.StackTrace}");
+            }
+            catch (DispatcherResetJump)
+            {
+                // Allows dispatcher to force cancel everything and return to the main listening routine
+                // This means the message won't be acknowledged as read, so we reset the visibility
+                await _queue.UpdateMessageAsync(queueMessage, TimeSpan.Zero, MessageUpdateFields.Visibility);
                 throw;
             }
             catch (Exception e)
@@ -126,14 +217,24 @@ namespace XchangeCrypt.Backend.QueueAccess
             }
         }
 
+        protected string MessagePairsToString(IDictionary<string, object> message)
+        {
+            var messagePairs = string.Join(
+                Environment.NewLine, message.Select(pair =>
+                    "  " + pair.Key + (pair.Value == null ? " null" : ": " + pair.Value.ToString())
+                )
+            );
+            return $"{{\n{messagePairs}\n}}";
+        }
+
         protected abstract Task Dispatch(CloudQueueMessage queueMessage, IDictionary<string, object> message);
 
-        private async Task ReportInvalidMessage(CloudQueueMessage queueMessage, string errorMessage)
+        protected async Task<string> ReportInvalidMessage(CloudQueueMessage queueMessage, string errorMessage)
         {
             if (queueMessage == null)
             {
                 _logger.LogError("Attempted to report invalid message, which was actually null.");
-                return;
+                return "Error during error report";
             }
 
             IDictionary<string, object> dictionary;
@@ -160,7 +261,8 @@ namespace XchangeCrypt.Backend.QueueAccess
 
             throw new InvalidMessageException(
                 $"Message handler couldn't handle a message with ID {queueMessage.Id}. "
-                + $"Reported as a DeadLetter message ID {deadLetterMessage.Id}. Error was: {errorMessage}"
+                + $"Reported as a DeadLetter message ID {deadLetterMessage.Id}.",
+                errorMessage
             );
         }
 
@@ -176,10 +278,25 @@ namespace XchangeCrypt.Backend.QueueAccess
         }
 
         private class InvalidMessageException : Exception
+
         {
-            public InvalidMessageException(string message) : base(message)
+            public string OriginalErrorMessage { get; }
+
+            public InvalidMessageException(string description, string originalErrorMessage)
+                : base(description + " Error was: " + originalErrorMessage)
             {
+                OriginalErrorMessage = originalErrorMessage;
             }
+
+            public InvalidMessageException(string errorMessage) : base(errorMessage)
+            {
+                OriginalErrorMessage = errorMessage;
+            }
+        }
+
+        protected class DispatcherResetJump : Exception
+
+        {
         }
     }
 }

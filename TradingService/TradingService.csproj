@@ -20,6 +20,7 @@
     <ItemGroup>
         <ProjectReference Include="..\ConstantsLibrary\ConstantsLibrary.csproj" />
         <ProjectReference Include="..\DatabaseAccess\DatabaseAccess.csproj" />
+        <ProjectReference Include="..\QueueAccess\QueueAccess.csproj" />
     </ItemGroup>
 
 </Project>

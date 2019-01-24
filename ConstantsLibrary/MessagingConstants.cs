@@ -1,8 +1,8 @@
 namespace XchangeCrypt.Backend.ConstantsLibrary
 {
-    public class MessagingConstants
+    public static class MessagingConstants
     {
-        public class ParameterNames
+        public static class ParameterNames
         {
             // Main
 
@@ -34,22 +34,27 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             // Misc
 
             public const string RequestId = "RequestId";
+
+            // Answers
+
+            public const string AnswerQueuePostfix = "AnswerQueuePostfix";
+            public const string ErrorIfAny = "ErrorIfAny";
         }
 
-        public class MessageTypes
+        public static class MessageTypes
         {
             public const string TradeOrder = "TradeOrder";
             public const string WalletOperation = "WalletOperation";
         }
 
-        public class OrderTypes
+        public static class OrderTypes
         {
             public const string LimitOrder = "limit";
             public const string StopOrder = "stop";
             public const string MarketOrder = "market";
         }
 
-        public class OrderSides
+        public static class OrderSides
         {
             public const string BuySide = "buy";
             public const string SellSide = "sell";

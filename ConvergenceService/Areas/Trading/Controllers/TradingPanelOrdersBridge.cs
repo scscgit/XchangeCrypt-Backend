@@ -292,7 +292,7 @@ namespace IO.Swagger.Controllers
             description:
             "Status. &#x60;message&#x60; should be filled if erroneous. &#x60;orderId&#x60; should present if successful.")]
         [Authorize]
-        public IActionResult AccountsAccountIdOrdersPost(
+        public async Task<IActionResult> AccountsAccountIdOrdersPost(
             [FromRoute] [Required] string accountId,
             [FromForm] [Required] string instrument,
             [FromForm] [Required] decimal? qty,
@@ -307,30 +307,33 @@ namespace IO.Swagger.Controllers
             [FromForm] string digitalSignature,
             [FromQuery] string requestId)
         {
-            Task orderTask;
+            if (requestId == null)
+            {
+                requestId = "1";
+            }
+
+            string errorIfAny;
             try
             {
                 var user = User.GetIdentifier();
                 switch (type)
                 {
                     case OrderTypes.MarketOrder:
-                        orderTask = OrderService.CreateMarketOrder(
+                        errorIfAny = await OrderService.CreateMarketOrder(
                             user, accountId, instrument, qty.Value, side, durationType, durationDateTime, stopLoss,
                             takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
-                        orderTask = OrderService.CreateStopOrder(
+                        errorIfAny = await OrderService.CreateStopOrder(
                             user, accountId, instrument, qty.Value, side, stopPrice.Value, durationType,
-                            durationDateTime,
-                            stopLoss, takeProfit, requestId);
+                            durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
-                        orderTask = OrderService.CreateLimitOrder(
+                        errorIfAny = await OrderService.CreateLimitOrder(
                             user, accountId, instrument, qty.Value, side, limitPrice.Value, durationType,
-                            durationDateTime,
-                            stopLoss, takeProfit, requestId);
+                            durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case "stoplimit":
@@ -353,13 +356,10 @@ namespace IO.Swagger.Controllers
                             }
                         );
                 }
-
-                // Finish sending in order to catch exceptions
-                orderTask.Wait();
             }
             catch (Exception e)
             {
-                _logger.LogError(e.StackTrace);
+                _logger.LogError($"{e.GetType()}\n{e.Message}\n{e.StackTrace}");
                 return StatusCode(
                     500,
                     new InlineResponse2005
@@ -374,12 +374,14 @@ namespace IO.Swagger.Controllers
                 200,
                 new InlineResponse2005
                 {
-                    S = Status.OkEnum,
-                    D = new InlineResponse2005D
-                    {
-                        // Currently the OrderId is not supported, as the request is asynchronous
-                        OrderId = requestId
-                    }
+                    S = null != errorIfAny ? Status.ErrorEnum : Status.OkEnum,
+                    D = null != errorIfAny
+                        ? null
+                        : new InlineResponse2005D
+                        {
+                            OrderId = requestId
+                        },
+                    Errmsg = errorIfAny
                 }
             );
         }

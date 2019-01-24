@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using IO.Swagger.Models;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace XchangeCrypt.Backend.ConvergenceService.Services
@@ -12,12 +13,10 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
         private readonly HttpClient _client = new HttpClient();
         private readonly string _remoteUrl;
 
-        public OrderViewService()
+        public OrderViewService(IConfiguration configuration)
         {
-            // TODO
-            var domainName = "192.168.99.100";
-            var port = "8003";
-            _remoteUrl = $"https://{domainName}:{port}/api/v1/view/";
+            _remoteUrl =
+                $"https://{configuration["ViewService:Domain"] ?? throw new ArgumentException("ViewService:Domain")}:{configuration["ViewService:Port"] ?? throw new ArgumentException("ViewService:Port")}/api/v1/view/";
         }
 
         public List<Execution> GetExecutions(string user, string accountId, string instrument, int? maxCount)
