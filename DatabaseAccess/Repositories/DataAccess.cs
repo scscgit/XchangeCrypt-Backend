@@ -18,7 +18,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
             settings.SslSettings = new SslSettings {EnabledSslProtocols = SslProtocols.Tls12};
             MongoClient = new MongoClient(settings);
             Database = MongoClient.GetDatabase("XchangeCrypt");
-            logger.LogInformation("Database initialized");
+            logger.LogInformation("Database access initialized");
         }
     }
 }

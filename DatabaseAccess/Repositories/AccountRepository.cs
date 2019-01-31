@@ -5,14 +5,14 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
 {
     public class AccountRepository
     {
-        public IMongoDatabase Database { get; }
+        private IMongoDatabase Database { get; }
 
         public AccountRepository(DataAccess dataAccess)
         {
             Database = dataAccess.Database;
         }
 
-        public IMongoCollection<AccountEntry> Orders()
+        public IMongoCollection<AccountEntry> Accounts()
         {
             return Database.GetCollection<AccountEntry>("Accounts");
         }

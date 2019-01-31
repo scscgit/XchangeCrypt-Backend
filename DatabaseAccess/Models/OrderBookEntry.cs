@@ -8,11 +8,16 @@ using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 
 namespace XchangeCrypt.Backend.DatabaseAccess.Models
 {
+    /// <summary>
+    /// Limit entry.
+    /// </summary>
     public class OrderBookEntry
     {
         public ObjectId Id { get; set; }
 
         public DateTime EntryTime { get; set; }
+
+        public long CreatedOnVersionId { get; set; }
 
         public string User { get; set; }
 
@@ -28,7 +33,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
 
         public decimal FilledQty { get; set; }
 
-        public decimal? LimitPrice { get; set; }
+        public decimal LimitPrice { get; set; }
 
         public string ParentId { get; set; }
 
@@ -44,9 +49,5 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         public string DurationType { get; set; }
 
         public decimal? Duration { get; set; }
-
-        [JsonConverter(typeof(StringEnumConverter))]
-        [BsonRepresentation(BsonType.String)]
-        public OrderStatus Status { get; set; }
     }
 }

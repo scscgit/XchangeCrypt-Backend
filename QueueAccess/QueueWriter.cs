@@ -45,7 +45,7 @@ namespace XchangeCrypt.Backend.QueueAccess
             {
                 // Write the body of the message to the console
                 _logger.LogInformation(
-                    $"Sending message with {userProperties.Count} properties: {messageBody ?? "no body"}");
+                    $"Sending message with {userProperties.Count} properties{(messageBody == null ? "" : ": " + messageBody)}");
 
                 // Prepare the message
                 userProperties.Add("MessageBody", messageBody);

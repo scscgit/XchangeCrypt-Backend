@@ -11,7 +11,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
     {
         public ObjectId Id { get; set; }
 
-        public DateTime EntryTime { get; set; }
+        public DateTime ExecutionTime { get; set; }
 
         public string User { get; set; }
 

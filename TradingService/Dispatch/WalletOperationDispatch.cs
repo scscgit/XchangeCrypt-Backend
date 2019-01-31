@@ -21,21 +21,22 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
         /// </summary>
         /// <param name="message">Message to be processed</param>
         /// <param name="reportInvalidMessage">Error handler to call if the intended handler experienced error. Parameter is error message</param>
-        internal Task Dispatch(IDictionary<string, object> message, Func<string, Task> reportInvalidMessage)
+        internal Task Dispatch(IDictionary<string, object> message, Func<string, Exception> reportInvalidMessage)
         {
             var user = (string) message[ParameterNames.User];
             var accountId = (string) message[ParameterNames.AccountId];
             var coinSymbol = (string) message[ParameterNames.CoinSymbol];
-            var depositType = (string) message[ParameterNames.DepositType];
-            var withdrawalType = (string) message[ParameterNames.WithdrawalType];
+            var walletCommandType = (string) message[ParameterNames.WalletCommandType];
             var amount = (decimal) message[ParameterNames.Amount];
+            var walletEventIdReference = (string) message[ParameterNames.WalletEventIdReference];
             var requestId = (string) message[ParameterNames.RequestId];
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 
             //todo
-            return ProcessorFactory.CreateWalletOperationPersistenceProcessor().PersistWalletOperation(
-                user, accountId, coinSymbol, depositType, withdrawalType, amount, reportInvalidMessage);
+            return ProcessorFactory.CreateWalletOperationPersistenceProcessor().ExecuteWalletOperationCommand(
+                user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference, requestId,
+                reportInvalidMessage);
         }
     }
 }

@@ -1,15 +1,12 @@
 namespace XchangeCrypt.Backend.DatabaseAccess.Models
 {
-    public class CoinWallet
+    public class HotWallet
     {
         // TODO maybe unique ID
         public string CoinSymbol;
 
-        /// <summary>
-        /// Generated from WalletService, copy.
-        /// </summary>
         public string PublicKey;
 
-        public decimal Balance;
+        public string PrivateKey;
     }
 }

@@ -59,7 +59,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 
                         {ParameterNames.Quantity, qty},
                         {ParameterNames.Side, side},
-                        {ParameterNames.Type, OrderTypes.LimitOrder},
+                        {ParameterNames.OrderType, OrderTypes.LimitOrder},
                         {ParameterNames.LimitPrice, limitPrice},
                         {ParameterNames.DurationType, durationType},
                         {ParameterNames.Duration, durationDateTime},
@@ -102,7 +102,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 
                         {ParameterNames.Quantity, qty},
                         {ParameterNames.Side, side},
-                        {ParameterNames.Type, OrderTypes.StopOrder},
+                        {ParameterNames.OrderType, OrderTypes.StopOrder},
                         {ParameterNames.StopPrice, stopPrice},
                         {ParameterNames.DurationType, durationType},
                         {ParameterNames.Duration, durationDateTime},
@@ -144,7 +144,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 
                         {ParameterNames.Quantity, qty},
                         {ParameterNames.Side, side},
-                        {ParameterNames.Type, OrderTypes.MarketOrder},
+                        {ParameterNames.OrderType, OrderTypes.MarketOrder},
                         {ParameterNames.DurationType, durationType},
                         {ParameterNames.Duration, durationDateTime},
                         {ParameterNames.StopLoss, stopLoss},

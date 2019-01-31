@@ -30,7 +30,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                     Id = e.Id.ToString(),
                     Instrument = e.Instrument,
                     Price = e.Price,
-                    Time = e.EntryTime.GetUnixEpochMillis(),
+                    Time = e.ExecutionTime.GetUnixEpochMillis(),
                     Qty = e.FilledQty,
                     Side = MapSide(e.Side),
                 })
@@ -61,7 +61,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                         Type = e.DurationType,
                         Datetime = e.Duration,
                     },
-                    Status = MapStatus(e.Status),
+                    Status = MapStatus(OrderStatus.Working),
                 })
                 .ToList()
                 .Union(
@@ -90,7 +90,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                                 Datetime = e.Duration,
                             },
                             // Is always valid if placed within hidden orders
-                            Status = StatusEnum.WorkingEnum,
+                            Status = MapStatus(OrderStatus.Inactive),
                         })
                         .ToList()
                 ).ToList();

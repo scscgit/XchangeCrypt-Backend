@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
@@ -11,6 +12,10 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
     {
         public ObjectId Id { get; set; }
 
+        public DateTime EntryTime { get; set; }
+
+        public long CreatedOnVersionId { get; set; }
+
         public string User { get; set; }
 
         public string AccountId { get; set; }
@@ -22,10 +27,6 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         [JsonConverter(typeof(StringEnumConverter))]
         [BsonRepresentation(BsonType.String)]
         public OrderSide Side { get; set; }
-
-        [JsonConverter(typeof(StringEnumConverter))]
-        [BsonRepresentation(BsonType.String)]
-        public OrderType Type { get; set; }
 
         public decimal? StopPrice { get; set; }
 

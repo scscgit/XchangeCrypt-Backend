@@ -7,6 +7,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 
 namespace XchangeCrypt.Backend.DatabaseAccess.Models
 {
+    [System.Obsolete]
     public class ActivityHistoryWalletOperationEntry
     {
         public ObjectId Id { get; set; }

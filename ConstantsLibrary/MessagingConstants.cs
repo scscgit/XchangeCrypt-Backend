@@ -16,7 +16,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string Quantity = "Quantity";
 
             public const string Side = "Side";
-            public const string Type = "Type";
+            public const string OrderType = "OrderType";
             public const string LimitPrice = "LimitPrice";
             public const string StopPrice = "StopPrice";
             public const string DurationType = "DurationType";
@@ -27,15 +27,15 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             // Wallet operation
 
             public const string CoinSymbol = "CoinSymbol";
-            public const string DepositType = "DepositType";
-            public const string WithdrawalType = "WithdrawalType";
+            public const string WalletCommandType = "WalletCommandType";
             public const string Amount = "Amount";
+            public const string WalletEventIdReference = "WalletEventIdReference";
 
             // Misc
 
             public const string RequestId = "RequestId";
 
-            // Answers
+            // Command answers
 
             public const string AnswerQueuePostfix = "AnswerQueuePostfix";
             public const string ErrorIfAny = "ErrorIfAny";
@@ -58,6 +58,14 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
         {
             public const string BuySide = "buy";
             public const string SellSide = "sell";
+        }
+
+        public static class WalletCommandTypes
+        {
+            public const string Deposit = "Deposit";
+            public const string Withdrawal = "Withdrawal";
+            public const string RevokeDeposit = "RevokeDeposit";
+            public const string RevokeWithdrawal = "RevokeWithdrawal";
         }
     }
 }

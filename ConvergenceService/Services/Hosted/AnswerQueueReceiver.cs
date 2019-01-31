@@ -29,7 +29,8 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
             : base(
                 configuration["Queue:ConnectionString"],
                 configuration["Queue:Answer:NamePrefix"],
-                configuration["Queue:Answer:DeadLetterNamePrefix"],
+                configuration["Queue:Answer:DeadLetterName"],
+                Program.Shutdown,
                 logger)
         {
             _logger = logger;
@@ -94,6 +95,11 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
             _logger.LogInformation(
                 $"Received matching answer in the answer queue: {MessagePairsToString(payload.Message)}");
             return payload.Message;
+        }
+
+        public new async Task DeleteQueueAsync()
+        {
+            await base.DeleteQueueAsync();
         }
     }
 }

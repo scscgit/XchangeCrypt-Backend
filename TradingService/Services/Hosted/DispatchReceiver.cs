@@ -4,10 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
+using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.QueueAccess;
-using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
+using XchangeCrypt.Backend.TradingService.Dispatch;
 
-namespace XchangeCrypt.Backend.TradingService.Dispatch
+namespace XchangeCrypt.Backend.TradingService.Services.Hosted
 {
     public class DispatchReceiver : AbstractDispatchReceiver
     {
@@ -28,6 +29,7 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
                 configuration["Queue:ConnectionString"],
                 configuration["Queue:Name"],
                 configuration["Queue:DeadLetter"],
+                Program.Shutdown,
                 logger)
         {
             _tradeOrderDispatch = tradeOrderDispatch;
@@ -51,21 +53,21 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
 
         protected override async Task Dispatch(CloudQueueMessage queueMessage, IDictionary<string, object> message)
         {
-            switch (message[ParameterNames.MessageType])
+            switch (message[MessagingConstants.ParameterNames.MessageType])
             {
-                case MessageTypes.TradeOrder:
+                case MessagingConstants.MessageTypes.TradeOrder:
                     await _tradeOrderDispatch.Dispatch(message,
-                        errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
+                        errorMessage => throw ReportInvalidMessage(queueMessage, errorMessage).Result);
                     break;
 
-                case MessageTypes.WalletOperation:
+                case MessagingConstants.MessageTypes.WalletOperation:
                     await _walletOperationDispatch.Dispatch(message,
-                        errorMessage => ReportInvalidMessage(queueMessage, errorMessage));
+                        errorMessage => throw ReportInvalidMessage(queueMessage, errorMessage).Result);
                     break;
 
                 default:
                     await ReportInvalidMessage(queueMessage,
-                        $"Unrecognized MessageType {message[ParameterNames.MessageType]}");
+                        $"Unrecognized MessageType {message[MessagingConstants.ParameterNames.MessageType]}");
                     throw new Exception("This never occurs");
             }
         }

@@ -5,10 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.TradingService.Dispatch;
 using XchangeCrypt.Backend.TradingService.Processors;
+using XchangeCrypt.Backend.TradingService.Processors.Event;
 using XchangeCrypt.Backend.TradingService.Services;
+using XchangeCrypt.Backend.TradingService.Services.Hosted;
 using XchangeCrypt.Backend.TradingService.Services.Meta;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
@@ -32,34 +35,42 @@ namespace XchangeCrypt.Backend.TradingService
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Persistently running queue message handler
-            services.AddSingleton<IHostedService, DispatchReceiver>();
+            services.AddSingleton<DispatchReceiver>();
+            services.AddSingleton<IHostedService, DispatchReceiver>(
+                serviceProvider => serviceProvider.GetService<DispatchReceiver>()
+            );
+
+            // Persistently running database handler for executing events
+            services.AddSingleton<DatabaseGenerator>();
+            services.AddSingleton<IHostedService, DatabaseGenerator>(
+                serviceProvider => serviceProvider.GetService<DatabaseGenerator>()
+            );
 
             // Meta-faculties
             services.AddSingleton<MonitorService>();
 
             // Shared dispatch
-            services.AddSingleton<TradeOrderDispatch>();
-            services.AddSingleton<WalletOperationDispatch>();
+            services.AddTransient<TradeOrderDispatch>();
+            services.AddTransient<WalletOperationDispatch>();
 
-            // Processors are made ad-hoc via factory
+            // (Command) processors are made ad-hoc via factory
             services.AddTransient<ProcessorFactory>();
-            // They use their own Executor instances
-            services.AddTransient<TradeExecutor>();
+
+            // Event processors
+            services.AddTransient<TradeEventProcessor>();
 
             // Custom services
-            services.AddTransient<TradeOrderDispatch>();
-            services.AddTransient<ActivityHistoryService>();
-            services.AddTransient<LimitOrderService>();
-            services.AddTransient<MarketOrderService>();
-            services.AddTransient<StopOrderService>();
+            services.AddTransient<EventHistoryService>();
+            services.AddTransient<TradingOrderService>();
 
             // Custom repositories
             services.AddTransient<AccountRepository>();
-            services.AddTransient<ActivityHistoryRepository>();
+            services.AddTransient<EventHistoryRepository>();
             services.AddTransient<TradingRepository>();
 
             // Custom singleton services
             services.AddSingleton<DataAccess>();
+            services.AddSingleton<VersionControl>();
         }
 
         /// <summary>

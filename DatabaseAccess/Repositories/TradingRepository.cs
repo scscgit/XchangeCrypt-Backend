@@ -5,7 +5,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
 {
     public class TradingRepository
     {
-        public IMongoDatabase Database { get; }
+        private IMongoDatabase Database { get; }
 
         public TradingRepository(DataAccess dataAccess)
         {

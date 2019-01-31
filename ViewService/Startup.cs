@@ -34,7 +34,7 @@ namespace XchangeCrypt.Backend.ViewService
 
             // Database caching
             services.AddTransient<AccountRepository>();
-            services.AddTransient<ActivityHistoryRepository>();
+            services.AddTransient<EventHistoryRepository>();
             services.AddTransient<TradingRepository>();
             services.AddSingleton<DataAccess>();
         }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using IO.Swagger.Filters;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Swashbuckle.AspNetCore.Swagger;
@@ -24,14 +26,20 @@ namespace XchangeCrypt.Backend.ConvergenceService
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env, IConfiguration configuration)
+        public Startup(IHostingEnvironment env, IServiceProvider serviceProvider, ILogger<Startup> logger,
+            IConfiguration configuration)
         {
             _hostingEnv = env;
+            _serviceProvider = serviceProvider;
+            _logger = logger;
             Configuration = configuration;
         }
 
-        private readonly IHostingEnvironment _hostingEnv;
         private IConfiguration Configuration { get; }
+        private readonly IHostingEnvironment _hostingEnv;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<Startup> _logger;
+        private AnswerQueueReceiver _answerQueueReceiver;
 
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
@@ -121,6 +129,10 @@ namespace XchangeCrypt.Backend.ConvergenceService
             services.AddSingleton<IHostedService, AnswerQueueReceiver>(
                 serviceProvider => serviceProvider.GetService<AnswerQueueReceiver>()
             );
+//            using (var scope = _serviceProvider.CreateScope())
+//            {
+//                _answerQueueReceiver = scope.ServiceProvider.GetRequiredService<AnswerQueueReceiver>();
+//            }
 
             // Trading services (Queue)
             services.AddTransient<OrderService>();
@@ -190,6 +202,9 @@ namespace XchangeCrypt.Backend.ConvergenceService
                 //TODO: Enable production exception handling (https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling)
                 // app.UseExceptionHandler("/Home/Error");
             }
+
+            // Getting rid of the spam in Debug Output
+            TelemetryDebugWriter.IsTracingDisabled = true;
         }
 
         private Task AuthenticationFailed(AuthenticationFailedContext arg)
@@ -199,6 +214,12 @@ namespace XchangeCrypt.Backend.ConvergenceService
             arg.Response.ContentLength = s.Length;
             arg.Response.Body.Write(Encoding.UTF8.GetBytes(s), 0, s.Length);
             return Task.FromResult(0);
+        }
+
+        private void OnShutdown()
+        {
+            _logger.LogInformation("Shutting down");
+//            await _answerQueueReceiver.DeleteQueueAsync();
         }
     }
 }

@@ -22,14 +22,14 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
         /// </summary>
         /// <param name="message">Message to be processed</param>
         /// <param name="reportInvalidMessage">Error handler to call if the intended handler experienced error. Parameter is error message</param>
-        internal Task Dispatch(IDictionary<string, object> message, Func<string, Task> reportInvalidMessage)
+        internal Task Dispatch(IDictionary<string, object> message, Func<string, Exception> reportInvalidMessage)
         {
             var user = (string) message.GetValueOrDefault(ParameterNames.User);
             var accountId = (string) message.GetValueOrDefault(ParameterNames.AccountId);
             var instrument = (string) message.GetValueOrDefault(ParameterNames.Instrument);
             var quantity = (decimal) message.GetValueOrDefault(ParameterNames.Quantity);
             var side = (string) message.GetValueOrDefault(ParameterNames.Side);
-            var type = (string) message.GetValueOrDefault(ParameterNames.Type);
+            var orderType = (string) message.GetValueOrDefault(ParameterNames.OrderType);
             var limitPrice = (decimal?) message.GetValueOrDefault(ParameterNames.LimitPrice);
             var stopPrice = (decimal?) message.GetValueOrDefault(ParameterNames.StopPrice);
             var durationType = (string) message.GetValueOrDefault(ParameterNames.DurationType);
@@ -40,9 +40,9 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 
-            return ProcessorFactory.CreateTradeOrderPersistenceProcessor().PersistOrder(
-                user, accountId, instrument, quantity, side, type, limitPrice, stopPrice, durationType, duration,
-                stopLoss, takeProfit, reportInvalidMessage);
+            return ProcessorFactory.CreateTradeOrderPersistenceProcessor().ExecuteTradeOrderCommand(
+                user, accountId, instrument, quantity, side, orderType, limitPrice, stopPrice, durationType, duration,
+                stopLoss, takeProfit, requestId, reportInvalidMessage);
         }
     }
 }
