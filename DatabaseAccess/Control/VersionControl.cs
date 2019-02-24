@@ -8,7 +8,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
     {
         private readonly ILogger<VersionControl> _logger;
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(0);
-        private long _currentVersion;
+        public long CurrentVersion { get; private set; }
 
         public VersionControl(ILogger<VersionControl> logger)
         {
@@ -21,7 +21,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
         /// <param name="currentVersion">initial current version</param>
         public void Initialize(long currentVersion)
         {
-            _currentVersion = currentVersion;
+            CurrentVersion = currentVersion;
             _semaphore.Release();
         }
 
@@ -35,7 +35,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
 
             try
             {
-                actionVersionNumber(_currentVersion);
+                actionVersionNumber(CurrentVersion);
             }
             finally
             {
@@ -53,7 +53,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
 
             try
             {
-                _currentVersion = actionVersionNumber();
+                CurrentVersion = actionVersionNumber();
             }
             finally
             {

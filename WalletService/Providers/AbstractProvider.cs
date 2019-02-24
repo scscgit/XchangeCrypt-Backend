@@ -30,7 +30,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     $"Initialized {GetType().Name}, listening for event entries & blockchain events to be processed");
                 while (!_stopped)
                 {
-                    ListenForEvents().Wait(stoppingToken);
+                    ListenForBlockchainEvents().Wait(stoppingToken);
 
                     await Task.Delay(_listeningInterval, stoppingToken);
                     _logger.LogDebug($"{GetType().Name} is still listening for event entries & blockchain events...");
@@ -44,9 +44,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             }
         }
 
-        protected abstract Task ListenForEvents();
+        protected abstract Task ListenForBlockchainEvents();
 
-        protected abstract void ProcessEvent(WalletEventEntry eventEntry);
+        public abstract void ProcessEvent(WalletEventEntry eventEntry);
 
         public abstract Task<string> GenerateHdWallet();
 

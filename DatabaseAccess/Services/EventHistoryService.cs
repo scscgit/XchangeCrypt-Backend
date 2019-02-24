@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
@@ -29,7 +30,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
         public async Task<IList<EventEntry>> Persist(IEnumerable<EventEntry> eventTransaction)
         {
             // Copy the list before modifying it
-            IList<EventEntry> events = new List<EventEntry>(eventTransaction);
+            var events = new List<EventEntry>(eventTransaction);
             // Take the version number, they all use the same
             var versionNumber = events[0].VersionNumber;
             // Add the commit event at the end in order to prevent mixing multiple transactions
@@ -79,7 +80,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 EventHistoryRepository.VersionEqFilter(versionNumber)
             );
             var foundEvents = await foundEventsCursor.ToListAsync();
-            IList<EventEntry> failedEntries = new List<EventEntry>();
+            var failedEntries = new List<EventEntry>();
             var foundCommit = false;
             var thisSuccessful = false;
             foreach (var foundEvent in foundEvents)
@@ -133,6 +134,18 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 })
                 .ToList();
             return validEvents;
+        }
+
+        public EventEntry FindById(ObjectId eventId)
+        {
+            return EventHistoryRepository.Events().Find(eventEntry => eventEntry.Id.Equals(eventId)).Single();
+        }
+
+        public WalletGenerateEventEntry FindWalletGenerateByPublicKey(string publicKey)
+        {
+            return (WalletGenerateEventEntry) EventHistoryRepository.Events().Find(eventEntry =>
+                eventEntry is WalletGenerateEventEntry
+                && ((WalletGenerateEventEntry) eventEntry).WalletPublicKey.Equals(publicKey)).Single();
         }
     }
 }

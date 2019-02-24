@@ -40,7 +40,7 @@ namespace XchangeCrypt.Backend.WalletService
 
             // Custom repositories
             services.AddTransient<WalletRepository>();
-//            services.AddTransient<EventHistoryRepository>();
+            services.AddTransient<EventHistoryRepository>();
 
             // Custom services
             services.AddTransient<WalletOperationService>();
@@ -67,6 +67,14 @@ namespace XchangeCrypt.Backend.WalletService
 
             // Dispatch
             services.AddTransient<WalletOperationDispatch>();
+
+            // Wallet provider-related event listener
+
+            // Persistently running queue message handler
+            services.AddSingleton<WalletEventListener>();
+            services.AddSingleton<IHostedService, WalletEventListener>(
+                serviceProvider => serviceProvider.GetService<WalletEventListener>()
+            );
         }
 
         /// <summary>
