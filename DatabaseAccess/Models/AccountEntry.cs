@@ -7,8 +7,10 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
     {
         public ObjectId Id { get; set; }
 
+        public string User { get; set; }
+
         public string AccountId { get; set; }
 
-        public IList<CoinWallet> Coins { get; set; }
+        public IList<CoinWallet> CoinWallets { get; set; }
     }
 }

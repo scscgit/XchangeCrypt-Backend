@@ -6,20 +6,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage.Queue;
 using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.QueueAccess;
-using XchangeCrypt.Backend.TradingService.Dispatch;
+using XchangeCrypt.Backend.WalletService.Dispatch;
 
-namespace XchangeCrypt.Backend.TradingService.Services.Hosted
+namespace XchangeCrypt.Backend.WalletService.Services.Hosted
 {
     public class DispatchReceiver : AbstractDispatchReceiver
     {
-        private readonly TradeOrderDispatch _tradeOrderDispatch;
+        private readonly WalletOperationDispatch _walletOperationDispatch;
         private readonly ILogger<DispatchReceiver> _logger;
         private readonly ILogger<QueueWriter> _queueWriterLogger;
         private readonly string _connectionString;
         private readonly string _answerQueueNamePrefix;
 
         public DispatchReceiver(
-            TradeOrderDispatch tradeOrderDispatch,
+            WalletOperationDispatch walletOperationDispatch,
             IConfiguration configuration,
             ILogger<DispatchReceiver> logger,
             ILogger<QueueWriter> queueWriterLogger)
@@ -30,7 +30,7 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
                 Program.Shutdown,
                 logger)
         {
-            _tradeOrderDispatch = tradeOrderDispatch;
+            _walletOperationDispatch = walletOperationDispatch;
             _logger = logger;
             _queueWriterLogger = queueWriterLogger;
             _connectionString = configuration["Queue:ConnectionString"]
@@ -53,13 +53,13 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
             switch (message[MessagingConstants.ParameterNames.MessageType])
             {
                 case MessagingConstants.MessageTypes.TradeOrder:
-                    await _tradeOrderDispatch.Dispatch(message,
-                        errorMessage => throw ReportInvalidMessage(queueMessage, errorMessage).Result);
+                    await ReportInvalidMessage(queueMessage,
+                        $"Wrong queue for MessageType {message[MessagingConstants.ParameterNames.MessageType]}");
                     break;
 
                 case MessagingConstants.MessageTypes.WalletOperation:
-                    await ReportInvalidMessage(queueMessage,
-                        $"Wrong queue for MessageType {message[MessagingConstants.ParameterNames.MessageType]}");
+                    await _walletOperationDispatch.Dispatch(message,
+                        errorMessage => throw ReportInvalidMessage(queueMessage, errorMessage).Result);
                     break;
 
                 default:

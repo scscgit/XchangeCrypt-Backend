@@ -44,7 +44,7 @@ namespace XchangeCrypt.Backend.QueueAccess
         }
 
         /// <inheritdoc />
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace XchangeCrypt.Backend.QueueAccess
 
                     try
                     {
-                        await ListenOnQueue(cancellationToken);
+                        await ListenOnQueue(stoppingToken);
                     }
                     catch (DispatcherResetJump)
                     {

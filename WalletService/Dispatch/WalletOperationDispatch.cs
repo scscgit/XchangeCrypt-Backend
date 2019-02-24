@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using XchangeCrypt.Backend.TradingService.Processors;
-using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
+using XchangeCrypt.Backend.ConstantsLibrary;
+using XchangeCrypt.Backend.WalletService.Processors;
 
-namespace XchangeCrypt.Backend.TradingService.Dispatch
+namespace XchangeCrypt.Backend.WalletService.Dispatch
 {
     public class WalletOperationDispatch
     {
@@ -23,13 +23,13 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
         /// <param name="reportInvalidMessage">Error handler to call if the intended handler experienced error. Parameter is error message</param>
         internal Task Dispatch(IDictionary<string, object> message, Func<string, Exception> reportInvalidMessage)
         {
-            var user = (string) message[ParameterNames.User];
-            var accountId = (string) message[ParameterNames.AccountId];
-            var coinSymbol = (string) message[ParameterNames.CoinSymbol];
-            var walletCommandType = (string) message[ParameterNames.WalletCommandType];
-            var amount = (decimal) message[ParameterNames.Amount];
-            var walletEventIdReference = (string) message[ParameterNames.WalletEventIdReference];
-            var requestId = (string) message[ParameterNames.RequestId];
+            var user = (string) message[MessagingConstants.ParameterNames.User];
+            var accountId = (string) message[MessagingConstants.ParameterNames.AccountId];
+            var coinSymbol = (string) message[MessagingConstants.ParameterNames.CoinSymbol];
+            var walletCommandType = (string) message[MessagingConstants.ParameterNames.WalletCommandType];
+            var amount = (decimal) message[MessagingConstants.ParameterNames.Amount];
+            var walletEventIdReference = (string) message[MessagingConstants.ParameterNames.WalletEventIdReference];
+            var requestId = (string) message[MessagingConstants.ParameterNames.RequestId];
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 

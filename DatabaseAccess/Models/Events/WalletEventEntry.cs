@@ -3,7 +3,8 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 {
     [BsonKnownTypes(
-        typeof(WalletEventEntry),
+        typeof(WalletDepositEventEntry),
+        typeof(WalletGenerateEventEntry),
         typeof(WalletRevokeEventEntry),
         typeof(WalletWithdrawalEventEntry))]
     public abstract class WalletEventEntry : EventEntry

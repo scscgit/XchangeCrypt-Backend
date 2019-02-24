@@ -7,6 +7,7 @@ using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.TradingService.Services;
 
 namespace XchangeCrypt.Backend.TradingService.Processors.Command

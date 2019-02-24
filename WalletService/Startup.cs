@@ -6,6 +6,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using XchangeCrypt.Backend.DatabaseAccess.Control;
+using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.WalletService.Dispatch;
+using XchangeCrypt.Backend.WalletService.Processors;
+using XchangeCrypt.Backend.WalletService.Processors.Command;
+using XchangeCrypt.Backend.WalletService.Providers.ETH;
+using XchangeCrypt.Backend.WalletService.Services;
+using XchangeCrypt.Backend.WalletService.Services.Hosted;
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace XchangeCrypt.Backend.WalletService
 {
@@ -26,6 +37,36 @@ namespace XchangeCrypt.Backend.WalletService
             services.AddAuthentication(AzureADB2CDefaults.BearerAuthenticationScheme)
                 .AddAzureADB2CBearer(options => Configuration.Bind("AzureAdB2C", options));
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            // Custom repositories
+            services.AddTransient<WalletRepository>();
+//            services.AddTransient<EventHistoryRepository>();
+
+            // Custom services
+            services.AddTransient<WalletOperationService>();
+            services.AddTransient<EventHistoryService>();
+
+            // Custom singleton services
+            services.AddSingleton<DataAccess>();
+            services.AddSingleton<VersionControl>();
+
+            // Command processors are made ad-hoc via factory
+            services.AddTransient<ProcessorFactory>();
+
+            // Wallet providers
+            services.AddSingleton<EthereumProvider>();
+            services.AddSingleton<IHostedService, EthereumProvider>(
+                serviceProvider => serviceProvider.GetService<EthereumProvider>()
+            );
+
+            // Persistently running queue message handler
+            services.AddSingleton<DispatchReceiver>();
+            services.AddSingleton<IHostedService, DispatchReceiver>(
+                serviceProvider => serviceProvider.GetService<DispatchReceiver>()
+            );
+
+            // Dispatch
+            services.AddTransient<WalletOperationDispatch>();
         }
 
         /// <summary>

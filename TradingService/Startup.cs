@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.TradingService.Dispatch;
 using XchangeCrypt.Backend.TradingService.Processors;
 using XchangeCrypt.Backend.TradingService.Processors.Event;
@@ -34,26 +35,25 @@ namespace XchangeCrypt.Backend.TradingService
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
-            // Persistently running queue message handler
-            services.AddSingleton<DispatchReceiver>();
-            services.AddSingleton<IHostedService, DispatchReceiver>(
-                serviceProvider => serviceProvider.GetService<DispatchReceiver>()
-            );
-
             // Persistently running database handler for executing events
             services.AddSingleton<DatabaseGenerator>();
             services.AddSingleton<IHostedService, DatabaseGenerator>(
                 serviceProvider => serviceProvider.GetService<DatabaseGenerator>()
             );
 
+            // Persistently running queue message handler
+            services.AddSingleton<DispatchReceiver>();
+            services.AddSingleton<IHostedService, DispatchReceiver>(
+                serviceProvider => serviceProvider.GetService<DispatchReceiver>()
+            );
+
+            // Dispatch
+            services.AddTransient<TradeOrderDispatch>();
+
             // Meta-faculties
             services.AddSingleton<MonitorService>();
 
-            // Shared dispatch
-            services.AddTransient<TradeOrderDispatch>();
-            services.AddTransient<WalletOperationDispatch>();
-
-            // (Command) processors are made ad-hoc via factory
+            // Command processors are made ad-hoc via factory
             services.AddTransient<ProcessorFactory>();
 
             // Event processors

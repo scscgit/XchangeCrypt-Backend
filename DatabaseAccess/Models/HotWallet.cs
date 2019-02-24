@@ -5,8 +5,14 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         // TODO maybe unique ID
         public string CoinSymbol;
 
-        public string PublicKey;
+        public string User { get; set; }
+
+        public string AccountId { get; set; }
+
+        public string HdSeed;
 
         public string PrivateKey;
+
+        public string PublicKey;
     }
 }

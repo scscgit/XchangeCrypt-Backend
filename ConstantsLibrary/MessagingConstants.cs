@@ -26,8 +26,8 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
 
             // Wallet operation
 
-            public const string CoinSymbol = "CoinSymbol";
             public const string WalletCommandType = "WalletCommandType";
+            public const string CoinSymbol = "CoinSymbol";
             public const string Amount = "Amount";
             public const string WalletEventIdReference = "WalletEventIdReference";
 
@@ -62,6 +62,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
 
         public static class WalletCommandTypes
         {
+            public const string Generate = "Generate";
             public const string Deposit = "Deposit";
             public const string Withdrawal = "Withdrawal";
             public const string RevokeDeposit = "RevokeDeposit";

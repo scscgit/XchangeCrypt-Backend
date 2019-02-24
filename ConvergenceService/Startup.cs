@@ -75,7 +75,8 @@ namespace XchangeCrypt.Backend.ConvergenceService
                 .AddJsonOptions(opts =>
                 {
                     opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                    opts.SerializerSettings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy()));
+                    opts.SerializerSettings.Converters.Add(new StringEnumConverter(true));
+                    //opts.SerializerSettings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy()));
                 });
 
             // API documentation

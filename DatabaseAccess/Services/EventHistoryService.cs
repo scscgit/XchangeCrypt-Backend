@@ -7,7 +7,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 
-namespace XchangeCrypt.Backend.TradingService.Services
+namespace XchangeCrypt.Backend.DatabaseAccess.Services
 {
     /// <summary>
     /// Helps with persistence and usage of EventHistory Source-of-Truth Append-Only database.

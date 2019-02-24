@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using XchangeCrypt.Backend.WalletService.Providers.ETH;
 
 namespace XchangeCrypt.Backend.WalletService.Controllers
 {
@@ -7,10 +8,19 @@ namespace XchangeCrypt.Backend.WalletService.Controllers
     [ApiController]
     public class MonitorController : ControllerBase
     {
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        private readonly EthereumProvider _ethereumProvider;
+
+        public MonitorController(EthereumProvider ethereumProvider)
         {
-            return new string[] {"value1", "value2"};
+            _ethereumProvider = ethereumProvider;
+        }
+
+        [HttpGet]
+        public ActionResult<string> Get()
+        {
+            return _ethereumProvider.GetBalance("0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae")
+                .Result
+                .ToString(CultureInfo.CurrentCulture);
         }
     }
 }

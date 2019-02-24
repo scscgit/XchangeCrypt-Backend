@@ -9,6 +9,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.TradingService.Processors.Event;
 
 namespace XchangeCrypt.Backend.TradingService.Services.Hosted
@@ -44,7 +45,7 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
         }
 
         /// <inheritdoc />
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             try
             {
@@ -55,11 +56,11 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
                     // Only integrate new events as long as no one is currently assuming a fixed current version
                     _versionControl.IncreaseVersion(() =>
                     {
-                        IntegrateNewEvents().Wait(cancellationToken);
+                        IntegrateNewEvents().Wait(stoppingToken);
                         return _currentVersion;
                     });
 
-                    await Task.Delay(_listeningInterval, cancellationToken);
+                    await Task.Delay(_listeningInterval, stoppingToken);
                     _logger.LogDebug($"{GetType().Name} is still listening for event entries...");
                 }
             }
