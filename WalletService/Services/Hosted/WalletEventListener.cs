@@ -34,6 +34,8 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
         {
             try
             {
+                // This enables the version control semaphore
+                _versionControl.Initialize(_currentVersion);
                 _logger.LogInformation(
                     $"Initialized {GetType().Name}, listening for wallet event entries to be processed");
                 while (!_stopped)

@@ -16,13 +16,13 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/trading/")]
     public sealed class TradingPanelBrokerDataBridge : Controller
     {
-        private readonly OrderService _orderService;
+        private readonly CommandService _commandService;
 
         /// <summary>
         /// </summary>
-        public TradingPanelBrokerDataBridge(OrderService orderService)
+        public TradingPanelBrokerDataBridge(CommandService commandService)
         {
-            _orderService = orderService;
+            _commandService = commandService;
         }
 
         /// <summary>

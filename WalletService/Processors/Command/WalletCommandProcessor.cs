@@ -48,23 +48,14 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                             user, accountId, coinSymbol, requestId, reportInvalidMessage);
                         break;
 
-                    case MessagingConstants.WalletCommandTypes.Deposit:
-                        eventEntries = await PlanDepositEvents(
-                            user, accountId, coinSymbol, amount, requestId, reportInvalidMessage);
-                        break;
-
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
                         eventEntries = await PlanWithdrawalEvents(
                             user, accountId, coinSymbol, amount, requestId, reportInvalidMessage);
                         break;
 
                     case MessagingConstants.WalletCommandTypes.RevokeDeposit:
-                        eventEntries = await PlanRevokeDepositEvents(
-                            user, accountId, coinSymbol, walletEventIdReference, requestId, reportInvalidMessage);
-                        break;
-
                     case MessagingConstants.WalletCommandTypes.RevokeWithdrawal:
-                        eventEntries = await PlanRevokeWithdrawalEvents(
+                        eventEntries = await PlanRevokeEvents(
                             user, accountId, coinSymbol, walletEventIdReference, requestId, reportInvalidMessage);
                         break;
 
@@ -96,7 +87,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             }
 
             var plannedEvents = new List<EventEntry>();
-            var now = new DateTime();
+            var now = DateTime.Now;
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
@@ -116,13 +107,6 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             return plannedEvents;
         }
 
-        private async Task<IList<EventEntry>> PlanDepositEvents(
-            string user, string accountId, string coinSymbol, decimal amount, string requestId,
-            Func<string, Exception> reportInvalidMessage)
-        {
-            throw new NotImplementedException();
-        }
-
         private async Task<IList<EventEntry>> PlanWithdrawalEvents(
             string user, string accountId, string coinSymbol, decimal amount, string requestId,
             Func<string, Exception> reportInvalidMessage)
@@ -130,14 +114,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             throw new NotImplementedException();
         }
 
-        private async Task<IList<EventEntry>> PlanRevokeDepositEvents(
-            string user, string accountId, string coinSymbol, string walletEventIdReference, string requestId,
-            Func<string, Exception> reportInvalidMessage)
-        {
-            throw new NotImplementedException();
-        }
-
-        private async Task<IList<EventEntry>> PlanRevokeWithdrawalEvents(
+        private async Task<IList<EventEntry>> PlanRevokeEvents(
             string user, string accountId, string coinSymbol, string walletEventIdReference, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {

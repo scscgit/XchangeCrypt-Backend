@@ -5,15 +5,16 @@ using System.Net.Http;
 using IO.Swagger.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 
 namespace XchangeCrypt.Backend.ConvergenceService.Services
 {
-    public class OrderViewService : IDisposable
+    public class ViewProxyService : IDisposable
     {
         private readonly HttpClient _client = new HttpClient();
         private readonly string _remoteUrl;
 
-        public OrderViewService(IConfiguration configuration)
+        public ViewProxyService(IConfiguration configuration)
         {
             _remoteUrl =
                 $"https://{configuration["ViewService:Domain"] ?? throw new ArgumentException("ViewService:Domain")}:{configuration["ViewService:Port"] ?? throw new ArgumentException("ViewService:Port")}/api/v1/view/";
@@ -59,6 +60,20 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                         {"user", user},
                         {"accountId", accountId},
                         {"orderId", orderId},
+                    }
+                )).Result
+            );
+        }
+
+        public IEnumerable<WalletDetails> GetWallets(string user, string accountId)
+        {
+            return JsonConvert.DeserializeObject<IEnumerable<WalletDetails>>(
+                _client.GetStringAsync(Uri(
+                    "wallets",
+                    new Dictionary<string, string>
+                    {
+                        {"user", user},
+                        {"accountId", accountId},
                     }
                 )).Result
             );

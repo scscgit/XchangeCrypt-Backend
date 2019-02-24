@@ -10,21 +10,25 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 {
     /// <summary>
     /// Supports limit, stop, and market order operations.
-    /// Uses a queue to send the requests to a trading backend.
+    /// Also manages user's personal information.
+    /// Uses a queue to send the requests to a trading backend or a wallet backend.
     /// </summary>
-    public class OrderService
+    public class CommandService
     {
         private readonly TimeSpan _timeout = TimeSpan.FromSeconds(10);
         private readonly TradingQueueWriter _tradingQueueWriter;
+        private readonly WalletQueueWriter _walletQueueWriter;
         private readonly AnswerQueueReceiver _answerQueueReceiver;
 
         /// <summary>
         /// </summary>
-        public OrderService(
+        public CommandService(
             TradingQueueWriter tradingQueueWriter,
+            WalletQueueWriter walletQueueWriter,
             AnswerQueueReceiver answerQueueReceiver)
         {
             _tradingQueueWriter = tradingQueueWriter;
+            _walletQueueWriter = walletQueueWriter;
             _answerQueueReceiver = answerQueueReceiver;
         }
 
@@ -149,6 +153,34 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                         {ParameterNames.Duration, durationDateTime},
                         {ParameterNames.StopLoss, stopLoss},
                         {ParameterNames.TakeProfit, takeProfit},
+                        {ParameterNames.RequestId, requestId},
+                        {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
+                    }
+                );
+            });
+        }
+
+
+        /// <summary>
+        /// Enqueues a Market order.
+        /// </summary>
+        /// <returns>null on success, otherwise the error message</returns>
+        public async Task<string> GenerateWallet(
+            string user,
+            string accountId,
+            string coinSymbol,
+            string requestId)
+        {
+            requestId = Sha256Hash(requestId);
+            return await ExecuteForAnswer(user, requestId, async () =>
+            {
+                await _walletQueueWriter.SendMessageAsync(
+                    new Dictionary<string, object>
+                    {
+                        {ParameterNames.MessageType, MessageTypes.WalletOperation},
+                        {ParameterNames.User, user},
+                        {ParameterNames.AccountId, accountId},
+                        {ParameterNames.CoinSymbol, coinSymbol},
                         {ParameterNames.RequestId, requestId},
                         {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
                     }

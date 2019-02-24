@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
+using XchangeCrypt.Backend.ConvergenceService.Services;
 
 namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
 {
@@ -19,6 +21,15 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
     [Authorize]
     public class UserBridge : Controller
     {
+        public CommandService CommandService { get; }
+        public ViewProxyService ViewProxyService { get; }
+
+        public UserBridge(CommandService commandService, ViewProxyService viewProxyService)
+        {
+            CommandService = commandService;
+            ViewProxyService = viewProxyService;
+        }
+
         /// <summary>
         /// Receives all profile details related to an account of the authorized user.
         /// </summary>
@@ -42,6 +53,19 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         [HttpGet("wallets")]
         public IEnumerable<WalletDetails> Wallets()
         {
+            var wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0");
+            if (!wallets.Any(wallet => wallet.CoinSymbol.Equals("ETH")))
+            {
+                var error = CommandService.GenerateWallet(User.GetIdentifier(), "0", "ETH", "").Result;
+                if (error != null)
+                {
+                    throw new Exception("Error during wallet generation: " + error);
+                }
+            }
+
+            return wallets;
+
+
             return new List<WalletDetails>
             {
                 new WalletDetails

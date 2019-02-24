@@ -87,7 +87,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
 //            ).First();
 //            var actionOrderId = matchOrderRelatedCreateOrder.Id;
 
-            var now = new DateTime();
+            var now = DateTime.Now;
             var actionOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
             ).Single();
@@ -166,7 +166,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
 
         internal void CancelOrder(CancelOrderEventEntry cancelOrder)
         {
-            var now = new DateTime();
+            var now = DateTime.Now;
             OrderBook.DeleteOne(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrder.CancelOrderId)
             );

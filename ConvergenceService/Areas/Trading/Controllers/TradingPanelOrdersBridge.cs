@@ -24,22 +24,19 @@ namespace IO.Swagger.Controllers
     public sealed class TradingPanelOrdersBridge : Controller
     {
         private readonly ILogger<TradingPanelOrdersBridge> _logger;
-        public UserService UserService { get; }
-        public OrderService OrderService { get; }
-        public OrderViewService OrderViewService { get; }
+        public CommandService CommandService { get; }
+        public ViewProxyService ViewProxyService { get; }
 
         /// <summary>
         /// </summary>
         public TradingPanelOrdersBridge(
             ILogger<TradingPanelOrdersBridge> logger,
-            UserService userService,
-            OrderService orderService,
-            OrderViewService orderViewService)
+            CommandService commandService,
+            ViewProxyService viewProxyService)
         {
             _logger = logger;
-            UserService = userService;
-            OrderService = orderService;
-            OrderViewService = orderViewService;
+            CommandService = commandService;
+            ViewProxyService = viewProxyService;
         }
 
         /// <summary>
@@ -65,7 +62,7 @@ namespace IO.Swagger.Controllers
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = OrderViewService.GetExecutions(User.GetIdentifier(), accountId, instrument, maxCount)
+                    D = ViewProxyService.GetExecutions(User.GetIdentifier(), accountId, instrument, maxCount)
                 }
             );
         }
@@ -120,7 +117,7 @@ namespace IO.Swagger.Controllers
             {
                 S = Status.OkEnum,
                 Errmsg = null,
-                D = OrderViewService.GetOrders(User.GetIdentifier(), accountId)
+                D = ViewProxyService.GetOrders(User.GetIdentifier(), accountId)
             };
             var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>(
                 "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
@@ -224,7 +221,7 @@ namespace IO.Swagger.Controllers
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = OrderViewService.GetOrder(User.GetIdentifier(), accountId, orderId)
+                    D = ViewProxyService.GetOrder(User.GetIdentifier(), accountId, orderId)
                 }
             );
         }
@@ -319,19 +316,19 @@ namespace IO.Swagger.Controllers
                 switch (type)
                 {
                     case OrderTypes.MarketOrder:
-                        errorIfAny = await OrderService.CreateMarketOrder(
+                        errorIfAny = await CommandService.CreateMarketOrder(
                             user, accountId, instrument, qty.Value, side, durationType, durationDateTime, stopLoss,
                             takeProfit, requestId);
                         break;
 
                     case OrderTypes.StopOrder:
-                        errorIfAny = await OrderService.CreateStopOrder(
+                        errorIfAny = await CommandService.CreateStopOrder(
                             user, accountId, instrument, qty.Value, side, stopPrice.Value, durationType,
                             durationDateTime, stopLoss, takeProfit, requestId);
                         break;
 
                     case OrderTypes.LimitOrder:
-                        errorIfAny = await OrderService.CreateLimitOrder(
+                        errorIfAny = await CommandService.CreateLimitOrder(
                             user, accountId, instrument, qty.Value, side, limitPrice.Value, durationType,
                             durationDateTime, stopLoss, takeProfit, requestId);
                         break;

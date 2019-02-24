@@ -90,7 +90,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             decimal limitPriceValue, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
-            var now = new DateTime();
+            var now = DateTime.Now;
             var limitOrderEvent = new CreateOrderEventEntry
             {
                 EntryTime = now,

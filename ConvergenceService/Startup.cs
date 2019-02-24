@@ -136,14 +136,14 @@ namespace XchangeCrypt.Backend.ConvergenceService
 //            }
 
             // Trading services (Queue)
-            services.AddTransient<OrderService>();
-            services.AddTransient<UserService>();
+            services.AddTransient<CommandService>();
 
             // View service (Proxy)
-            services.AddTransient<OrderViewService>();
+            services.AddTransient<ViewProxyService>();
 
-            // Persistently running queue writer
+            // Persistently running queue writers
             services.AddSingleton<TradingQueueWriter>();
+            services.AddSingleton<WalletQueueWriter>();
         }
 
         /// <summary>
