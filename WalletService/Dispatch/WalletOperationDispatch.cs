@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.ConstantsLibrary.Extensions;
 using XchangeCrypt.Backend.WalletService.Processors;
@@ -29,17 +30,19 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
             var coinSymbol = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.CoinSymbol);
             var walletCommandType =
                 (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletCommandType);
+            var withdrawalPublicKey =
+                (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WithdrawalPublicKey);
             var amount = (decimal?) message.GetValueOrDefault(MessagingConstants.ParameterNames.Amount);
             var walletEventIdReference =
-                (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
+                (ObjectId) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
             var requestId = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.RequestId);
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 
             //todo
             return ProcessorFactory.CreateWalletOperationPersistenceProcessor().ExecuteWalletOperationCommand(
-                user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference, requestId,
-                reportInvalidMessage);
+                user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference, withdrawalPublicKey,
+                requestId, reportInvalidMessage);
         }
     }
 }

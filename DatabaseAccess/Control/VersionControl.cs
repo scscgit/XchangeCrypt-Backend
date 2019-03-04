@@ -37,6 +37,14 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
             {
                 actionVersionNumber(CurrentVersion);
             }
+            catch (AggregateException e)
+            {
+                foreach (var innerException in e.InnerExceptions)
+                {
+                    _logger.LogError($"{innerException.Message}\n{innerException.StackTrace}");
+                }
+                throw;
+            }
             finally
             {
                 _semaphore.Release();

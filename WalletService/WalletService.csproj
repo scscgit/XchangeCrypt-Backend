@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.AzureADB2C.UI" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+        <PackageReference Include="NBitcoin.Mono" Version="3.0.0.46" />
         <PackageReference Include="Nethereum.Geth" Version="3.0.0" />
         <PackageReference Include="Nethereum.HdWallet" Version="3.0.0" />
         <PackageReference Include="Nethereum.Web3" Version="3.0.0" />

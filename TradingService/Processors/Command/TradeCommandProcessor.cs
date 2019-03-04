@@ -89,10 +89,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             decimal limitPriceValue, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
-            var now = DateTime.Now;
             var limitOrderEvent = new CreateOrderEventEntry
             {
-                EntryTime = now,
                 User = user,
                 AccountId = accountId,
                 Instrument = instrument,
@@ -149,7 +147,6 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                         plannedEvents.Add(new MatchOrderEventEntry
                         {
                             VersionNumber = eventVersionNumber,
-                            EntryTime = now,
                             ActionUser = user,
                             ActionAccountId = accountId,
                             TargetOrderOnVersionNumber = other.CreatedOnVersionId,

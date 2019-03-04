@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Nethereum.Geth;
 using Nethereum.HdWallet;
 using Nethereum.Web3;
@@ -16,7 +17,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 {
     public class EthereumProvider : AbstractProvider
     {
-        private readonly string thisCoinSymbol = "ETH";
+        private const string ThisCoinSymbol = "ETH";
         private readonly ILogger<EthereumProvider> _logger;
         private readonly WalletOperationService _walletOperationService;
         private readonly EventHistoryService _eventHistoryService;
@@ -58,12 +59,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             if (retry)
                             {
                                 _logger.LogInformation(
-                                    $"Retrying {thisCoinSymbol} deposit event persistence @ version number {currentVersion + 1}");
+                                    $"Retrying {ThisCoinSymbol} deposit event persistence @ version number {currentVersion + 1}");
                             }
 
                             var deposit = new WalletDepositEventEntry
                             {
-                                CoinSymbol = thisCoinSymbol,
+                                CoinSymbol = ThisCoinSymbol,
                                 DepositQty = balance - oldBalance,
                                 NewBalance = balance,
                                 WalletPublicKey = publicKey,
@@ -144,11 +145,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             _knownPublicKeyBalances[eventEntry.WalletPublicKey] = eventEntry.NewBalance;
         }
 
-
         public override async Task<string> GenerateHdWallet()
         {
-            //TODO
-            return "brass bus same payment express already energy direct type have venture afraid";
+            //return "brass bus same payment express already energy direct type have venture afraid";
+            var seed = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            return seed.WordList.ToString();
         }
 
         public override async Task<string> GetPublicKeyFromHdWallet(string hdSeed)
@@ -156,22 +157,34 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             return new Wallet(hdSeed, null).GetAccount(0).Address;
         }
 
-        public override async Task<bool> Withdraw(string withdrawToPublicKey, decimal value)
+        public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
+            decimal value)
         {
             var transaction = await _web3.Eth.GetEtherTransferService()
                 .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasFee);
-            return transaction.HasErrors() ?? true;
+            var success = transaction.HasErrors() ?? true;
+            if (success)
+            {
+                _knownPublicKeyBalances[walletPublicKeyUserReference] -= value;
+            }
+
+            return success;
         }
 
         public override async Task OnDeposit(string fromPublicKey, string toPublicKey, decimal value)
         {
-            throw new System.NotImplementedException();
+            _knownPublicKeyBalances[toPublicKey] += value;
         }
 
         public override async Task<decimal> GetBalance(string publicKey)
         {
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(publicKey);
             return Web3.Convert.FromWei(balance.Value);
+        }
+
+        public override async Task<decimal> GetCurrentlyCachedBalance(string publicKey)
+        {
+            return _knownPublicKeyBalances[publicKey];
         }
     }
 }

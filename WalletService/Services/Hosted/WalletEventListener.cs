@@ -63,9 +63,11 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                             return _currentVersion;
                         });
                     }
-
-                    await Task.Delay(_listeningInterval, stoppingToken);
-                    _logger.LogDebug($"{GetType().Name} is still listening for event entries...");
+                    else
+                    {
+                        await Task.Delay(_listeningInterval, stoppingToken);
+                        _logger.LogDebug($"{GetType().Name} is still listening for event entries...");
+                    }
                 }
             }
             catch (Exception e)

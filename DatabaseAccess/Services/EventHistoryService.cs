@@ -106,10 +106,11 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 }
             }
 
-            if (failedEntries.Count > 0)
+            foreach (var failedEntry in failedEntries)
             {
-                await EventHistoryRepository.Events().DeleteManyAsync(
-                    e => failedEntries.Any(failedEntry => failedEntry.Id.Equals(e.Id))
+                // Re-written to be sequential, as there were issues with DeleteMany LINQ selector
+                await EventHistoryRepository.Events().DeleteOneAsync(
+                    e => failedEntry.Id.Equals(e.Id)
                 );
             }
 

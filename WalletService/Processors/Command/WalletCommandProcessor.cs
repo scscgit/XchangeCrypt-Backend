@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using NBitcoin.SPV;
 using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
@@ -35,9 +37,11 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         public async Task ExecuteWalletOperationCommand(
             string user, string accountId, string coinSymbol, string walletCommandType, decimal? amount,
-            string walletEventIdReference, string requestId, Func<string, Exception> reportInvalidMessage)
+            ObjectId walletEventIdReference, string withdrawalPublicKey, string requestId,
+            Func<string, Exception> reportInvalidMessage)
         {
             var retry = false;
+            Action afterPersistence = null;
             do
             {
                 IList<EventEntry> eventEntries;
@@ -50,7 +54,8 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
                         eventEntries = await PlanWithdrawalEvents(
-                            user, accountId, coinSymbol, amount.Value, requestId, reportInvalidMessage);
+                            user, accountId, coinSymbol, withdrawalPublicKey, amount.Value, requestId,
+                            reportInvalidMessage, out afterPersistence);
                         break;
 
                     case MessagingConstants.WalletCommandTypes.RevokeDeposit:
@@ -71,25 +76,27 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             while (retry);
 
             _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
+            afterPersistence?.Invoke();
         }
 
-        private async Task<IList<EventEntry>> PlanGenerateEvents(
+        private Task<IList<EventEntry>> PlanGenerateEvents(
             string user, string accountId, string coinSymbol, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
-            var walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
-            if (walletPublicKey == null)
-            {
-                var hdSeed = await AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet();
-                walletPublicKey =
-                    await AbstractProvider.ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed);
-                WalletOperationService.StoreHdWallet(hdSeed, walletPublicKey, user, accountId, coinSymbol);
-            }
-
-            var plannedEvents = new List<EventEntry>();
-            var now = DateTime.Now;
+            IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
+                // Prevent overwrites if the event is just a redundant replay
+                var walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
+                if (walletPublicKey == null)
+                {
+                    // Do the actual seed generation, storing it during a version control lock
+                    var hdSeed = AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet().Result;
+                    walletPublicKey = AbstractProvider
+                        .ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed).Result;
+                    WalletOperationService.StoreHdWallet(hdSeed, walletPublicKey, user, accountId, coinSymbol);
+                }
+
                 var eventVersionNumber = currentVersionNumber + 1;
                 plannedEvents.Add(
                     new WalletGenerateEventEntry
@@ -98,27 +105,94 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                         User = user,
                         AccountId = accountId,
                         CoinSymbol = coinSymbol,
-                        EntryTime = now,
                         NewBalance = 0,
                         WalletPublicKey = walletPublicKey,
                     }
                 );
             });
-            return plannedEvents;
+            return Task.FromResult(plannedEvents);
         }
 
-        private async Task<IList<EventEntry>> PlanWithdrawalEvents(
-            string user, string accountId, string coinSymbol, decimal amount, string requestId,
-            Func<string, Exception> reportInvalidMessage)
+        private Task<IList<EventEntry>> PlanWithdrawalEvents(
+            string user, string accountId, string coinSymbol, string withdrawalPublicKey, decimal amount,
+            string requestId, Func<string, Exception> reportInvalidMessage, out Action afterPersistence)
         {
-            throw new NotImplementedException();
+            WalletWithdrawalEventEntry withdrawalEventEntry = null;
+            string walletPublicKey = null;
+            IList<EventEntry> plannedEvents = new List<EventEntry>();
+            VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+            {
+                var eventVersionNumber = currentVersionNumber + 1;
+                walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
+                var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
+                    .Result;
+                withdrawalEventEntry = new WalletWithdrawalEventEntry
+                {
+                    VersionNumber = eventVersionNumber,
+                    User = user,
+                    AccountId = accountId,
+                    CoinSymbol = coinSymbol,
+                    WalletPublicKey = walletPublicKey,
+                    NewBalance = balance - amount,
+                    //BlockchainTransactionId = ,
+                    WithdrawalPublicKey = withdrawalPublicKey,
+                    WithdrawalQty = amount,
+                };
+                plannedEvents.Add(withdrawalEventEntry);
+            });
+            // Executes the withdrawal, or a compensating event, only after the event is successfully stored
+            afterPersistence = () =>
+            {
+                var success = AbstractProvider.ProviderLookup[coinSymbol]
+                    .Withdraw(walletPublicKey, withdrawalPublicKey, amount).Result;
+                _logger.LogInformation(
+                    $"Withdrawal of amount {amount} of user {user} to wallet {withdrawalPublicKey} {(success ? "successful" : "has failed, this is a critical error")}");
+                if (!success)
+                {
+                    ExecuteWalletOperationCommand(user, accountId, coinSymbol,
+                        MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amount, withdrawalEventEntry.Id, null,
+                        requestId, reportInvalidMessage).Wait();
+                    reportInvalidMessage($"Couldn't withdraw amount {amount} to wallet {withdrawalPublicKey}");
+                }
+            };
+            return Task.FromResult(plannedEvents);
         }
 
-        private async Task<IList<EventEntry>> PlanRevokeEvents(
-            string user, string accountId, string coinSymbol, string walletEventIdReference, string requestId,
+        private Task<IList<EventEntry>> PlanRevokeEvents(
+            string user, string accountId, string coinSymbol, ObjectId walletEventIdReference, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
-            throw new NotImplementedException();
+            // Administrator only
+            IList<EventEntry> plannedEvents = new List<EventEntry>();
+            VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+            {
+                var eventVersionNumber = currentVersionNumber + 1;
+                var walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
+                var referencedEventEntry = EventHistoryService.FindById(walletEventIdReference);
+                var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
+                    .Result;
+                if (referencedEventEntry is WalletDepositEventEntry deposit)
+                {
+                    balance -= deposit.DepositQty;
+                }
+                else if (referencedEventEntry is WalletWithdrawalEventEntry withdrawal)
+                {
+                    balance += withdrawal.WithdrawalQty;
+                }
+                else
+                {
+                    reportInvalidMessage($"Unsupported referenced event entry type {referencedEventEntry.GetType()}");
+                }
+
+                plannedEvents.Add(new WalletRevokeEventEntry
+                {
+                    VersionNumber = eventVersionNumber,
+                    CoinSymbol = coinSymbol,
+                    WalletPublicKey = walletPublicKey,
+                    NewBalance = balance,
+                });
+            });
+            return Task.FromResult(plannedEvents);
         }
     }
 }

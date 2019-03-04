@@ -36,6 +36,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     _logger.LogDebug($"{GetType().Name} is still listening for event entries & blockchain events...");
                 }
             }
+            catch (AggregateException e)
+            {
+                foreach (var innerException in e.InnerExceptions)
+                {
+                    _logger.LogError($"{innerException.Message}\n{innerException.StackTrace}");
+                }
+
+                Program.Shutdown();
+                throw;
+            }
             catch (Exception e)
             {
                 _logger.LogError($"{e.Message}\n{e.StackTrace}");
@@ -52,9 +62,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public abstract Task<string> GetPublicKeyFromHdWallet(string hdSeed);
 
-        public abstract Task<bool> Withdraw(string withdrawToPublicKey, decimal value);
+        public abstract Task<bool> Withdraw(
+            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value);
+
         public abstract Task OnDeposit(string fromPublicKey, string toPublicKey, decimal value);
+
         public abstract Task<decimal> GetBalance(string publicKey);
+
+        public abstract Task<decimal> GetCurrentlyCachedBalance(string publicKey);
 
         public new async Task StopAsync(CancellationToken cancellationToken)
         {
