@@ -8,13 +8,16 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
     public class TradeEventProcessor
     {
         private readonly TradingOrderService _tradingOrderService;
+        private readonly UserService _userService;
         private readonly ILogger<TradeEventProcessor> _logger;
 
         public TradeEventProcessor(
             TradingOrderService tradingOrderService,
+            UserService userService,
             ILogger<TradeEventProcessor> logger)
         {
             _tradingOrderService = tradingOrderService;
+            _userService = userService;
             _logger = logger;
         }
 
@@ -43,6 +46,12 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
         public void ProcessEvent(TransactionCommitEventEntry eventEntry)
         {
             // Ignored
+        }
+
+        public void ProcessEvent(WalletGenerateEventEntry eventEntry)
+        {
+            _userService.AddWallet(
+                eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol, eventEntry.WalletPublicKey);
         }
 
         public void ProcessEvent(WalletDepositEventEntry eventEntry)

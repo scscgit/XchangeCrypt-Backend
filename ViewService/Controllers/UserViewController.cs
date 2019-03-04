@@ -5,10 +5,13 @@ using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 
 namespace XchangeCrypt.Backend.ViewService.Controllers
 {
+    [Route("api/v1/view/")]
+    [ApiController]
     public class UserViewController
     {
         public AccountRepository AccountRepository { get; }
@@ -24,10 +27,23 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
             [FromQuery] [Required] string user,
             [FromQuery] [Required] string accountId)
         {
-            return AccountRepository.Accounts()
+            // TODO: re-work so that this happens implicitly! not in view service!
+            var userAccount = AccountRepository.Accounts()
                 .Find(account =>
                     account.User.Equals(user)
-                    && account.AccountId.Equals(accountId))
+                    && account.AccountId.Equals(accountId));
+            if (userAccount.CountDocuments() == 0)
+            {
+                AccountRepository.Accounts().InsertOne(
+                    new AccountEntry
+                    {
+                        User = user,
+                        AccountId = accountId,
+                        CoinWallets = new List<CoinWallet>(),
+                    });
+            }
+
+            return userAccount
                 .Single()
                 .CoinWallets
                 .Select(coinWallet =>

@@ -62,6 +62,7 @@ namespace XchangeCrypt.Backend.TradingService
             // Custom services
             services.AddTransient<EventHistoryService>();
             services.AddTransient<TradingOrderService>();
+            services.AddTransient<UserService>();
 
             // Custom repositories
             services.AddTransient<AccountRepository>();

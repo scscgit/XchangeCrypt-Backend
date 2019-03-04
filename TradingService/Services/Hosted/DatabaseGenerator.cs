@@ -64,6 +64,16 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
                     _logger.LogDebug($"{GetType().Name} is still listening for event entries...");
                 }
             }
+            catch (AggregateException e)
+            {
+                foreach (var innerException in e.InnerExceptions)
+                {
+                    _logger.LogError($"{innerException.Message}\n{innerException.StackTrace}");
+                }
+
+                Program.Shutdown();
+                throw;
+            }
             catch (Exception e)
             {
                 _logger.LogError($"{e.Message}\n{e.StackTrace}");

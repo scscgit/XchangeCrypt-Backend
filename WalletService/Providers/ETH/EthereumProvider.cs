@@ -33,7 +33,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             _walletOperationService = walletOperationService;
             _eventHistoryService = eventHistoryService;
             _versionControl = versionControl;
-            _web3 = new Web3("https://mainnet.infura.io");
+            _web3 = new Web3("https://rinkeby.infura.io");
             _withdrawalGasFee = 20;
             ProviderLookup["ETH"] = this;
         }
@@ -43,40 +43,40 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             // Listen for deposits
             foreach (var publicKey in _knownPublicKeyBalances.Keys)
             {
-                var balance = await GetBalance(publicKey);
+                var balance = GetBalance(publicKey).Result;
                 var oldBalance = _knownPublicKeyBalances[publicKey];
                 if (balance > oldBalance)
                 {
                     _logger.LogInformation(
                         $"Detected blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}");
                     //var generateEvent = _eventHistoryService.FindWalletGenerateByPublicKey(publicKey);
-                    IList<EventEntry> persist;
                     var retry = false;
                     do
                     {
-                        if (retry)
+                        _versionControl.ExecuteUsingFixedVersion(currentVersion =>
                         {
-                            _logger.LogInformation("Retrying deposit event persistence");
-                        }
+                            if (retry)
+                            {
+                                _logger.LogInformation(
+                                    $"Retrying {thisCoinSymbol} deposit event persistence @ version number {currentVersion + 1}");
+                            }
 
-                        retry = true;
-                        var now = DateTime.Now;
-                        var currentVersion = _versionControl.CurrentVersion;
-                        var deposit = new WalletDepositEventEntry
-                        {
-                            CoinSymbol = thisCoinSymbol,
-                            DepositQty = balance - oldBalance,
-                            EntryTime = now,
-                            NewBalance = balance,
-                            WalletPublicKey = publicKey,
-                            VersionNumber = currentVersion
-                        };
-                        persist = new List<EventEntry>
-                        {
-                            deposit
-                        };
+                            var deposit = new WalletDepositEventEntry
+                            {
+                                CoinSymbol = thisCoinSymbol,
+                                DepositQty = balance - oldBalance,
+                                NewBalance = balance,
+                                WalletPublicKey = publicKey,
+                                VersionNumber = currentVersion + 1
+                            };
+                            IList<EventEntry> persist = new List<EventEntry>
+                            {
+                                deposit
+                            };
+                            retry = null == _eventHistoryService.Persist(persist, currentVersion).Result;
+                        });
                     }
-                    while (null == await _eventHistoryService.Persist(persist));
+                    while (retry);
                 }
                 else if (balance < oldBalance)
                 {

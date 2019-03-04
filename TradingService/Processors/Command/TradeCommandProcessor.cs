@@ -77,8 +77,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
 
                 _logger.LogInformation(
                     $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
-                var success = await EventHistoryService.Persist(eventEntries);
-                retry = success == null;
+                retry = null == await EventHistoryService.Persist(eventEntries);
             }
             while (retry);
 

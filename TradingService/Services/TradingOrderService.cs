@@ -134,6 +134,21 @@ namespace XchangeCrypt.Backend.TradingService.Services
                 new TransactionHistoryEntry
                 {
                     ExecutionTime = now,
+                    User = matchOrder.ActionUser,
+                    AccountId = matchOrder.ActionAccountId,
+                    Instrument = matchOrder.Instrument,
+                    Side = targetOrder.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy,
+                    OrderId = matchOrder.Id,
+                    // The entire quantity was filled
+                    FilledQty = matchOrder.Qty,
+                    Price = targetOrder.LimitPrice,
+                }
+            );
+
+            TransactionHistory.InsertOne(
+                new TransactionHistoryEntry
+                {
+                    ExecutionTime = now,
                     User = targetOrder.User,
                     AccountId = targetOrder.AccountId,
                     Instrument = targetOrder.Instrument,
@@ -141,7 +156,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     OrderId = targetOrder.Id,
                     // The entire quantity was filled
                     FilledQty = matchOrder.Qty,
-                    Price = matchOrder.Price,
+                    Price = targetOrder.LimitPrice,
                 }
             );
         }

@@ -178,6 +178,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                     new Dictionary<string, object>
                     {
                         {ParameterNames.MessageType, MessageTypes.WalletOperation},
+                        {ParameterNames.WalletCommandType, WalletCommandTypes.Generate},
                         {ParameterNames.User, user},
                         {ParameterNames.AccountId, accountId},
                         {ParameterNames.CoinSymbol, coinSymbol},

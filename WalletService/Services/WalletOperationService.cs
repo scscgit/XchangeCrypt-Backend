@@ -15,11 +15,12 @@ namespace XchangeCrypt.Backend.WalletService.Services
 
         public string GetPublicKey(string user, string accountId, string coinSymbol)
         {
-            return HotWallets.Find(hotWallet =>
-                    hotWallet.User.Equals(user)
-                    && hotWallet.AccountId.Equals(accountId)
-                    && hotWallet.CoinSymbol.Equals(coinSymbol))
-                .Single().PublicKey;
+            var hotWallet = HotWallets.Find(hotWalletEntry =>
+                    hotWalletEntry.User.Equals(user)
+                    && hotWalletEntry.AccountId.Equals(accountId)
+                    && hotWalletEntry.CoinSymbol.Equals(coinSymbol))
+                .SingleOrDefault();
+            return hotWallet?.PublicKey;
         }
 
         public void StoreHdWallet(string hdSeed, string publicKey, string user, string accountId, string coinSymbol)

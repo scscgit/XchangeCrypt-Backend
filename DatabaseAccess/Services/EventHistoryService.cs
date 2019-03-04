@@ -27,7 +27,9 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
         /// <summary>
         /// Atomically persists multiple event entries representing a single version.
         /// </summary>
-        public async Task<IList<EventEntry>> Persist(IEnumerable<EventEntry> eventTransaction)
+        public async Task<IList<EventEntry>> Persist(
+            IEnumerable<EventEntry> eventTransaction,
+            long? alreadyLockedVersionNumber = null)
         {
             // Copy the list before modifying it
             var events = new List<EventEntry>(eventTransaction);
@@ -54,7 +56,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
 
             // Take the semaphore, so that no other action can use the current version as it's about to change
             var versionNumberOutdatedAlready = false;
-            VersionControl.ExecuteUsingFixedVersion(currentDatabaseVersionNumber =>
+
+            void InsertLambda(long currentDatabaseVersionNumber)
             {
                 // Make sure version number has not changed, as we can just save ourselves the useless effort otherwise
                 if (currentDatabaseVersionNumber + 1 != versionNumber)
@@ -64,11 +67,18 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 }
 
                 // Attempt to atomically insert all entries
-                EventHistoryRepository.Events().InsertMany(
-                    events,
-                    new InsertManyOptions {IsOrdered = true}
-                );
-            });
+                EventHistoryRepository.Events().InsertMany(events, new InsertManyOptions {IsOrdered = true});
+            }
+
+            if (alreadyLockedVersionNumber.HasValue)
+            {
+                InsertLambda(alreadyLockedVersionNumber.Value);
+            }
+            else
+            {
+                VersionControl.ExecuteUsingFixedVersion(InsertLambda);
+            }
+
             if (versionNumberOutdatedAlready)
             {
                 // Prematurely aborted insertion
@@ -98,7 +108,9 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
 
             if (failedEntries.Count > 0)
             {
-                await EventHistoryRepository.Events().DeleteManyAsync(e => failedEntries.Contains(e));
+                await EventHistoryRepository.Events().DeleteManyAsync(
+                    e => failedEntries.Any(failedEntry => failedEntry.Id.Equals(e.Id))
+                );
             }
 
             // Return null if the attempted transaction was not the first group of events with the same version number,

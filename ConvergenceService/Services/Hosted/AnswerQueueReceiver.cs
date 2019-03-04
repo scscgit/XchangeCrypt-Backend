@@ -88,7 +88,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
                 _logger.LogWarning($"No matching answer in the answer queue for request id {requestId}");
                 return new Dictionary<string, object>
                 {
-                    {MessagingConstants.ParameterNames.ErrorIfAny, "No answer was received from the trading service"}
+                    {MessagingConstants.ParameterNames.ErrorIfAny, "No answer was received from the target service"}
                 };
             }
 

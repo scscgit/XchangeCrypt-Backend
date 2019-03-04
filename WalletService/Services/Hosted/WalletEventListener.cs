@@ -58,7 +58,9 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                                 }
                             }
 
-                            return _currentVersion + 1;
+                            _currentVersion++;
+                            _logger.LogInformation($"Current version is increased to {_currentVersion}");
+                            return _currentVersion;
                         });
                     }
 
