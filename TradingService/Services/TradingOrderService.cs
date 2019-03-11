@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
@@ -13,6 +14,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
     public class TradingOrderService
     {
         private readonly EventHistoryRepository _eventHistoryRepository;
+        private readonly ILogger<TradingOrderService> _logger;
         private IMongoCollection<OrderBookEntry> OrderBook { get; }
         private IMongoCollection<HiddenOrderEntry> HiddenOrders { get; }
         private IMongoCollection<OrderHistoryEntry> OrderHistory { get; }
@@ -20,9 +22,13 @@ namespace XchangeCrypt.Backend.TradingService.Services
 
         /// <summary>
         /// </summary>
-        public TradingOrderService(TradingRepository tradingRepository, EventHistoryRepository eventHistoryRepository)
+        public TradingOrderService(
+            TradingRepository tradingRepository,
+            EventHistoryRepository eventHistoryRepository,
+            ILogger<TradingOrderService> logger)
         {
             _eventHistoryRepository = eventHistoryRepository;
+            _logger = logger;
             OrderBook = tradingRepository.OrderBook();
             HiddenOrders = tradingRepository.HiddenOrders();
             OrderHistory = tradingRepository.OrderHistory();
@@ -31,6 +37,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
 
         internal void CreateOrder(CreateOrderEventEntry createOrder)
         {
+            _logger.LogDebug("Called create order @ version number " + createOrder.VersionNumber);
             switch (createOrder.Type)
             {
                 case OrderType.Limit:
@@ -76,10 +83,14 @@ namespace XchangeCrypt.Backend.TradingService.Services
                 default:
                     throw new ArgumentOutOfRangeException(nameof(createOrder.Type));
             }
+
+            _logger.LogDebug("Persisted create order @ version number " + createOrder.VersionNumber);
         }
 
         internal void MatchOrder(MatchOrderEventEntry matchOrder)
         {
+            _logger.LogDebug("Called match order @ version number " + matchOrder.VersionNumber);
+
             // Old incorrect way:
             // In order to find actionOrderId, we must go a little roundabout way
 //            var matchOrderRelatedCreateOrder = _eventHistoryRepository.Events<CreateOrderEventEntry>().Find(
@@ -159,6 +170,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     Price = targetOrder.LimitPrice,
                 }
             );
+
+            _logger.LogDebug("Persisted match order @ version number " + matchOrder.VersionNumber);
         }
 
         private void AssertMatchOrderQty(

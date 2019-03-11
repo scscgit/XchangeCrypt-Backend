@@ -37,7 +37,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         public async Task ExecuteWalletOperationCommand(
             string user, string accountId, string coinSymbol, string walletCommandType, decimal? amount,
-            ObjectId walletEventIdReference, string withdrawalPublicKey, string requestId,
+            ObjectId? walletEventIdReference, string withdrawalPublicKey, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
             var retry = false;
@@ -61,7 +61,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     case MessagingConstants.WalletCommandTypes.RevokeDeposit:
                     case MessagingConstants.WalletCommandTypes.RevokeWithdrawal:
                         eventEntries = await PlanRevokeEvents(
-                            user, accountId, coinSymbol, walletEventIdReference, requestId, reportInvalidMessage);
+                            user, accountId, coinSymbol, walletEventIdReference.Value, requestId, reportInvalidMessage);
                         break;
 
                     default:

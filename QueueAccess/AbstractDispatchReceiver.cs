@@ -15,6 +15,8 @@ namespace XchangeCrypt.Backend.QueueAccess
 {
     public abstract class AbstractDispatchReceiver : BackgroundService
     {
+        private const bool StrictInvalidMessageCrashPolicy = false;
+
         public string QueryNamePostfix { get; private set; }
 
         private readonly TimeSpan _listeningInterval = TimeSpan.FromMilliseconds(2000);
@@ -129,7 +131,19 @@ namespace XchangeCrypt.Backend.QueueAccess
         {
             foreach (var queueMessage in await _queue.GetMessagesAsync(32))
             {
-                await ProcessMessagesAsync(queueMessage);
+                try
+                {
+                    await ProcessMessagesAsync(queueMessage);
+                }
+                catch (InvalidMessageException e)
+                {
+                    _logger.LogError(e.Message);
+                    if (StrictInvalidMessageCrashPolicy)
+                    {
+                        throw;
+                    }
+                }
+
                 _logger.LogInformation($"Finished consuming message ID {queueMessage.Id}");
             }
         }

@@ -55,7 +55,7 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                 case MessagingConstants.MessageTypes.TradeOrder:
                     await ReportInvalidMessage(queueMessage,
                         $"Wrong queue for MessageType {message[MessagingConstants.ParameterNames.MessageType]}");
-                    break;
+                    throw new Exception("This never occurs");
 
                 case MessagingConstants.MessageTypes.WalletOperation:
                     await _walletOperationDispatch.Dispatch(message,

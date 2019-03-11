@@ -41,8 +41,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         protected override async Task ListenForBlockchainEvents()
         {
+            // Copy the collection as it's modified during iteration
+            var keysIteration = new List<string>(_knownPublicKeyBalances.Keys);
             // Listen for deposits
-            foreach (var publicKey in _knownPublicKeyBalances.Keys)
+            foreach (var publicKey in keysIteration)
             {
                 var balance = GetBalance(publicKey).Result;
                 var oldBalance = _knownPublicKeyBalances[publicKey];
@@ -149,12 +151,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             //return "brass bus same payment express already energy direct type have venture afraid";
             var seed = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            return seed.WordList.ToString();
+            return seed.ToString();
         }
 
         public override async Task<string> GetPublicKeyFromHdWallet(string hdSeed)
         {
-            return new Wallet(hdSeed, null).GetAccount(0).Address;
+            return new Wallet(hdSeed, "").GetAccount(0).Address;
         }
 
         public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,

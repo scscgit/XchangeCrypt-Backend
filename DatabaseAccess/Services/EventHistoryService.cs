@@ -123,9 +123,19 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             long currentVersionNumber,
             long? maxVersionNumber = null)
         {
+            // TODO DELETE ME: fast database purge for development purposes
+            //EventHistoryRepository.Events().DeleteMany(Builders<EventEntry>.Filter.Gt(e => e.VersionNumber, INSERT_NUMBER));
+
             var allNewerEvents = (await EventHistoryRepository
                     .Events()
-                    .FindAsync(EventHistoryRepository.VersionAboveFilter(currentVersionNumber, maxVersionNumber))
+                    .FindAsync(
+                        EventHistoryRepository.VersionAboveFilter(currentVersionNumber, maxVersionNumber)
+//                        ,new FindOptions<EventEntry>
+//                        {
+//                            // The events need to be deterministically sorted by their version number!
+//                            Sort = Builders<EventEntry>.Sort.Ascending(e => e.VersionNumber)
+//                        }
+                    )
                 ).ToList();
 
             var validEvents = allNewerEvents

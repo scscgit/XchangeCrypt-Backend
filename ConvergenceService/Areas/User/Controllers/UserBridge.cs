@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Services;
@@ -21,11 +22,20 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
     [Authorize]
     public class UserBridge : Controller
     {
+        private static readonly string[] AllCoins =
+        {
+            "ETH",
+            "BTC",
+            "LTC",
+        };
+
+        private readonly ILogger<UserBridge> _logger;
         public CommandService CommandService { get; }
         public ViewProxyService ViewProxyService { get; }
 
-        public UserBridge(CommandService commandService, ViewProxyService viewProxyService)
+        public UserBridge(CommandService commandService, ViewProxyService viewProxyService, ILogger<UserBridge> logger)
         {
+            _logger = logger;
             CommandService = commandService;
             ViewProxyService = viewProxyService;
         }
@@ -48,18 +58,51 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         }
 
         /// <summary>
+        /// Obsolete api.
         /// Receives details of all wallets of the authorized user.
         /// </summary>
+        [Obsolete]
         [HttpGet("wallets")]
         public IEnumerable<WalletDetails> Wallets()
         {
-            var wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0");
-            if (!wallets.Any(wallet => wallet.CoinSymbol.Equals("ETH")))
+            return Wallets("0");
+        }
+
+        /// <summary>
+        /// Receives details of all wallets of the authorized user.
+        /// <param name="accountId">The account identifier.</param>
+        /// </summary>
+        [HttpGet("accounts/{accountId}/wallets")]
+        public IEnumerable<WalletDetails> Wallets(
+            [FromRoute] [Required] string accountId)
+        {
+            IList<WalletDetails> wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
+            // Generate missing empty wallets
+            foreach (var expectedCoin in AllCoins)
             {
-                var error = CommandService.GenerateWallet(User.GetIdentifier(), "0", "ETH", "").Result;
-                if (error != null)
+                if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
                 {
-                    throw new Exception("Error during wallet generation: " + error);
+                    var error = WalletGenerate(accountId, expectedCoin);
+                    _logger.LogInformation($"Generating {expectedCoin} wallet for user {User.GetIdentifier()}");
+                    if (error != null)
+                    {
+                        _logger.LogError("Error during wallet generation: " + error);
+                        wallets.Add(new WalletDetails
+                        {
+                            CoinSymbol = expectedCoin,
+                            WalletPublicKey = null,
+                            Balance = 0
+                        });
+                    }
+                    else
+                    {
+                        // Retry getting the wallet after it's supposed to be generated
+                        wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
+                        if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
+                        {
+                            _logger.LogError("Wallet generation did not cause a wallet to be generated");
+                        }
+                    }
                 }
             }
 
@@ -92,23 +135,27 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         /// <summary>
         /// Receives details of a single specific wallet of the authorized user.
         /// </summary>
-        /// <param name="accountId">The account identifier. A unique symbol identification of a coin</param>
-        [HttpGet("accounts/{accountId}/wallet")]
+        /// <param name="accountId">The account identifier.</param>
+        /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
+        [HttpGet("accounts/{accountId}/wallets/{coinSymbol}")]
         public WalletDetails Wallet(
-            [FromRoute] [Required] string accountId)
+            [FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string coinSymbol)
         {
-            return Wallets().Single(wallet => wallet.CoinSymbol.Equals(accountId));
+            return Wallets(accountId).Single(wallet => wallet.CoinSymbol.Equals(coinSymbol));
         }
 
         /// <summary>
         /// Requests a coin withdrawal from a specific wallet of the authorized user.
         /// </summary>
-        /// <param name="accountId">The account identifier. A unique symbol identification of a coin</param>
+        /// <param name="accountId">The account identifier.</param>
+        /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
         /// <param name="recipientPublicKey">Recipient address of a wallet for coins to be sent to</param>
         /// <param name="withdrawalAmount">Amount of balance to withdraw, represented in multiplies of the lowest tradable amount, which is specified by the wallet</param>
-        [HttpPost("accounts/{accountId}/withdraw")]
+        [HttpPost("accounts/{accountId}/wallets/{coinSymbol}/withdraw")]
         public IDictionary<string, string> WalletWithdraw(
             [FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string coinSymbol,
             [FromBody] [Required] string recipientPublicKey,
             [FromBody] [Required] decimal withdrawalAmount)
         {
@@ -120,5 +167,20 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         }
 
         // TODO: withdrawal history with state, cancel pending
+
+
+        /// <summary>
+        /// Requests a coin withdrawal from a specific wallet of the authorized user.
+        /// </summary>
+        /// <param name="accountId">The account identifier.</param>
+        /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
+        /// <returns>Error if any</returns>
+        [HttpPut("accounts/{accountId}/wallets/{coinSymbol}/generate")]
+        public string WalletGenerate(
+            [FromRoute] [Required] string accountId,
+            [FromRoute] [Required] string coinSymbol)
+        {
+            return CommandService.GenerateWallet(User.GetIdentifier(), accountId, coinSymbol, "").Result;
+        }
     }
 }

@@ -59,6 +59,16 @@ namespace XchangeCrypt.Backend.WalletService
                 serviceProvider => serviceProvider.GetService<EthereumProvider>()
             );
 
+            services.AddSingleton<BitcoinProvider>();
+            services.AddSingleton<IHostedService, BitcoinProvider>(
+                serviceProvider => serviceProvider.GetService<BitcoinProvider>()
+            );
+
+            services.AddSingleton<LitecoinProvider>();
+            services.AddSingleton<IHostedService, LitecoinProvider>(
+                serviceProvider => serviceProvider.GetService<LitecoinProvider>()
+            );
+
             // Persistently running queue message handler
             services.AddSingleton<DispatchReceiver>();
             services.AddSingleton<IHostedService, DispatchReceiver>(

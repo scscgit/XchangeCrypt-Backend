@@ -34,7 +34,7 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
                 (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WithdrawalPublicKey);
             var amount = (decimal?) message.GetValueOrDefault(MessagingConstants.ParameterNames.Amount);
             var walletEventIdReference =
-                (ObjectId) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
+                (ObjectId?) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
             var requestId = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.RequestId);
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur

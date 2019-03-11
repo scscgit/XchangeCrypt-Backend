@@ -43,6 +43,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
                 {
                     _logger.LogError($"{innerException.Message}\n{innerException.StackTrace}");
                 }
+
                 throw;
             }
             finally

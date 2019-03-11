@@ -19,6 +19,10 @@ namespace XchangeCrypt.Backend.TradingService.Services
 
         public void AddWallet(string user, string accountId, string coinSymbol, string publicKey)
         {
+            // TODO: create user account if does not exist yet
+            // After a wallet generation event, wallet service already contains private key,
+            // so a public key representation must be created, always storing only the most recent one
+            // This also initializes user account if none exists yet
             var userAccount = Accounts
                 .Find(account =>
                     account.User.Equals(user)
