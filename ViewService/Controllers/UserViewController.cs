@@ -34,13 +34,7 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
                     && account.AccountId.Equals(accountId));
             if (userAccount.CountDocuments() == 0)
             {
-                AccountRepository.Accounts().InsertOne(
-                    new AccountEntry
-                    {
-                        User = user,
-                        AccountId = accountId,
-                        CoinWallets = new List<CoinWallet>(),
-                    });
+                return new List<WalletDetails>();
             }
 
             return userAccount

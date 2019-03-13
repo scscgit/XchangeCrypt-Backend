@@ -46,7 +46,18 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             // Listen for deposits
             foreach (var publicKey in keysIteration)
             {
-                var balance = GetBalance(publicKey).Result;
+                decimal balance;
+                try
+                {
+                    balance = GetBalance(publicKey).Result;
+                }
+                catch (Exception)
+                {
+                    _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
+                                     $"service is probably offline, skipping the entire run");
+                    return;
+                }
+
                 var oldBalance = _knownPublicKeyBalances[publicKey];
                 if (balance > oldBalance)
                 {

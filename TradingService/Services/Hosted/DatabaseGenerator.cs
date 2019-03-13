@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -108,7 +109,18 @@ namespace XchangeCrypt.Backend.TradingService.Services.Hosted
 
         private async Task IntegrateNewEvents()
         {
-            foreach (var eventEntry in await _eventHistoryService.LoadMissingEvents(_currentVersion))
+            IList<EventEntry> missingEvents;
+            try
+            {
+                missingEvents = await _eventHistoryService.LoadMissingEvents(_currentVersion);
+            }
+            catch (Exception)
+            {
+                _logger.LogError("Could not load missing events, the database is probably offline, will try later");
+                return;
+            }
+
+            foreach (var eventEntry in missingEvents)
             {
                 var eventVersion = eventEntry.VersionNumber;
                 if (eventVersion != _currentVersion + 1)
