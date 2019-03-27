@@ -8,8 +8,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
     public class BitcoinProvider : EthereumProvider
     {
         public BitcoinProvider(ILogger<EthereumProvider> logger, WalletOperationService walletOperationService,
-            EventHistoryService eventHistoryService, VersionControl versionControl) : base(logger,
-            walletOperationService, eventHistoryService, versionControl)
+            EventHistoryService eventHistoryService, RandomEntropyService randomEntropyService,
+            VersionControl versionControl) : base(logger,
+            walletOperationService, eventHistoryService, randomEntropyService, versionControl)
         {
             // TODO: DEVELOPMENT ONLY, replace by actual provider!
             AbstractProvider.ProviderLookup["BTC"] = this;

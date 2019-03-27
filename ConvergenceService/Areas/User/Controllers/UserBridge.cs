@@ -58,17 +58,6 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         }
 
         /// <summary>
-        /// Obsolete api.
-        /// Receives details of all wallets of the authorized user.
-        /// </summary>
-        [Obsolete]
-        [HttpGet("wallets")]
-        public IEnumerable<WalletDetails> Wallets()
-        {
-            return Wallets("0");
-        }
-
-        /// <summary>
         /// Receives details of all wallets of the authorized user.
         /// <param name="accountId">The account identifier.</param>
         /// </summary>
@@ -107,29 +96,6 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
             }
 
             return wallets;
-
-
-            return new List<WalletDetails>
-            {
-                new WalletDetails
-                {
-                    CoinSymbol = "BTC",
-                    WalletPublicKey = "B65983299",
-                    Balance = 0.0013185m
-                },
-                new WalletDetails
-                {
-                    CoinSymbol = "LTC",
-                    WalletPublicKey = "L88183299",
-                    Balance = 103350.23358m
-                },
-                new WalletDetails
-                {
-                    CoinSymbol = "QBC",
-                    WalletPublicKey = "Q4018",
-                    Balance = 800_059_900_000
-                }
-            };
         }
 
         /// <summary>

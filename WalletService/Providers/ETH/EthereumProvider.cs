@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -21,18 +22,24 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         private readonly ILogger<EthereumProvider> _logger;
         private readonly WalletOperationService _walletOperationService;
         private readonly EventHistoryService _eventHistoryService;
+        private readonly RandomEntropyService _randomEntropyService;
         private readonly VersionControl _versionControl;
         private readonly Web3 _web3;
         private readonly decimal _withdrawalGasFee;
         private readonly IDictionary<string, decimal> _knownPublicKeyBalances = new Dictionary<string, decimal>();
 
         public EthereumProvider(
-            ILogger<EthereumProvider> logger, WalletOperationService walletOperationService,
-            EventHistoryService eventHistoryService, VersionControl versionControl) : base(logger)
+            ILogger<EthereumProvider> logger,
+            WalletOperationService walletOperationService,
+            EventHistoryService eventHistoryService,
+            RandomEntropyService randomEntropyService,
+            VersionControl versionControl
+        ) : base(logger)
         {
             _logger = logger;
             _walletOperationService = walletOperationService;
             _eventHistoryService = eventHistoryService;
+            _randomEntropyService = randomEntropyService;
             _versionControl = versionControl;
             _web3 = new Web3("https://rinkeby.infura.io");
             _withdrawalGasFee = 20;
@@ -161,7 +168,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         public override async Task<string> GenerateHdWallet()
         {
             //return "brass bus same payment express already energy direct type have venture afraid";
+            var resultEntropy = RandomUtils.GetBytes(16);
+            var thirdPartyEntropy = _randomEntropyService.GetRandomBytes(16);
+            //_logger.LogInformation( $"Combining two entropies:\n{new Mnemonic(Wordlist.English, resultEntropy)}\nand\n{new Mnemonic(Wordlist.English, thirdPartyEntropy)}");
+            for (var i = 0; i < 16; i++)
+            {
+                resultEntropy[i] = (byte) (resultEntropy[i] ^ thirdPartyEntropy[i]);
+            }
+
             var seed = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            //_logger.LogInformation($"Resulting entropy seed:\n{seed.ToString()}");
             return seed.ToString();
         }
 

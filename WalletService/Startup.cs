@@ -45,6 +45,7 @@ namespace XchangeCrypt.Backend.WalletService
             // Custom services
             services.AddTransient<WalletOperationService>();
             services.AddTransient<EventHistoryService>();
+            services.AddTransient<RandomEntropyService>();
 
             // Custom singleton services
             services.AddSingleton<DataAccess>();

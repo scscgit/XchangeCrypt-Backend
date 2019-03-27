@@ -86,16 +86,11 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
-                // Prevent overwrites if the event is just a redundant replay
-                var walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
-                if (walletPublicKey == null)
-                {
-                    // Do the actual seed generation, storing it during a version control lock
-                    var hdSeed = AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet().Result;
-                    walletPublicKey = AbstractProvider
-                        .ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed).Result;
-                    WalletOperationService.StoreHdWallet(hdSeed, walletPublicKey, user, accountId, coinSymbol);
-                }
+                // Do the actual seed generation, storing it during a version control lock
+                var hdSeed = AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet().Result;
+                var walletPublicKey = AbstractProvider
+                    .ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed).Result;
+                WalletOperationService.StoreHdWallet(hdSeed, walletPublicKey, user, accountId, coinSymbol);
 
                 var eventVersionNumber = currentVersionNumber + 1;
                 plannedEvents.Add(
