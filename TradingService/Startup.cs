@@ -13,7 +13,6 @@ using XchangeCrypt.Backend.TradingService.Processors;
 using XchangeCrypt.Backend.TradingService.Processors.Event;
 using XchangeCrypt.Backend.TradingService.Services;
 using XchangeCrypt.Backend.TradingService.Services.Hosted;
-using XchangeCrypt.Backend.TradingService.Services.Meta;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace XchangeCrypt.Backend.TradingService
@@ -49,9 +48,6 @@ namespace XchangeCrypt.Backend.TradingService
 
             // Dispatch
             services.AddTransient<TradeOrderDispatch>();
-
-            // Meta-faculties
-            services.AddSingleton<MonitorService>();
 
             // Command processors are made ad-hoc via factory
             services.AddTransient<ProcessorFactory>();

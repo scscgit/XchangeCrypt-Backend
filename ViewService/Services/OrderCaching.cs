@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IO.Swagger.Models;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.ConvergenceService.Extensions;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
@@ -102,7 +103,69 @@ namespace XchangeCrypt.Backend.ViewService.Services
             return GetOrders(user, accountId).Find(e => e.Id.ToString().Equals(orderId));
         }
 
-        private SideEnum MapSide(OrderSide side)
+        public List<Order> GetOrdersHistory(string user, string accountId, int? maxCount)
+        {
+            return TradingRepository
+                .OrderHistory()
+                .Find(e => e.User.Equals(user) && e.AccountId.Equals(accountId))
+                .Limit(maxCount)
+                .ToList()
+                .Select(e => new Order
+                    {
+                        Id = e.Id.ToString(),
+                        Instrument = e.Instrument,
+                        Qty = e.Qty,
+                        Side = MapSide(e.Side),
+                        Type = MapType(e.Type),
+                        // Stop order is never active until it becomes a market order
+                        FilledQty = e.FilledQty,
+                        // TODO reconsider avg
+                        AvgPrice = 0,
+                        LimitPrice = e.LimitPrice,
+                        StopPrice = e.StopPrice,
+                        ParentId = e.ParentId,
+                        ParentType = MapParentType(e.ParentType),
+                        Duration = new OrderDuration
+                        {
+                            Type = e.DurationType,
+                            Datetime = e.Duration,
+                        },
+                        // Is always valid if placed within hidden orders
+                        Status = MapStatus(e.Status),
+                    }
+                ).ToList();
+        }
+
+        public Depth GetDepth(string instrument)
+        {
+            return new Depth
+            {
+                Asks = TradingRepository
+                    .OrderBook()
+                    .Find(e => e.Instrument.Equals(instrument) && e.Side == OrderSide.Sell)
+                    .ToList()
+                    .OrderBy(e => e.LimitPrice)
+                    .GroupBy(e => e.LimitPrice)
+                    .Select(limitPrice => new DepthItem
+                    {
+                        limitPrice.Key, limitPrice.Sum(e => e.Qty - e.FilledQty)
+                    })
+                    .ToList(),
+                Bids = TradingRepository
+                    .OrderBook()
+                    .Find(e => e.Instrument.Equals(instrument) && e.Side == OrderSide.Buy)
+                    .ToList()
+                    .OrderByDescending(e => e.LimitPrice)
+                    .GroupBy(e => e.LimitPrice)
+                    .Select(limitPrice => new DepthItem
+                    {
+                        limitPrice.Key, limitPrice.Sum(e => e.Qty - e.FilledQty)
+                    })
+                    .ToList(),
+            };
+        }
+
+        private static SideEnum MapSide(OrderSide side)
         {
             switch (side)
             {
@@ -117,7 +180,23 @@ namespace XchangeCrypt.Backend.ViewService.Services
             }
         }
 
-        private ParentTypeEnum? MapParentType(ParentOrderType? parentType)
+        private static TypeEnum MapType(OrderType type)
+        {
+            switch (type)
+            {
+                case OrderType.Limit:
+                    return TypeEnum.LimitEnum;
+                case OrderType.Stop:
+                    return TypeEnum.StopEnum;
+                case OrderType.Market:
+                    return TypeEnum.MarketEnum;
+
+                default:
+                    throw new Exception("Unknown OrderType");
+            }
+        }
+
+        private static ParentTypeEnum? MapParentType(ParentOrderType? parentType)
         {
             if (parentType == null)
             {
@@ -137,7 +216,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
             }
         }
 
-        private StatusEnum? MapStatus(OrderStatus status)
+        private static StatusEnum? MapStatus(OrderStatus status)
         {
             switch (status)
             {

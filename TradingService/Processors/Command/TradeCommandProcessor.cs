@@ -162,7 +162,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                             TargetBaseNewBalance = 999,
                             TargetQuoteNewBalance = 999,
                             ActionOrderQtyRemaining = quantityRemaining,
-                            TargetOrderQtyRemaining = other.Qty - matchedQuantity,
+                            TargetOrderQtyRemaining = other.Qty - other.FilledQty - matchedQuantity,
                         });
                         if (quantityRemaining == 0)
                         {

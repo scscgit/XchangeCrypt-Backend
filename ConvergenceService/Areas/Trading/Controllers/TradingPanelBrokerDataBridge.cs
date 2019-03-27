@@ -1,9 +1,12 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
+using XchangeCrypt.Backend.ConvergenceService.Extensions;
 using XchangeCrypt.Backend.ConvergenceService.Services;
 
 namespace IO.Swagger.Controllers
@@ -46,18 +49,42 @@ namespace IO.Swagger.Controllers
             [FromQuery] [Required] string resolution, [FromQuery] [Required] decimal? from,
             [FromQuery] [Required] decimal? to, [FromQuery] decimal? countback)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(BarsArrays));
-
-            string exampleJson = null;
-            exampleJson =
-                "{\n  \"s\" : \"ok\",\n  \"c\" : [ 2.3021358869347654518833223846741020679473876953125, 2.3021358869347654518833223846741020679473876953125 ],\n  \"nb\" : 0.80082819046101150206595775671303272247314453125,\n  \"t\" : [ 6.02745618307040320615897144307382404804229736328125, 6.02745618307040320615897144307382404804229736328125 ],\n  \"v\" : [ 7.061401241503109105224211816675961017608642578125, 7.061401241503109105224211816675961017608642578125 ],\n  \"h\" : [ 5.962133916683182377482808078639209270477294921875, 5.962133916683182377482808078639209270477294921875 ],\n  \"errmsg\" : \"errmsg\",\n  \"l\" : [ 5.63737665663332876420099637471139430999755859375, 5.63737665663332876420099637471139430999755859375 ],\n  \"o\" : [ 1.46581298050294517310021547018550336360931396484375, 1.46581298050294517310021547018550336360931396484375 ]\n}";
-
-            var example = exampleJson != null
-                ? JsonConvert.DeserializeObject<BarsArrays>(exampleJson)
-                : default(BarsArrays);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new BarsArrays
+                {
+                    S = SEnum.OkEnum,
+                    Errmsg = null,
+                    Nb = null,
+                    O = new List<decimal?>
+                    {
+                        2.2m, 2.6m, 2.2m, 3.3m
+                    },
+                    H = new List<decimal?>
+                    {
+                        2.8m, 2.9m, 2.2m, 3.3m
+                    },
+                    L = new List<decimal?>
+                    {
+                        1.7m, 2.1m, 2.0m, 3.1m
+                    },
+                    C = new List<decimal?>
+                    {
+                        2.3m, 2.9m, 2.0m, 3.9m
+                    },
+                    V = new List<decimal?>
+                    {
+                        100.7m, 0.1m, 22.0m, 33.9m
+                    },
+                    T = new List<decimal?>
+                    {
+                        new DateTime(2019, 03, 11, 1, 1, 1).GetUnixEpochMillis(),
+                        new DateTime(2019, 03, 12, 1, 1, 1).GetUnixEpochMillis(),
+                        new DateTime(2019, 03, 14, 1, 1, 1).GetUnixEpochMillis(),
+                        new DateTime(2019, 03, 21, 1, 1, 1).GetUnixEpochMillis(),
+                    },
+                }
+            );
         }
 
         /// <summary>

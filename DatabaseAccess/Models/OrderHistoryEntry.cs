@@ -33,11 +33,17 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
 
         public decimal FilledQty { get; set; }
 
-        //public decimal? AvgPrice { get; set; }
+//        public decimal? AvgPrice { get; set; }
 
         public decimal? LimitPrice { get; set; }
 
         public decimal? StopPrice { get; set; }
+
+        public string ParentId { get; set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        [BsonRepresentation(BsonType.String)]
+        public ParentOrderType? ParentType { get; set; }
 
         /// <summary>
         /// Many to many reverse side.

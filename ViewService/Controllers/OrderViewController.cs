@@ -46,5 +46,23 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
         {
             return _orderCaching.GetOrder(user, accountId, orderId);
         }
+
+        [HttpGet]
+        [Route("ordersHistory")]
+        public List<Order> AccountsAccountIdOrdersHistoryGet(
+            [FromQuery] [Required] string user,
+            [FromQuery] [Required] string accountId,
+            [FromQuery] int? maxCount)
+        {
+            return _orderCaching.GetOrdersHistory(user, accountId, maxCount);
+        }
+
+        [HttpGet]
+        [Route("depth")]
+        public Depth DepthGet(
+            [FromQuery] [Required] string instrument)
+        {
+            return _orderCaching.GetDepth(instrument);
+        }
     }
 }

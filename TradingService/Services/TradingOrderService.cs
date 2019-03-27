@@ -119,7 +119,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
             {
                 OrderBook.UpdateOne(
                     Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber),
-                    Builders<OrderBookEntry>.Update.Set(e => e.FilledQty, matchOrder.ActionOrderQtyRemaining)
+                    Builders<OrderBookEntry>.Update.Set(
+                        e => e.FilledQty, actionOrder.Qty - matchOrder.ActionOrderQtyRemaining)
                 );
             }
 
@@ -135,9 +136,9 @@ namespace XchangeCrypt.Backend.TradingService.Services
             {
                 OrderBook.UpdateOne(
                     Builders<OrderBookEntry>.Filter.Eq(
-                        e => e.CreatedOnVersionId,
-                        matchOrder.TargetOrderOnVersionNumber),
-                    Builders<OrderBookEntry>.Update.Set(e => e.FilledQty, matchOrder.TargetOrderQtyRemaining)
+                        e => e.CreatedOnVersionId, matchOrder.TargetOrderOnVersionNumber),
+                    Builders<OrderBookEntry>.Update.Set(
+                        e => e.FilledQty, targetOrder.Qty - matchOrder.TargetOrderQtyRemaining)
                 );
             }
 
@@ -237,7 +238,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
             return await OrderBook
                 .Find(e => e.Side == OrderSide.Sell && e.LimitPrice <= belowOrAt && e.Instrument.Equals(instrument))
                 // TODO: verify
-                .Sort(Builders<OrderBookEntry>.Sort.Descending(e => e.LimitPrice))
+                .Sort(Builders<OrderBookEntry>.Sort.Ascending(e => e.LimitPrice))
                 .ToCursorAsync();
         }
 
@@ -246,7 +247,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
             return await OrderBook
                 .Find(e => e.Side == OrderSide.Buy && e.LimitPrice >= aboveOrAt && e.Instrument.Equals(instrument))
                 // TODO: verify
-                .Sort(Builders<OrderBookEntry>.Sort.Ascending(e => e.LimitPrice))
+                .Sort(Builders<OrderBookEntry>.Sort.Descending(e => e.LimitPrice))
                 .ToCursorAsync();
         }
     }

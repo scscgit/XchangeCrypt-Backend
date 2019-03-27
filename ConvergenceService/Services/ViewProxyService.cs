@@ -30,7 +30,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                         {"user", user},
                         {"accountId", accountId},
                         {"instrument", instrument},
-                        {"maxCount", maxCount.ToString()},
+                        {"maxCount", maxCount?.ToString()},
                     }
                 )).Result
             );
@@ -65,6 +65,21 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             );
         }
 
+        public List<Order> GetOrdersHistory(string user, string accountId, int? maxCount)
+        {
+            return JsonConvert.DeserializeObject<List<Order>>(
+                _client.GetStringAsync(Uri(
+                    "ordersHistory",
+                    new Dictionary<string, string>
+                    {
+                        {"user", user},
+                        {"accountId", accountId},
+                        {"maxCount", maxCount?.ToString()},
+                    }
+                )).Result
+            );
+        }
+
         public IEnumerable<WalletDetails> GetWallets(string user, string accountId)
         {
             return JsonConvert.DeserializeObject<IEnumerable<WalletDetails>>(
@@ -74,6 +89,19 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                     {
                         {"user", user},
                         {"accountId", accountId},
+                    }
+                )).Result
+            );
+        }
+
+        public Depth GetDepth(string instrument)
+        {
+            return JsonConvert.DeserializeObject<Depth>(
+                _client.GetStringAsync(Uri(
+                    "depth",
+                    new Dictionary<string, string>
+                    {
+                        {"instrument", instrument},
                     }
                 )).Result
             );

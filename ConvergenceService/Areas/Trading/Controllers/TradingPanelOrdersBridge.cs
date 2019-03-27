@@ -78,13 +78,15 @@ namespace IO.Swagger.Controllers
         [ValidateModelState]
         [SwaggerOperation("AccountsAccountIdInstrumentsGet")]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse20011), description: "List of instruments")]
-        [Authorize]
+        // Works even offline, as the instrument list is static
+        //[Authorize]
         public IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
         {
             var instruments = new List<Instrument>
             {
-                new Instrument {Name = "QBC_BTC", Description = "QBC_BTC"},
-                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC"}
+                new Instrument {Name = "ETH_BTC", Description = "ETH_BTC"},
+                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC"},
+                new Instrument {Name = "LTC_ETH", Description = "LTC_ETH"}
             };
             return StatusCode(
                 200,
@@ -113,23 +115,14 @@ namespace IO.Swagger.Controllers
         [Authorize]
         public IActionResult AccountsAccountIdOrdersGet([FromRoute] [Required] string accountId)
         {
-            var realData = new InlineResponse2004
-            {
-                S = Status.OkEnum,
-                Errmsg = null,
-                D = ViewProxyService.GetOrders(User.GetIdentifier(), accountId)
-            };
-            var exampleAndRealData = JsonConvert.DeserializeObject<InlineResponse2004>(
-                "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.0000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.10082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.22082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.25082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.56082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }, " +
-                "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000033916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.80082819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  } ],\n  \"errmsg\" : \"errmsg\"\n}");
-            exampleAndRealData.D.AddRange(realData.D);
             return StatusCode(
                 200,
-                exampleAndRealData
+                new InlineResponse2004
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = ViewProxyService.GetOrders(User.GetIdentifier(), accountId)
+                }
             );
         }
 
@@ -146,27 +139,19 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersHistoryGet", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2004), description: "List of orders")]
         [Authorize]
-        public IActionResult AccountsAccountIdOrdersHistoryGet([FromRoute] [Required] string accountId,
+        public IActionResult AccountsAccountIdOrdersHistoryGet(
+            [FromRoute] [Required] string accountId,
             [FromQuery] decimal? maxCount)
         {
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse2004));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"d\" : [ " +
-                          "{\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.000006683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"market\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 0.60012819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00233916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 1.90062819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.00002433916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80172819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.00002533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"QBC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 6.80162819046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " {\n    \"side\" : \"sell\",\n    \"limitPrice\" : 0.000016683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"limit\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 8.81082819146101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " {\n    \"side\" : \"buy\",\n    \"limitPrice\" : 0.034533916683182377482808078639209270477294921875,\n    \"avgPrice\" : 1.46581298050294517310021547018550336360931396484375,\n    \"instrument\" : \"LTC_BTC\",\n    \"type\" : \"stop\",\n    \"parentId\" : \"parentId\",\n    \"parentType\" : \"order\",\n    \"duration\" : {\n      \"datetime\" : 2.3021358869347654518833223846741020679473876953125,\n      \"type\" : \"type\"\n    },\n    \"stopPrice\" : 5.63737665663332876420099637471139430999755859375,\n    \"qty\" : 10.8104259046101150206595775671303272247314453125,\n    \"id\" : \"id\",\n    \"filledQty\" : 6.02745618307040320615897144307382404804229736328125,\n    \"status\" : \"placing\"\n  }," +
-                          " ],\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-                ? JsonConvert.DeserializeObject<InlineResponse2004>(exampleJson)
-                : default(InlineResponse2004);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new InlineResponse2004
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = ViewProxyService.GetOrdersHistory(User.GetIdentifier(), accountId, (int?) maxCount)
+                }
+            );
         }
 
         /// <summary>
@@ -571,21 +556,24 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse200),
             description:
             "Access Token. TradingView will set Authorization header to &#39;Bearer &#39; + access_token for all requests with authorization.")]
-        public IActionResult AuthorizePost([FromForm] [Required] string login,
+        public IActionResult AuthorizePost(
+            [FromForm] [Required] string login,
             [FromForm] [Required] string password)
         {
             //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse200));
-
-            string exampleJson = null;
-            exampleJson =
-                "{\n  \"s\" : \"ok\",\n  \"d\" : {\n    \"access_token\" : \"access_token\",\n    \"expiration\" : 0.80082819046101150206595775671303272247314453125\n  },\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-                ? JsonConvert.DeserializeObject<InlineResponse200>(exampleJson)
-                : default(InlineResponse200);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            return StatusCode(
+                200,
+                new InlineResponse200
+                {
+                    S = Status.OkEnum,
+                    Errmsg = null,
+                    D = new AuthorizationResponse
+                    {
+                        AccessToken = "Bearer: test",
+                        Expiration = null
+                    }
+                }
+            );
         }
 
         /// <summary>
@@ -633,35 +621,7 @@ namespace IO.Swagger.Controllers
                 new InlineResponse20013
                 {
                     S = Status.OkEnum,
-                    D = new Depth
-                    {
-                        Asks = new List<DepthItem>
-                        {
-                            new DepthItem {0.000033m, 1.98582m},
-                            new DepthItem {0.000045m, 1.554112m},
-                            new DepthItem {0.000165m, 40.113m},
-                            new DepthItem {0.000043m, 5.95112m},
-                            new DepthItem {0.000052m, 2.551212m},
-                            new DepthItem {0.000261m, 25.126m},
-                            new DepthItem {0.000041m, 4.12112m},
-                            new DepthItem {0.000055m, 1.552512m},
-                            new DepthItem {0.000098m, 10.12256m},
-                            new DepthItem {0.000077m, 5.19856m}
-                        },
-                        Bids = new List<DepthItem>
-                        {
-                            new DepthItem {0.000001m, 50m},
-                            new DepthItem {0.000005m, 2.585m},
-                            new DepthItem {0.000021m, 4.895m},
-                            new DepthItem {0.000022m, 2.435m},
-                            new DepthItem {0.000042m, 2.555212m},
-                            new DepthItem {0.000211m, 21.156m},
-                            new DepthItem {0.000031m, 4.12512m},
-                            new DepthItem {0.000065m, 2.551512m},
-                            new DepthItem {0.000078m, 11.11256m},
-                            new DepthItem {0.000076m, 7.19856m}
-                        }
-                    }
+                    D = ViewProxyService.GetDepth(symbol),
                 });
         }
 
