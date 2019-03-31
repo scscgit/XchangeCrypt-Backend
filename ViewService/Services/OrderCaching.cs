@@ -108,6 +108,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
             return TradingRepository
                 .OrderHistory()
                 .Find(e => e.User.Equals(user) && e.AccountId.Equals(accountId))
+                .SortByDescending(e => e.CloseTime)
                 .Limit(maxCount)
                 .ToList()
                 .Select(e => new Order

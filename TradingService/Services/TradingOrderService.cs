@@ -57,7 +57,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                         DurationType = createOrder.DurationType,
                         Duration = createOrder.Duration,
                     };
-                    OrderBook.InsertOneAsync(limitOrder);
+                    OrderBook.InsertOne(limitOrder);
                     break;
                 case OrderType.Stop:
                     var stopOrder = new HiddenOrderEntry
@@ -75,7 +75,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                         DurationType = createOrder.DurationType,
                         Duration = createOrder.Duration,
                     };
-                    HiddenOrders.InsertOneAsync(stopOrder);
+                    HiddenOrders.InsertOne(stopOrder);
                     break;
                 case OrderType.Market:
                     throw new ArgumentOutOfRangeException(nameof(createOrder.Type),

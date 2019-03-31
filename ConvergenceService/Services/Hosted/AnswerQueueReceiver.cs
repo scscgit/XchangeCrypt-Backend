@@ -12,6 +12,8 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
 {
     public class AnswerQueueReceiver : AbstractDispatchReceiver
     {
+        private int _dispatcherPostfixCleanupTimer;
+
         private class ExpectingAnswerPayload
         {
             public SemaphoreSlim Semaphore;
@@ -63,7 +65,21 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
         {
             // Generating a new random queue postfix, so that no message answer conflicts will occur
             // (Note that pending answers may be lost at the immediate moment after convergence service is scaled up)
-            queueNamePostfix = new Random().Next(50000).ToString();
+            queueNamePostfix = new Random().Next(100).ToString();
+
+            _dispatcherPostfixCleanupTimer++;
+            if (_dispatcherPostfixCleanupTimer > 50)
+            {
+                _dispatcherPostfixCleanupTimer = 0;
+                // Clean up old queues (asynchronously)
+                for (var i = 0; i < 100; i++)
+                {
+                    _logger.LogInformation($"Cleanup: removing queue {_queueName + i}");
+                    var async = _queueClient
+                        .GetQueueReference(_queueName + i)
+                        .DeleteIfExistsAsync();
+                }
+            }
         }
 
         public void ExpectAnswer(string user, string requestId)

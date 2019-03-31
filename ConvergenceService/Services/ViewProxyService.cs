@@ -11,13 +11,20 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 {
     public class ViewProxyService : IDisposable
     {
-        private readonly HttpClient _client = new HttpClient();
+        private readonly HttpClient _client;
         private readonly string _remoteUrl;
 
         public ViewProxyService(IConfiguration configuration)
         {
+            _client = new HttpClient();
             _remoteUrl =
                 $"https://{configuration["ViewService:Domain"] ?? throw new ArgumentException("ViewService:Domain")}:{configuration["ViewService:Port"] ?? throw new ArgumentException("ViewService:Port")}/api/v1/view/";
+        }
+
+        public ViewProxyService(HttpClient mockedClient)
+        {
+            _client = mockedClient;
+            _remoteUrl = "api/v1/view/";
         }
 
         public List<Execution> GetExecutions(string user, string accountId, string instrument, int? maxCount)
@@ -121,7 +128,8 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 
         public void Dispose()
         {
-            _client?.Dispose();
+            // We cannot dispose of an injected mock client during test process
+            //_client?.Dispose();
         }
     }
 }

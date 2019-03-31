@@ -22,13 +22,13 @@ namespace XchangeCrypt.Backend.QueueAccess
         private readonly TimeSpan _listeningInterval = TimeSpan.FromMilliseconds(2000);
         private readonly ILogger<AbstractDispatchReceiver> _logger;
         private readonly string _connectionString;
-        private string _queueName;
+        protected string _queueName;
         private readonly string _deadLetterQueueName;
         private readonly Action _shutdownAction;
         private CloudQueue _queue;
         private CloudQueue _deadLetterQueue;
         private bool _stopped;
-        private CloudQueueClient _queueClient;
+        protected CloudQueueClient _queueClient;
 
         protected AbstractDispatchReceiver(
             string connectionString,
@@ -112,6 +112,8 @@ namespace XchangeCrypt.Backend.QueueAccess
             while (!_stopped)
             {
                 await ReceiveMessagesAsync();
+                // Don't pass the cancellationToken, because we don't want the receiver
+                // to shutdown application from a simple testing API call timeout. // Edit: actually nevermind.
                 await Task.Delay(_listeningInterval, cancellationToken);
                 _logger.LogDebug($"{GetType().Name} is still listening for messages...");
             }

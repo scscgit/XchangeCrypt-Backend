@@ -20,5 +20,15 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
             Database = MongoClient.GetDatabase("XchangeCrypt");
             logger.LogInformation("Database access initialized");
         }
+
+        public DataAccess(string connectionString)
+        {
+            var settings = MongoClientSettings.FromUrl(
+                new MongoUrl( connectionString)
+            );
+            settings.SslSettings = new SslSettings {EnabledSslProtocols = SslProtocols.Tls12};
+            MongoClient = new MongoClient(settings);
+            Database = MongoClient.GetDatabase("XchangeCrypt");
+        }
     }
 }
