@@ -1,6 +1,7 @@
 using System;
 using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.TradingService.Services;
 
 namespace XchangeCrypt.Backend.TradingService.Processors.Event
@@ -8,15 +9,18 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
     public class TradeEventProcessor
     {
         private readonly TradingOrderService _tradingOrderService;
+        private readonly EventHistoryService _eventHistoryService;
         private readonly UserService _userService;
         private readonly ILogger<TradeEventProcessor> _logger;
 
         public TradeEventProcessor(
             TradingOrderService tradingOrderService,
+            EventHistoryService eventHistoryService,
             UserService userService,
             ILogger<TradeEventProcessor> logger)
         {
             _tradingOrderService = tradingOrderService;
+            _eventHistoryService = eventHistoryService;
             _userService = userService;
             _logger = logger;
         }
@@ -51,17 +55,39 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
         public void ProcessEvent(WalletGenerateEventEntry eventEntry)
         {
             _userService.AddWallet(
-                eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol, eventEntry.WalletPublicKey);
+                eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol, eventEntry.LastWalletPublicKey);
         }
 
         public void ProcessEvent(WalletDepositEventEntry eventEntry)
         {
-            throw new NotImplementedException();
+            _userService.ModifyBalance(
+                eventEntry.User,
+                eventEntry.AccountId,
+                eventEntry.CoinSymbol,
+                eventEntry.DepositQty);
         }
 
         public void ProcessEvent(WalletRevokeEventEntry eventEntry)
         {
-            throw new NotImplementedException();
+            var relativeBalance = 0m;
+            var revoke = _eventHistoryService.FindById(eventEntry.RevokeWalletEventEntryId);
+            switch (revoke)
+            {
+                case WalletDepositEventEntry deposit:
+                    relativeBalance = -deposit.DepositQty;
+                    break;
+                case WalletWithdrawalEventEntry withdrawal:
+                    relativeBalance = withdrawal.WithdrawalQty;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            _userService.ModifyBalance(
+                eventEntry.User,
+                eventEntry.AccountId,
+                eventEntry.CoinSymbol,
+                relativeBalance);
         }
 
         public void ProcessEvent(WalletWithdrawalEventEntry eventEntry)

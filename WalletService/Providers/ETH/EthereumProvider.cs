@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NBitcoin;
 using Nethereum.Geth;
 using Nethereum.HdWallet;
 using Nethereum.Web3;
+using Nethereum.Web3.Accounts;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
@@ -18,7 +20,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 {
     public class EthereumProvider : AbstractProvider
     {
-        private const string ThisCoinSymbol = "ETH";
+        public const string ETH = "ETH";
+
+        public string ThisCoinSymbol = ETH;
+        private const string Web3Url = "https://rinkeby.infura.io";
         private readonly ILogger<EthereumProvider> _logger;
         private readonly WalletOperationService _walletOperationService;
         private readonly EventHistoryService _eventHistoryService;
@@ -41,9 +46,13 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             _eventHistoryService = eventHistoryService;
             _randomEntropyService = randomEntropyService;
             _versionControl = versionControl;
-            _web3 = new Web3("https://rinkeby.infura.io");
+            _web3 = new Web3(Web3Url);
             _withdrawalGasFee = 20;
-            ProviderLookup["ETH"] = this;
+            if (GetType() == typeof(EthereumProvider))
+            {
+                // Do not implicitly call in (mocked) subclasses
+                ProviderLookup[ThisCoinSymbol] = this;
+            }
         }
 
         protected override async Task ListenForBlockchainEvents()
@@ -82,12 +91,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                                     $"Retrying {ThisCoinSymbol} deposit event persistence @ version number {currentVersion + 1}");
                             }
 
+                            var depositHotWallet = _walletOperationService.GetHotWallet(publicKey, ThisCoinSymbol);
                             var deposit = new WalletDepositEventEntry
                             {
+                                User = depositHotWallet.User,
+                                AccountId = depositHotWallet.AccountId,
                                 CoinSymbol = ThisCoinSymbol,
                                 DepositQty = balance - oldBalance,
                                 NewBalance = balance,
-                                WalletPublicKey = publicKey,
+                                LastWalletPublicKey = _walletOperationService.GetLastPublicKey(publicKey),
+                                DepositWalletPublicKey = publicKey,
                                 VersionNumber = currentVersion + 1
                             };
                             IList<EventEntry> persist = new List<EventEntry>
@@ -101,8 +114,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 }
                 else if (balance < oldBalance)
                 {
-                    throw new Exception(
-                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
+                    _logger.LogInformation(
+                        "Detected a negative value deposit event; assuming there is a withdrawal going on");
+                    //throw new Exception(
+                    //    "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
                 }
             }
         }
@@ -114,12 +129,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void ProcessEvent(WalletGenerateEventEntry eventEntry)
         {
-            _knownPublicKeyBalances[eventEntry.WalletPublicKey] = 0;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = 0;
         }
 
         private void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
         {
-            var oldBalance = _knownPublicKeyBalances[eventEntry.WalletPublicKey];
+            var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
             if (newBalance != eventEntry.NewBalance)
             {
@@ -128,13 +143,13 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     $"new balance event value of {eventEntry.NewBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.WalletPublicKey] = eventEntry.NewBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewBalance;
         }
 
         private void ProcessEvent(WalletRevokeEventEntry eventEntry)
         {
             var revoke = (WalletEventEntry) _eventHistoryService.FindById(eventEntry.RevokeWalletEventEntryId);
-            var oldBalance = _knownPublicKeyBalances[revoke.WalletPublicKey];
+            var oldBalance = _knownPublicKeyBalances[revoke.LastWalletPublicKey];
             decimal newBalance;
             switch (revoke)
             {
@@ -148,12 +163,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     throw new Exception("Unsupported wallet revoke event type " + revoke.GetType().Name);
             }
 
-            _knownPublicKeyBalances[revoke.WalletPublicKey] = newBalance;
+            _knownPublicKeyBalances[revoke.LastWalletPublicKey] = newBalance;
         }
 
         private void ProcessEvent(WalletDepositEventEntry eventEntry)
         {
-            var oldBalance = _knownPublicKeyBalances[eventEntry.WalletPublicKey];
+            var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
             var newBalance = oldBalance + eventEntry.DepositQty;
             if (newBalance != eventEntry.NewBalance)
             {
@@ -162,7 +177,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     $"new balance event value of {eventEntry.NewBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.WalletPublicKey] = eventEntry.NewBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewBalance;
         }
 
         public override async Task<string> GenerateHdWallet()
@@ -186,10 +201,23 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             return new Wallet(hdSeed, "").GetAccount(0).Address;
         }
 
-        public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
-            decimal value)
+        public override async Task<bool> Withdraw(
+            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
         {
-            var transaction = await _web3.Eth.GetEtherTransferService()
+            if (GetCurrentlyCachedBalance(walletPublicKeyUserReference).Result < value)
+            {
+                Consolidate(walletPublicKeyUserReference, value, true);
+            }
+
+            var transaction = await new Web3(
+                    new Account(
+                        new Wallet(
+                            _walletOperationService.GetHotWallet(walletPublicKeyUserReference, ThisCoinSymbol).HdSeed,
+                            ""
+                        ).GetAccount(0).PrivateKey
+                    )
+                ).Eth
+                .GetEtherTransferService()
                 .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasFee);
             var success = transaction.HasErrors() ?? true;
             if (success)
@@ -209,6 +237,43 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(publicKey);
             return Web3.Convert.FromWei(balance.Value);
+        }
+
+        public override void Consolidate(string targetPublicKey, decimal targetBalance, bool allowMoreBalance)
+        {
+            _logger.LogInformation(
+                $"Consolidation initiated for wallet {targetPublicKey}, target {targetBalance} {ThisCoinSymbol} {(allowMoreBalance ? "or more" : "")}");
+            var currentBalance = GetCurrentlyCachedBalance(targetPublicKey).Result;
+            var otherWallets = _walletOperationService.GetAllHotWallets(targetPublicKey, ThisCoinSymbol);
+            // Don't try to move balance from the same wallet
+            otherWallets.RemoveAll(wallet => wallet.PublicKey.Equals(targetPublicKey));
+            // Sort descending from largest balance
+            otherWallets.Sort(
+                (a, b) =>
+                    GetCurrentlyCachedBalance(b.PublicKey).Result
+                        .CompareTo(GetCurrentlyCachedBalance(a.PublicKey).Result)
+            );
+            foreach (var hotWallet in otherWallets)
+            {
+                if (currentBalance >= targetBalance)
+                {
+                    return;
+                }
+
+                var balanceToWithdraw = GetCurrentlyCachedBalance(hotWallet.PublicKey).Result;
+                if (!allowMoreBalance && currentBalance + balanceToWithdraw > targetBalance)
+                {
+                    balanceToWithdraw = targetBalance - currentBalance;
+                }
+
+                _logger.LogInformation(
+                    $"Consolidation withdrawal of {balanceToWithdraw} {ThisCoinSymbol} from {hotWallet.PublicKey} to {targetPublicKey} initiated");
+                // Mark target as already deposited, listener ignores such states
+                _knownPublicKeyBalances[targetPublicKey] += balanceToWithdraw;
+                // Withdraw and start listening for deposits on the other hot wallet
+                Withdraw(hotWallet.PublicKey, targetPublicKey, balanceToWithdraw).Wait();
+                _logger.LogInformation($"Consolidation withdrawal to {targetPublicKey} successful");
+            }
         }
 
         public override async Task<decimal> GetCurrentlyCachedBalance(string publicKey)

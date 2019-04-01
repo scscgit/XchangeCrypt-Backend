@@ -24,7 +24,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Repositories
         public DataAccess(string connectionString)
         {
             var settings = MongoClientSettings.FromUrl(
-                new MongoUrl( connectionString)
+                new MongoUrl(connectionString)
             );
             settings.SslSettings = new SslSettings {EnabledSslProtocols = SslProtocols.Tls12};
             MongoClient = new MongoClient(settings);

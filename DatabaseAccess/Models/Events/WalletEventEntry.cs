@@ -9,9 +9,13 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
         typeof(WalletWithdrawalEventEntry))]
     public abstract class WalletEventEntry : EventEntry
     {
+        public string User;
+
+        public string AccountId;
+
         public string CoinSymbol;
 
-        public string WalletPublicKey;
+        public string LastWalletPublicKey;
 
         public decimal NewBalance;
     }

@@ -11,6 +11,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
 
         public string User { get; set; }
 
+        public long CreatedOnVersionNumber { get; set; }
+
         public string AccountId { get; set; }
 
         public string HdSeed { get; set; }

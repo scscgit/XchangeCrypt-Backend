@@ -8,26 +8,86 @@ using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nethereum.Signer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.ConvergenceService;
+using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceService.Services;
+using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.WalletService.Providers.ETH;
+using XchangeCrypt.Backend.WalletService.Services;
 using Xunit;
+using Xunit.Sdk;
 
 namespace IntegrationTests
 {
     public class ConvergenceControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
     {
+        private class MockedEthereumProvider : EthereumProvider
+        {
+            public MockedEthereumProvider(
+                ILogger<EthereumProvider> logger,
+                WalletOperationService walletOperationService,
+                EventHistoryService eventHistoryService,
+                RandomEntropyService randomEntropyService,
+                VersionControl versionControl)
+                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl)
+            {
+                ProviderLookup[ThisCoinSymbol] = this;
+            }
+
+            public readonly Dictionary<string, decimal> MockedBalances = new Dictionary<string, decimal>();
+
+            public override Task<decimal> GetBalance(string publicKey)
+            {
+                if (!MockedBalances.ContainsKey(publicKey))
+                {
+                    MockedBalances.Add(publicKey, 100);
+                }
+
+                return Task.FromResult(MockedBalances[publicKey]);
+            }
+        }
+
+        private class MockedBitcoinProvider : BitcoinProvider
+        {
+            public MockedBitcoinProvider(
+                ILogger<EthereumProvider> logger,
+                WalletOperationService walletOperationService,
+                EventHistoryService eventHistoryService,
+                RandomEntropyService randomEntropyService,
+                VersionControl versionControl)
+                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl)
+            {
+                ProviderLookup[ThisCoinSymbol] = this;
+            }
+
+            public readonly Dictionary<string, decimal> MockedBalances = new Dictionary<string, decimal>();
+
+            public override Task<decimal> GetBalance(string publicKey)
+            {
+                if (!MockedBalances.ContainsKey(publicKey))
+                {
+                    MockedBalances.Add(publicKey, 80);
+                }
+
+                return Task.FromResult(MockedBalances[publicKey]);
+            }
+        }
+
         private const string TestingConnectionString =
             "mongodb+srv://test:test@cluster0-8dep5.azure.mongodb.net/test?retryWrites=true";
 
-        //private const string ViewPrefix = "/api/v1/view/";
-        private const string ApiPrefix = "/api/v1/trading/";
+        private const string TradingPrefix = "/api/v1/trading/";
+        private const string UserPrefix = "/api/v1/user/";
         private readonly ILogger _logger;
         private readonly EventHistoryRepository _eventHistoryRepository;
         private readonly HttpClient _client;
@@ -49,7 +109,33 @@ namespace IntegrationTests
 
             // Start other queue-based supporting micro-services
             new WebApplicationFactory<XchangeCrypt.Backend.TradingService.Startup>().CreateClient();
-            new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>().CreateClient();
+            new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>().WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    services.AddSingleton<EthereumProvider>(service => new MockedEthereumProvider(
+                        service.GetService<ILogger<EthereumProvider>>(),
+                        service.GetService<WalletOperationService>(),
+                        service.GetService<EventHistoryService>(),
+                        service.GetService<RandomEntropyService>(),
+                        service.GetService<VersionControl>()));
+
+                    services.AddSingleton<IHostedService, EthereumProvider>(
+                        serviceProvider => serviceProvider.GetService<MockedEthereumProvider>()
+                    );
+
+                    services.AddSingleton<BitcoinProvider>(service => new MockedBitcoinProvider(
+                        service.GetService<ILogger<EthereumProvider>>(),
+                        service.GetService<WalletOperationService>(),
+                        service.GetService<EventHistoryService>(),
+                        service.GetService<RandomEntropyService>(),
+                        service.GetService<VersionControl>()));
+
+                    services.AddSingleton<IHostedService, BitcoinProvider>(
+                        serviceProvider => serviceProvider.GetService<MockedBitcoinProvider>()
+                    );
+                });
+            }).CreateClient();
 
             // Prepare Convergence Service with injected View Service client
             _client = factory.WithWebHostBuilder(builder =>
@@ -64,8 +150,6 @@ namespace IntegrationTests
         [Fact]
         public async Task CanCreateAndMatchLimitOrders()
         {
-            // Assume test users have large balance
-
             // Make sure the depth is empty (and make sure the ViewService is running)
             var depth = await GetDepth();
             Assert.Empty(depth.Asks);
@@ -73,6 +157,17 @@ namespace IntegrationTests
 
             // We are using test users
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
+
+            // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
+            await GetWallets();
+            Try(20, () =>
+            {
+                var wallets = GetWallets().Result;
+                Assert.Equal(100,
+                    wallets.First(wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)).Balance);
+                Assert.Equal(80,
+                    wallets.First(wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)).Balance);
+            });
 
             // Prepare a buy order of 3.5 at price 0.2
             await LimitOrder(OrderSide.Buy, 2.5, 0.2);
@@ -147,7 +242,7 @@ namespace IntegrationTests
             Assert.Empty(depth.Bids);
         }
 
-        private async Task<T> RequestContentsOrError<T>(HttpResponseMessage response)
+        private async Task<T> RequestContentsOrError<T>(HttpResponseMessage response, bool directlyInsteadOfD = false)
         {
             var asString = await response.Content.ReadAsStringAsync();
             try
@@ -158,6 +253,11 @@ namespace IntegrationTests
             {
                 // Errors like invalid parameters must be printed out.
                 throw new Exception($"{nameof(HttpRequestException)}: {e.Message}\nResponse message: {asString}", e);
+            }
+
+            if (directlyInsteadOfD)
+            {
+                return JsonConvert.DeserializeObject<T>(asString);
             }
 
             IDictionary<string, JToken> dictionary;
@@ -180,27 +280,32 @@ namespace IntegrationTests
             return dictionary["d"].ToObject<T>();
         }
 
+        private async Task<IEnumerable<WalletDetails>> GetWallets()
+        {
+            return await RequestContentsOrError<IEnumerable<WalletDetails>>(
+                await _client.GetAsync($"{UserPrefix}accounts/0/wallets")
+                , true
+            );
+        }
+
         private async Task<Depth> GetDepth()
         {
             return await RequestContentsOrError<Depth>(
-                await _client.GetAsync($"{ApiPrefix}depth?symbol={_instrument}")
-//                await _viewClient.GetAsync($"{ViewPrefix}depth?instrument={_instrument}")
+                await _client.GetAsync($"{TradingPrefix}depth?symbol={_instrument}")
             );
         }
 
         private async Task<IEnumerable<Order>> GetOrders()
         {
             return await RequestContentsOrError<IEnumerable<Order>>(
-                await _client.GetAsync($"{ApiPrefix}accounts/0/orders")
-//                await _viewClient.GetAsync($"{ViewPrefix}accounts/0/orders")
+                await _client.GetAsync($"{TradingPrefix}accounts/0/orders")
             );
         }
 
         private async Task<IEnumerable<Order>> GetOrdersHistory(int maxCount)
         {
             return await RequestContentsOrError<IEnumerable<Order>>(
-                await _client.GetAsync($"{ApiPrefix}accounts/0/ordersHistory?maxCount={maxCount}")
-//                await _viewClient.GetAsync($"{ViewPrefix}accounts/0/ordersHistory?maxCount={maxCount}")
+                await _client.GetAsync($"{TradingPrefix}accounts/0/ordersHistory?maxCount={maxCount}")
             );
         }
 
@@ -236,8 +341,27 @@ namespace IntegrationTests
             };
             var encodedContent = new FormUrlEncodedContent(parameters);
             return await RequestContentsOrError<InlineResponse2005D>(
-                await _client.PostAsync($"{ApiPrefix}accounts/0/orders", encodedContent)
+                await _client.PostAsync($"{TradingPrefix}accounts/0/orders", encodedContent)
             );
+        }
+
+        private void Try(int maxSeconds, Action action)
+        {
+            for (var i = 0; i < maxSeconds; i++)
+            {
+                try
+                {
+                    action();
+                    return;
+                }
+                catch (AssertActualExpectedException e)
+                {
+                    _logger.LogDebug($"Try count {i + 1}/{maxSeconds} after {e.Message}");
+                    Task.Delay(1000).Wait();
+                }
+            }
+
+            action();
         }
     }
 }

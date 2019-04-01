@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
@@ -15,11 +16,16 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
     /// </summary>
     public class EventHistoryService
     {
+        private readonly ILogger<EventHistoryService> _logger;
         private EventHistoryRepository EventHistoryRepository { get; }
         private VersionControl VersionControl { get; }
 
-        public EventHistoryService(EventHistoryRepository eventHistoryRepository, VersionControl versionControl)
+        public EventHistoryService(
+            EventHistoryRepository eventHistoryRepository,
+            VersionControl versionControl,
+            ILogger<EventHistoryService> logger)
         {
+            _logger = logger;
             EventHistoryRepository = eventHistoryRepository;
             VersionControl = versionControl;
         }
@@ -63,7 +69,6 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 if (currentDatabaseVersionNumber + 1 != versionNumber)
                 {
                     versionNumberOutdatedAlready = true;
-                    return;
                 }
 
                 // Attempt to atomically insert all entries
@@ -82,6 +87,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             if (versionNumberOutdatedAlready)
             {
                 // Prematurely aborted insertion
+                _logger.LogError($"Reason for event @ version number {versionNumber} retry: already outdated");
                 return null;
             }
 
@@ -106,8 +112,11 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 }
             }
 
+            // A nasty workaround to clean up invalid events. This is not guaranteed to execute though, so TODO!
             foreach (var failedEntry in failedEntries)
             {
+                _logger.LogError(
+                    $"Note: removing duplicate (uncommitted) failed event entry @ version number {versionNumber}");
                 // Re-written to be sequential, as there were issues with DeleteMany LINQ selector
                 await EventHistoryRepository.Events().DeleteOneAsync(
                     e => failedEntry.Id.Equals(e.Id)
@@ -168,7 +177,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
         {
             return (WalletGenerateEventEntry) EventHistoryRepository.Events().Find(eventEntry =>
                 eventEntry is WalletGenerateEventEntry
-                && ((WalletGenerateEventEntry) eventEntry).WalletPublicKey.Equals(publicKey)).Single();
+                && ((WalletGenerateEventEntry) eventEntry).LastWalletPublicKey.Equals(publicKey)).Single();
         }
     }
 }

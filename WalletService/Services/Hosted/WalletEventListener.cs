@@ -13,7 +13,8 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
 {
     public class WalletEventListener : BackgroundService
     {
-        private readonly TimeSpan _listeningInterval = TimeSpan.FromMilliseconds(2000);
+        private int _listeningInterval = 2000;
+        private readonly int _listeningIntervalMax = 2000;
 
         private long _currentVersion = 0;
         private readonly EventHistoryService _eventHistoryService;
@@ -47,14 +48,11 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                         // Only integrate new events as long as no one is currently assuming a fixed current version
                         _versionControl.IncreaseVersion(() =>
                         {
-                            foreach (var providerKey in AbstractProvider.ProviderLookup.Keys)
+                            foreach (var missingEvent in missingEvents)
                             {
-                                foreach (var missingEvent in missingEvents)
+                                if (missingEvent is WalletEventEntry walletEvent)
                                 {
-                                    if (missingEvent is WalletEventEntry walletEvent)
-                                    {
-                                        AbstractProvider.ProviderLookup[providerKey].ProcessEvent(walletEvent);
-                                    }
+                                    AbstractProvider.ProviderLookup[walletEvent.CoinSymbol].ProcessEvent(walletEvent);
                                 }
                             }
 
@@ -62,10 +60,16 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                             _logger.LogInformation($"Current version is increased to {_currentVersion}");
                             return _currentVersion;
                         });
+                        _listeningInterval = 50;
                     }
                     else
                     {
-                        await Task.Delay(_listeningInterval, stoppingToken);
+                        if (_listeningInterval < _listeningIntervalMax)
+                        {
+                            _listeningInterval += 50;
+                        }
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(_listeningInterval), stoppingToken);
                         _logger.LogDebug($"{GetType().Name} is still listening for event entries...");
                     }
                 }

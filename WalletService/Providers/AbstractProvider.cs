@@ -69,6 +69,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public abstract Task<decimal> GetBalance(string publicKey);
 
+        /// <summary>
+        /// Makes the target public key contain a target balance by moving funds in.
+        /// </summary>
+        public abstract void Consolidate(string targetPublicKey, decimal targetBalance, bool allowMoreBalance);
+
         public abstract Task<decimal> GetCurrentlyCachedBalance(string publicKey);
 
         public new async Task StopAsync(CancellationToken cancellationToken)

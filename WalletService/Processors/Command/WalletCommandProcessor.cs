@@ -90,9 +90,10 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 var hdSeed = AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet().Result;
                 var walletPublicKey = AbstractProvider
                     .ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed).Result;
-                WalletOperationService.StoreHdWallet(hdSeed, walletPublicKey, user, accountId, coinSymbol);
 
                 var eventVersionNumber = currentVersionNumber + 1;
+                WalletOperationService.StoreHdWallet(
+                    hdSeed, walletPublicKey, user, accountId, coinSymbol, eventVersionNumber);
                 plannedEvents.Add(
                     new WalletGenerateEventEntry
                     {
@@ -101,7 +102,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                         AccountId = accountId,
                         CoinSymbol = coinSymbol,
                         NewBalance = 0,
-                        WalletPublicKey = walletPublicKey,
+                        LastWalletPublicKey = walletPublicKey,
                     }
                 );
             });
@@ -118,7 +119,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
-                walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
+                walletPublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
                 var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
                     .Result;
                 withdrawalEventEntry = new WalletWithdrawalEventEntry
@@ -127,7 +128,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     User = user,
                     AccountId = accountId,
                     CoinSymbol = coinSymbol,
-                    WalletPublicKey = walletPublicKey,
+                    LastWalletPublicKey = walletPublicKey,
                     NewBalance = balance - amount,
                     //BlockchainTransactionId = ,
                     WithdrawalPublicKey = withdrawalPublicKey,
@@ -162,7 +163,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
-                var walletPublicKey = WalletOperationService.GetPublicKey(user, accountId, coinSymbol);
+                var walletPublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
                 var referencedEventEntry = EventHistoryService.FindById(walletEventIdReference);
                 var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
                     .Result;
@@ -183,7 +184,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 {
                     VersionNumber = eventVersionNumber,
                     CoinSymbol = coinSymbol,
-                    WalletPublicKey = walletPublicKey,
+                    LastWalletPublicKey = walletPublicKey,
                     NewBalance = balance,
                 });
             });

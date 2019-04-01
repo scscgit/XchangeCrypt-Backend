@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
@@ -8,15 +9,52 @@ namespace XchangeCrypt.Backend.TradingService.Services
 {
     public class UserService
     {
+        private readonly ILogger<UserService> _logger;
         private readonly EventHistoryRepository _eventHistoryRepository;
         private IMongoCollection<AccountEntry> Accounts { get; }
 
         /// <summary>
         /// </summary>
-        public UserService(AccountRepository accountRepository, EventHistoryRepository eventHistoryRepository)
+        public UserService(
+            AccountRepository accountRepository,
+            EventHistoryRepository eventHistoryRepository,
+            ILogger<UserService> logger)
         {
+            _logger = logger;
             _eventHistoryRepository = eventHistoryRepository;
             Accounts = accountRepository.Accounts();
+        }
+
+        public void ModifyBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
+        {
+            AccountEntry result;
+            do
+            {
+                var userAccount = GetAccountQuery(user, accountId).Single();
+                var userWallet = userAccount.CoinWallets.Single(
+                    userAccountCoinWallet => userAccountCoinWallet.CoinSymbol.Equals(coinSymbol)
+                );
+                result = Accounts.FindOneAndUpdate(
+                    account =>
+                        account.Id.Equals(userAccount.Id)
+                        && account.CoinWallets.Any(coinWallet =>
+                            coinWallet.CoinSymbol.Equals(coinSymbol)
+                            // We modify the balance compared to the previous one, and simply retry when it was changed
+                            && coinWallet.Balance == userWallet.Balance
+                        ),
+                    // Parameter -1 of CoinWallets list means first matching
+                    Builders<AccountEntry>.Update.Set(
+                        account => account.CoinWallets[-1].Balance,
+                        userWallet.Balance + relativeValue
+                    )
+                );
+                if (result == null)
+                {
+                    _logger.LogError(
+                        $"Attempted to modify balance of user {user} accountId {accountId} coinSymbol {coinSymbol} from {userWallet.Balance} by {relativeValue}, but his Balance has changed meanwhile, so the atomic modify operation will be retried");
+                }
+            }
+            while (result == null);
         }
 
         /// <summary>
@@ -30,26 +68,11 @@ namespace XchangeCrypt.Backend.TradingService.Services
         /// <param name="publicKey">Public key of the specified coin to be registered as address visible to user</param>
         public void AddWallet(string user, string accountId, string coinSymbol, string publicKey)
         {
-            var userAccountQuery = Accounts
-                .Find(account =>
-                    account.User.Equals(user)
-                    && account.AccountId.Equals(accountId));
-
-            // Create user account if one does not exist yet
-            if (userAccountQuery.CountDocuments() == 0)
-            {
-                Accounts.InsertOne(
-                    new AccountEntry
-                    {
-                        User = user,
-                        AccountId = accountId,
-                        CoinWallets = new List<CoinWallet>()
-                    }
-                );
-            }
+            var userAccountQuery = GetAccountQuery(user, accountId);
 
             // Get the user account
             var userAccount = userAccountQuery.Single();
+
             var coinWalletList =
                 from wallet in userAccount.CoinWallets
                 where wallet.CoinSymbol.Equals(coinSymbol)
@@ -81,6 +104,29 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     Builders<AccountEntry>.Update.Set(account => account.CoinWallets[-1].PublicKey, publicKey)
                 );
             }
+        }
+
+        protected IFindFluent<AccountEntry, AccountEntry> GetAccountQuery(string user, string accountId)
+        {
+            var userAccountQuery = Accounts
+                .Find(account =>
+                    account.User.Equals(user)
+                    && account.AccountId.Equals(accountId));
+
+            // Create user account if one does not exist yet
+            if (userAccountQuery.CountDocuments() == 0)
+            {
+                Accounts.InsertOne(
+                    new AccountEntry
+                    {
+                        User = user,
+                        AccountId = accountId,
+                        CoinWallets = new List<CoinWallet>()
+                    }
+                );
+            }
+
+            return userAccountQuery;
         }
     }
 }

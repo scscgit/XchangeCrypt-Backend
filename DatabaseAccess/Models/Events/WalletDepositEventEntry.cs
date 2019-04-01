@@ -4,7 +4,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
     {
         public string BlockchainTransactionId;
 
-        //public string WalletPublicKey;
+        public string DepositWalletPublicKey;
 
         public decimal DepositQty;
     }
