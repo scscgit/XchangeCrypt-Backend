@@ -25,6 +25,15 @@ namespace XchangeCrypt.Backend.TradingService.Services
             Accounts = accountRepository.Accounts();
         }
 
+        public (decimal, decimal) GetBalanceAndReservedBalance(string user, string accountId, string coinSymbol)
+        {
+            var userAccount = GetAccountQuery(user, accountId).Single();
+            var userWallet = userAccount.CoinWallets.Single(
+                userAccountCoinWallet => userAccountCoinWallet.CoinSymbol.Equals(coinSymbol)
+            );
+            return (userWallet.Balance, userWallet.ReservedBalance);
+        }
+
         public void ModifyBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
         {
             AccountEntry result;
@@ -52,6 +61,38 @@ namespace XchangeCrypt.Backend.TradingService.Services
                 {
                     _logger.LogError(
                         $"Attempted to modify balance of user {user} accountId {accountId} coinSymbol {coinSymbol} from {userWallet.Balance} by {relativeValue}, but his Balance has changed meanwhile, so the atomic modify operation will be retried");
+                }
+            }
+            while (result == null);
+        }
+
+        public void ModifyReservedBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
+        {
+            AccountEntry result;
+            do
+            {
+                var userAccount = GetAccountQuery(user, accountId).Single();
+                var userWallet = userAccount.CoinWallets.Single(
+                    userAccountCoinWallet => userAccountCoinWallet.CoinSymbol.Equals(coinSymbol)
+                );
+                result = Accounts.FindOneAndUpdate(
+                    account =>
+                        account.Id.Equals(userAccount.Id)
+                        && account.CoinWallets.Any(coinWallet =>
+                            coinWallet.CoinSymbol.Equals(coinSymbol)
+                            // We modify the balance compared to the previous one, and simply retry when it was changed
+                            && coinWallet.ReservedBalance == userWallet.ReservedBalance
+                        ),
+                    // Parameter -1 of CoinWallets list means first matching
+                    Builders<AccountEntry>.Update.Set(
+                        account => account.CoinWallets[-1].ReservedBalance,
+                        userWallet.ReservedBalance + relativeValue
+                    )
+                );
+                if (result == null)
+                {
+                    _logger.LogError(
+                        $"Attempted to modify reserved balance of user {user} accountId {accountId} coinSymbol {coinSymbol} from {userWallet.Balance} by {relativeValue}, but his Balance has changed meanwhile, so the atomic modify operation will be retried");
                 }
             }
             while (result == null);
@@ -87,7 +128,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     {
                         CoinSymbol = coinSymbol,
                         PublicKey = publicKey,
-                        Balance = 0
+                        Balance = 0,
+                        ReservedBalance = 0,
                     })
                 );
             }

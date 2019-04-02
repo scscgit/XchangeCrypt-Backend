@@ -37,7 +37,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         public async Task ExecuteWalletOperationCommand(
             string user, string accountId, string coinSymbol, string walletCommandType, decimal? amount,
-            ObjectId? walletEventIdReference, string withdrawalPublicKey, string requestId,
+            ObjectId? walletEventIdReference, string withdrawalTargetPublicKey, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
             var retry = false;
@@ -54,7 +54,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
                         eventEntries = await PlanWithdrawalEvents(
-                            user, accountId, coinSymbol, withdrawalPublicKey, amount.Value, requestId,
+                            user, accountId, coinSymbol, withdrawalTargetPublicKey, amount.Value, requestId,
                             reportInvalidMessage, out afterPersistence);
                         break;
 
@@ -110,7 +110,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
         }
 
         private Task<IList<EventEntry>> PlanWithdrawalEvents(
-            string user, string accountId, string coinSymbol, string withdrawalPublicKey, decimal amount,
+            string user, string accountId, string coinSymbol, string withdrawalTargetPublicKey, decimal amount,
             string requestId, Func<string, Exception> reportInvalidMessage, out Action afterPersistence)
         {
             WalletWithdrawalEventEntry withdrawalEventEntry = null;
@@ -131,7 +131,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     LastWalletPublicKey = walletPublicKey,
                     NewBalance = balance - amount,
                     //BlockchainTransactionId = ,
-                    WithdrawalPublicKey = withdrawalPublicKey,
+                    WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
                     WithdrawalQty = amount,
                 };
                 plannedEvents.Add(withdrawalEventEntry);
@@ -140,15 +140,16 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             afterPersistence = () =>
             {
                 var success = AbstractProvider.ProviderLookup[coinSymbol]
-                    .Withdraw(walletPublicKey, withdrawalPublicKey, amount).Result;
+                    .Withdraw(walletPublicKey, withdrawalTargetPublicKey, amount).Result;
                 _logger.LogInformation(
-                    $"Withdrawal of amount {amount} of user {user} to wallet {withdrawalPublicKey} {(success ? "successful" : "has failed, this is a critical error")}");
+                    $"Withdrawal of {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey} {(success ? "successful" : "has failed, this is a critical error")}");
                 if (!success)
                 {
                     ExecuteWalletOperationCommand(user, accountId, coinSymbol,
                         MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amount, withdrawalEventEntry.Id, null,
                         requestId, reportInvalidMessage).Wait();
-                    reportInvalidMessage($"Couldn't withdraw amount {amount} to wallet {withdrawalPublicKey}");
+                    reportInvalidMessage(
+                        $"Couldn't withdraw {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey}");
                 }
             };
             return Task.FromResult(plannedEvents);

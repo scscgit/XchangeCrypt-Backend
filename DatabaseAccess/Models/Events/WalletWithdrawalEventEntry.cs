@@ -4,8 +4,10 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
     {
         public string BlockchainTransactionId;
 
-        public string WithdrawalPublicKey;
+        public string WithdrawalTargetPublicKey;
 
         public decimal WithdrawalQty;
+
+        public bool OverdrawnAndCanceledOrders;
     }
 }

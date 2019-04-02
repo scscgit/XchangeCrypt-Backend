@@ -1,5 +1,6 @@
 using System;
 using Microsoft.Extensions.Logging;
+using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.TradingService.Services;
@@ -92,7 +93,84 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
 
         public void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
         {
-            throw new NotImplementedException();
+            // This event was created by Wallet Service, so that it couldn't really access user's reserved balance.
+            // You may ask, how can we make sure no withdrawal occurs concurrently during a trade order creation?
+            // The trade command processor has strict sequential rules => such trade event persistence won't be allowed.
+            // Another issue occurs when a user has balance reserved in an open position.
+            // In that case we close his positions, so the trade command processor no longer uses them in calculation.
+
+            var overdrawn = eventEntry.OverdrawnAndCanceledOrders;
+            if (!overdrawn)
+            {
+                var (balance, reservedBalance) = _userService
+                    .GetBalanceAndReservedBalance(eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol);
+                if (balance - reservedBalance < eventEntry.WithdrawalQty)
+                {
+                    // First time the event has detected an overdraw, it will be persisted for reference purposes
+                    // (and for a marginal calculation speedup next time the event gets processed after restart)
+                    _eventHistoryService.ReportOverdrawnWithdrawal(eventEntry);
+                    overdrawn = true;
+                }
+            }
+
+            if (overdrawn)
+            {
+                _logger.LogInformation(
+                    $"User {eventEntry.User} accountId {eventEntry.AccountId} has overdrawn his {eventEntry.CoinSymbol} balance by a withdrawal so large, that all his positions need to be closed");
+                decimal unreservedBalance = 0;
+                foreach (var (baseCurrency, quoteCurrency)
+                    in _tradingOrderService.GetInstruments(eventEntry.CoinSymbol))
+                {
+                    var instrument = $"{baseCurrency}_{quoteCurrency}";
+                    // We only cancel the really relevant active orders - though for simplicity we cancel them all
+                    OrderSide cancelOrderSide;
+                    if (eventEntry.CoinSymbol.Equals(baseCurrency))
+                    {
+                        cancelOrderSide = OrderSide.Sell;
+                    }
+                    else if (eventEntry.CoinSymbol.Equals(quoteCurrency))
+                    {
+                        cancelOrderSide = OrderSide.Buy;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException();
+                    }
+
+                    foreach (var orderBookEntry
+                        in _tradingOrderService.GetLimitOrders(
+                            eventEntry.User, eventEntry.AccountId, instrument, cancelOrderSide))
+                    {
+                        unreservedBalance +=
+                            _tradingOrderService.CancelOrderById(orderBookEntry.Id, eventEntry.EntryTime);
+                        _logger.LogInformation(
+                            $"Canceling {instrument} limit order due to balance overdraw, id {orderBookEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");
+                    }
+
+                    // Stop orders will get canceled too
+                    foreach (var stopOrderEntry
+                        in _tradingOrderService.GetStopOrders(
+                            eventEntry.User, eventEntry.AccountId, instrument, cancelOrderSide))
+                    {
+                        unreservedBalance +=
+                            _tradingOrderService.CancelOrderById(stopOrderEntry.Id, eventEntry.EntryTime);
+                        _logger.LogInformation(
+                            $"Canceling {instrument} stop order due to balance overdraw, id {stopOrderEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");
+                    }
+                }
+
+                _userService.ModifyReservedBalance(
+                    eventEntry.User,
+                    eventEntry.AccountId,
+                    eventEntry.CoinSymbol,
+                    -unreservedBalance);
+            }
+
+            _userService.ModifyBalance(
+                eventEntry.User,
+                eventEntry.AccountId,
+                eventEntry.CoinSymbol,
+                -eventEntry.WithdrawalQty);
         }
     }
 }

@@ -9,9 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nethereum.Signer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XchangeCrypt.Backend.ConstantsLibrary;
@@ -28,8 +26,9 @@ using XchangeCrypt.Backend.WalletService.Services;
 using Xunit;
 using Xunit.Sdk;
 
-namespace IntegrationTests
+namespace XchangeCrypt.Backend.Tests.IntegrationTests
 {
+    [TestCaseOrderer("XchangeCrypt.Backend.Tests.IntegrationTests.AlphabeticalOrderer", "XchangeCrypt.Backend")]
     public class ConvergenceControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
     {
         private class MockedEthereumProvider : EthereumProvider
@@ -55,6 +54,12 @@ namespace IntegrationTests
                 }
 
                 return Task.FromResult(MockedBalances[publicKey]);
+            }
+
+            public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
+                decimal value)
+            {
+                return true;
             }
         }
 
@@ -82,6 +87,12 @@ namespace IntegrationTests
 
                 return Task.FromResult(MockedBalances[publicKey]);
             }
+
+            public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
+                decimal value)
+            {
+                return true;
+            }
         }
 
         private const string TestingConnectionString =
@@ -92,6 +103,9 @@ namespace IntegrationTests
         private readonly ILogger _logger;
         private readonly EventHistoryRepository _eventHistoryRepository;
         private readonly HttpClient _client;
+
+        private MockedEthereumProvider _ethProvider;
+        private MockedBitcoinProvider _btcProvider;
 
         private string _instrument = "ETH_BTC";
 
@@ -120,7 +134,7 @@ namespace IntegrationTests
                     // letting it receive a replaced injected singleton provider instance.
 
                     services.Replace(ServiceDescriptor.Singleton<EthereumProvider>(service =>
-                        new MockedEthereumProvider(
+                        _ethProvider = new MockedEthereumProvider(
                             service.GetService<ILogger<EthereumProvider>>(),
                             service.GetService<WalletOperationService>(),
                             service.GetService<EventHistoryService>(),
@@ -133,7 +147,7 @@ namespace IntegrationTests
 //                    ));
 
                     services.Replace(ServiceDescriptor.Singleton<BitcoinProvider>(service =>
-                        new MockedBitcoinProvider(
+                        _btcProvider = new MockedBitcoinProvider(
                             service.GetService<ILogger<EthereumProvider>>(),
                             service.GetService<WalletOperationService>(),
                             service.GetService<EventHistoryService>(),
@@ -160,7 +174,47 @@ namespace IntegrationTests
         }
 
         [Fact]
-        public async Task CanCreateAndMatchLimitOrders()
+        public async Task T1_CanWithdrawWithOpenOrdersAndTheyClose()
+        {
+            // Make sure the depth is empty (and make sure the ViewService is running)
+            var depth = await GetDepth();
+            Assert.Empty(depth.Asks);
+            Assert.Empty(depth.Bids);
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
+
+            // Generate the wallets
+            Try(10, () =>
+            {
+                var wallets = GetWallets().Result;
+                // Lets not flood it with too many duplicate generation requests
+                Task.Delay(1000).Wait();
+                Assert.Equal(100,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
+            });
+
+            // Try to withdraw
+            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
+
+            // Make sure the balance gets updated
+            Try(10, () =>
+            {
+                var wallets = GetWallets().Result;
+                Assert.Equal(50,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+            });
+        }
+
+        [Fact]
+        public async Task T2_CanCreateAndMatchLimitOrders()
         {
             // Make sure the depth is empty (and make sure the ViewService is running)
             var depth = await GetDepth();
@@ -171,18 +225,19 @@ namespace IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
-            await GetWallets();
             Try(10, () =>
             {
                 var wallets = GetWallets().Result;
                 // Lets not flood it with too many duplicate generation requests
                 Task.Delay(1000).Wait();
                 Assert.Equal(100,
-                    Assert.Single(wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH))
-                        .Balance);
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
                 Assert.Equal(80,
-                    Assert.Single(wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC))
-                        .Balance);
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
             });
 
             // Prepare a buy order of 3.5 at price 0.2
@@ -304,6 +359,23 @@ namespace IntegrationTests
             return await RequestContentsOrError<IEnumerable<WalletDetails>>(
                 await _client.GetAsync($"{UserPrefix}accounts/0/wallets")
                 , true
+            );
+        }
+
+        private async Task<string> WalletWithdraw(
+            string coinSymbol, string recipientPublicKey, decimal withdrawalAmount)
+        {
+            var parameters = new Dictionary<string, string>
+            {
+                {"recipientPublicKey", recipientPublicKey},
+                {"withdrawalAmount", $"{withdrawalAmount}"},
+            };
+            var encodedContent = new FormUrlEncodedContent(parameters);
+            return await RequestContentsOrError<string>(
+                await _client.PostAsync(
+                    $"{UserPrefix}accounts/0/wallets/{coinSymbol}/withdraw",
+                    encodedContent
+                ), true
             );
         }
 

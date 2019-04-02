@@ -134,7 +134,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
         {
-            var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
+            var oldBalance = GetCurrentlyCachedBalance(eventEntry.LastWalletPublicKey).Result;
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
             if (newBalance != eventEntry.NewBalance)
             {
@@ -221,15 +221,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 .GetEtherTransferService()
                 .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasFee);
             var success = transaction.HasErrors() ?? true;
-            if (success)
-            {
-                _knownPublicKeyBalances[walletPublicKeyUserReference] -= value;
-            }
-
+            // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;
         }
 
-        public override async Task OnDeposit(string fromPublicKey, string toPublicKey, decimal value)
+//        public override void OnWithdraw(string fromPublicKey, string toPublicKey, decimal value)
+//        {
+//            _knownPublicKeyBalances[fromPublicKey] -= value;
+//        }
+
+        public override void OnDeposit(string fromPublicKey, string toPublicKey, decimal value)
         {
             _knownPublicKeyBalances[toPublicKey] += value;
         }
@@ -279,7 +280,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         public override async Task<decimal> GetCurrentlyCachedBalance(string publicKey)
         {
-            return _knownPublicKeyBalances[publicKey];
+            // The zero is only returned if there was no Wallet Generate event processed yet,
+            // which means that the command method, which called this, will surely be deemed invalid before it persists
+            return _knownPublicKeyBalances.ContainsKey(publicKey) ? _knownPublicKeyBalances[publicKey] : 0m;
         }
     }
 }

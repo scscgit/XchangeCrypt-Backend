@@ -189,6 +189,34 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             });
         }
 
+        public async Task<string> WalletWithdraw(
+            string user,
+            string accountId,
+            string coinSymbol,
+            string recipientPublicKey,
+            decimal withdrawalAmount,
+            string requestId)
+        {
+            requestId = Sha256Hash(requestId);
+            return await ExecuteForAnswer(user, requestId, async () =>
+            {
+                await _walletQueueWriter.SendMessageAsync(
+                    new Dictionary<string, object>
+                    {
+                        {ParameterNames.MessageType, MessageTypes.WalletOperation},
+                        {ParameterNames.WalletCommandType, WalletCommandTypes.Withdrawal},
+                        {ParameterNames.User, user},
+                        {ParameterNames.AccountId, accountId},
+                        {ParameterNames.CoinSymbol, coinSymbol},
+                        {ParameterNames.WithdrawalTargetPublicKey, recipientPublicKey},
+                        {ParameterNames.Amount, withdrawalAmount},
+                        {ParameterNames.RequestId, requestId},
+                        {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
+                    }
+                );
+            });
+        }
+
         private async Task<string> ExecuteForAnswer(string user, string requestId, Action queueAction)
         {
             _answerQueueReceiver.ExpectAnswer(user, requestId);

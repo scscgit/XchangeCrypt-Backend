@@ -180,5 +180,16 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 eventEntry is WalletGenerateEventEntry
                 && ((WalletGenerateEventEntry) eventEntry).LastWalletPublicKey.Equals(publicKey)).Single();
         }
+
+        public void ReportOverdrawnWithdrawal(WalletWithdrawalEventEntry withdrawal)
+        {
+            EventHistoryRepository.Events().FindOneAndUpdate(
+                eventEntry => eventEntry.Id.Equals(withdrawal.Id),
+                Builders<EventEntry>.Update.Set(
+                    eventEntry => ((WalletWithdrawalEventEntry) eventEntry).OverdrawnAndCanceledOrders,
+                    true
+                )
+            );
+        }
     }
 }

@@ -30,8 +30,8 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
             var coinSymbol = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.CoinSymbol);
             var walletCommandType =
                 (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletCommandType);
-            var withdrawalPublicKey =
-                (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WithdrawalPublicKey);
+            var withdrawalTargetPublicKey =
+                (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.WithdrawalTargetPublicKey);
             var amount = (decimal?) message.GetValueOrDefault(MessagingConstants.ParameterNames.Amount);
             var walletEventIdReference =
                 (ObjectId?) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
@@ -41,8 +41,8 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
 
             //todo
             return ProcessorFactory.CreateWalletOperationPersistenceProcessor().ExecuteWalletOperationCommand(
-                user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference, withdrawalPublicKey,
-                requestId, reportInvalidMessage);
+                user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference,
+                withdrawalTargetPublicKey, requestId, reportInvalidMessage);
         }
     }
 }

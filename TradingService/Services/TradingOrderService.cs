@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
@@ -33,6 +37,36 @@ namespace XchangeCrypt.Backend.TradingService.Services
             HiddenOrders = tradingRepository.HiddenOrders();
             OrderHistory = tradingRepository.OrderHistory();
             TransactionHistory = tradingRepository.TransactionHistory();
+        }
+
+        internal List<(string, string)> GetInstruments(string coinSymbol)
+        {
+            return GlobalConfiguration.Instruments.Where(
+                instrument =>
+                    coinSymbol.Equals(instrument.Item1) || coinSymbol.Equals(instrument.Item2)
+            ).ToList();
+        }
+
+        internal List<OrderBookEntry> GetLimitOrders(
+            string user, string accountId, string instrument, OrderSide orderSide)
+        {
+            return OrderBook.Find(order =>
+                order.User.Equals(user)
+                && order.AccountId.Equals(accountId)
+                && order.Instrument.Equals(instrument)
+                && order.Side == orderSide
+            ).ToList();
+        }
+
+        internal List<HiddenOrderEntry> GetStopOrders(
+            string user, string accountId, string instrument, OrderSide orderSide)
+        {
+            return HiddenOrders.Find(order =>
+                order.User.Equals(user)
+                && order.AccountId.Equals(accountId)
+                && order.Instrument.Equals(instrument)
+                && order.Side == orderSide
+            ).ToList();
         }
 
         internal void CreateOrder(CreateOrderEventEntry createOrder)
@@ -193,26 +227,56 @@ namespace XchangeCrypt.Backend.TradingService.Services
             }
         }
 
-        internal void CancelOrder(CancelOrderEventEntry cancelOrder)
+        /// <summary>
+        /// Cancels an active order, inserting a relevant order history entry.
+        /// </summary>
+        /// <param name="cancelOrder">Event referencing the order to be canceled</param>
+        /// <returns>Remaining unmatched quantity of the order</returns>
+        internal decimal CancelOrder(CancelOrderEventEntry cancelOrder)
         {
-            var now = DateTime.Now;
-            OrderBook.DeleteOne(
-                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrder.CancelOrderId)
-            );
+            return CancelOrderById(cancelOrder.CancelOrderId, cancelOrder.EntryTime);
+        }
+
+        /// <summary>
+        /// Cancels an active order, inserting a relevant order history entry.
+        /// </summary>
+        /// <param name="cancelOrderId">Id of the order to be canceled</param>
+        /// <param name="orderHistoryTime">Time of the cancellation event</param>
+        /// <returns>Remaining unmatched quantity of the order if it's limit order, zero if it's stop order</returns>
+        internal decimal CancelOrderById(ObjectId cancelOrderId, DateTime orderHistoryTime)
+        {
+            decimal remainingQuantity;
             var targetOrder = OrderBook.Find(
-                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrder.CancelOrderId)
-            ).Single();
-            InsertOrderHistoryEntry(targetOrder.FilledQty, targetOrder, OrderStatus.Cancelled, now);
+                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrderId)
+            ).SingleOrDefault();
+            if (targetOrder != null)
+            {
+                InsertOrderHistoryEntry(targetOrder.FilledQty, targetOrder, OrderStatus.Cancelled, orderHistoryTime);
+                remainingQuantity = targetOrder.Qty - targetOrder.FilledQty;
+            }
+            else
+            {
+                var hiddenOrder = HiddenOrders.Find(
+                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.Id, cancelOrderId)
+                ).Single();
+                InsertOrderHistoryEntry(hiddenOrder, OrderStatus.Cancelled, orderHistoryTime);
+                remainingQuantity = 0;
+            }
+
+            OrderBook.DeleteOne(
+                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrderId)
+            );
+            return remainingQuantity;
         }
 
         private void InsertOrderHistoryEntry(
-            decimal filledQty, OrderBookEntry orderToClose, OrderStatus status, DateTime now)
+            decimal filledQty, OrderBookEntry orderToClose, OrderStatus status, DateTime closeTime)
         {
             OrderHistory.InsertOne(
                 new OrderHistoryEntry
                 {
                     CreateTime = orderToClose.EntryTime,
-                    CloseTime = now,
+                    CloseTime = closeTime,
                     User = orderToClose.User,
                     AccountId = orderToClose.AccountId,
                     Instrument = orderToClose.Instrument,
@@ -224,6 +288,34 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     FilledQty = filledQty,
                     LimitPrice = orderToClose.LimitPrice,
                     StopPrice = null,
+                    // TODO from stop loss and take profit
+                    //ChildrenIds
+                    DurationType = orderToClose.DurationType,
+                    Duration = orderToClose.Duration,
+                    Status = status,
+                }
+            );
+        }
+
+        private void InsertOrderHistoryEntry(
+            HiddenOrderEntry orderToClose, OrderStatus status, DateTime closeTime)
+        {
+            OrderHistory.InsertOne(
+                new OrderHistoryEntry
+                {
+                    CreateTime = orderToClose.EntryTime,
+                    CloseTime = closeTime,
+                    User = orderToClose.User,
+                    AccountId = orderToClose.AccountId,
+                    Instrument = orderToClose.Instrument,
+                    Qty = orderToClose.Qty,
+                    Side = orderToClose.Side,
+                    // Closed limit order
+                    Type = OrderType.Stop,
+                    // The entire order quantity was filled
+                    FilledQty = 0,
+                    LimitPrice = null,
+                    StopPrice = orderToClose.StopPrice,
                     // TODO from stop loss and take profit
                     //ChildrenIds
                     DurationType = orderToClose.DurationType,

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Services;
@@ -22,13 +22,6 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
     [Authorize]
     public class UserBridge : Controller
     {
-        private static readonly string[] AllCoins =
-        {
-            "ETH",
-            "BTC",
-            "LTC",
-        };
-
         private readonly ILogger<UserBridge> _logger;
         public CommandService CommandService { get; }
         public ViewProxyService ViewProxyService { get; }
@@ -67,7 +60,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         {
             IList<WalletDetails> wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
             // Generate missing empty wallets
-            foreach (var expectedCoin in AllCoins)
+            foreach (var expectedCoin in GlobalConfiguration.Currencies)
             {
                 if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
                 {
@@ -108,7 +101,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
             [FromRoute] [Required] string accountId,
             [FromRoute] [Required] string coinSymbol)
         {
-            return Wallets(accountId).Single(wallet => wallet.CoinSymbol.Equals(coinSymbol));
+            return Wallets(accountId).Single(wallet => wallet.CoinSymbol.Equals(coinSymbol.ToUpperInvariant()));
         }
 
         /// <summary>
@@ -118,22 +111,25 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
         /// <param name="recipientPublicKey">Recipient address of a wallet for coins to be sent to</param>
         /// <param name="withdrawalAmount">Amount of balance to withdraw, represented in multiplies of the lowest tradable amount, which is specified by the wallet</param>
+        /// <returns>Error if any</returns>
         [HttpPost("accounts/{accountId}/wallets/{coinSymbol}/withdraw")]
-        public IDictionary<string, string> WalletWithdraw(
+        public string WalletWithdraw(
             [FromRoute] [Required] string accountId,
             [FromRoute] [Required] string coinSymbol,
-            [FromBody] [Required] string recipientPublicKey,
-            [FromBody] [Required] decimal withdrawalAmount)
+            [FromForm] [Required] string recipientPublicKey,
+            [FromForm] [Required] decimal withdrawalAmount)
         {
-            return new Dictionary<string, string>
-            {
-                {"response", "error"},
-                {"message", "Balance insufficient for the withdrawal"}
-            };
+            return CommandService.WalletWithdraw(
+                User.GetIdentifier(),
+                accountId,
+                coinSymbol.ToUpperInvariant(),
+                recipientPublicKey,
+                withdrawalAmount,
+                ""
+            ).Result;
         }
 
         // TODO: withdrawal history with state, cancel pending
-
 
         /// <summary>
         /// Requests a coin withdrawal from a specific wallet of the authorized user.
@@ -146,7 +142,9 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
             [FromRoute] [Required] string accountId,
             [FromRoute] [Required] string coinSymbol)
         {
-            return CommandService.GenerateWallet(User.GetIdentifier(), accountId, coinSymbol, "").Result;
+            return CommandService.GenerateWallet(
+                User.GetIdentifier(), accountId, coinSymbol.ToUpperInvariant(), ""
+            ).Result;
         }
     }
 }

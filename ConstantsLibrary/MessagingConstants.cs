@@ -28,7 +28,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
 
             public const string WalletCommandType = "WalletCommandType";
             public const string CoinSymbol = "CoinSymbol";
-            public const string WithdrawalPublicKey = "WithdrawalPublicKey";
+            public const string WithdrawalTargetPublicKey = "WithdrawalTargetPublicKey";
             public const string Amount = "Amount";
             public const string WalletEventIdReference = "WalletEventIdReference";
 

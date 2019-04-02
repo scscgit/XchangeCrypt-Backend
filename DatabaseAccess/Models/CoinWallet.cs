@@ -11,5 +11,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         public string PublicKey;
 
         public decimal Balance;
+
+        public decimal ReservedBalance;
     }
 }

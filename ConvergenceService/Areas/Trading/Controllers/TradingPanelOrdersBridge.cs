@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
+using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.ConvergenceService.Extensions.Authentication;
 using XchangeCrypt.Backend.ConvergenceService.Services;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
@@ -82,19 +83,19 @@ namespace IO.Swagger.Controllers
         //[Authorize]
         public IActionResult AccountsAccountIdInstrumentsGet([FromRoute] [Required] string accountId)
         {
-            var instruments = new List<Instrument>
-            {
-                new Instrument {Name = "ETH_BTC", Description = "ETH_BTC"},
-                new Instrument {Name = "LTC_BTC", Description = "LTC_BTC"},
-                new Instrument {Name = "LTC_ETH", Description = "LTC_ETH"}
-            };
             return StatusCode(
                 200,
                 new InlineResponse20011
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = instruments
+                    D = GlobalConfiguration.Instruments.Select(
+                        (baseCurrency, quoteCurrency) => new Instrument
+                        {
+                            Name = $"{baseCurrency}_{quoteCurrency}",
+                            Description = $"{baseCurrency}_{quoteCurrency}",
+                        }
+                    ).ToList()
                 }
             );
         }
