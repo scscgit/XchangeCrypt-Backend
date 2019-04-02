@@ -129,7 +129,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void ProcessEvent(WalletGenerateEventEntry eventEntry)
         {
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = 0;
+            _knownPublicKeyBalances.Add(eventEntry.LastWalletPublicKey, 0);
         }
 
         private void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
@@ -183,15 +183,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         public override async Task<string> GenerateHdWallet()
         {
             //return "brass bus same payment express already energy direct type have venture afraid";
-            var resultEntropy = RandomUtils.GetBytes(16);
-            var thirdPartyEntropy = _randomEntropyService.GetRandomBytes(16);
+            const int bytesCount = 16;
+            var resultEntropy = RandomUtils.GetBytes(bytesCount);
+            var thirdPartyEntropy = _randomEntropyService.GetRandomBytes(bytesCount);
             //_logger.LogInformation( $"Combining two entropies:\n{new Mnemonic(Wordlist.English, resultEntropy)}\nand\n{new Mnemonic(Wordlist.English, thirdPartyEntropy)}");
-            for (var i = 0; i < 16; i++)
+            for (var i = 0; i < bytesCount; i++)
             {
                 resultEntropy[i] = (byte) (resultEntropy[i] ^ thirdPartyEntropy[i]);
             }
 
-            var seed = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            var seed = new Mnemonic(Wordlist.English, resultEntropy);
             //_logger.LogInformation($"Resulting entropy seed:\n{seed.ToString()}");
             return seed.ToString();
         }

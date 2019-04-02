@@ -27,13 +27,13 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
             [FromQuery] [Required] string user,
             [FromQuery] [Required] string accountId)
         {
-            // TODO: re-work so that this happens implicitly! not in view service!
             var userAccount = AccountRepository.Accounts()
                 .Find(account =>
                     account.User.Equals(user)
                     && account.AccountId.Equals(accountId));
             if (userAccount.CountDocuments() == 0)
             {
+                // Convergence service will initiate the wallet generation anyway, and it includes account creation
                 return new List<WalletDetails>();
             }
 

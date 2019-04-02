@@ -8,6 +8,7 @@ using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nethereum.Signer;
@@ -113,28 +114,39 @@ namespace IntegrationTests
             {
                 builder.ConfigureTestServices(services =>
                 {
-                    services.AddSingleton<EthereumProvider>(service => new MockedEthereumProvider(
-                        service.GetService<ILogger<EthereumProvider>>(),
-                        service.GetService<WalletOperationService>(),
-                        service.GetService<EventHistoryService>(),
-                        service.GetService<RandomEntropyService>(),
-                        service.GetService<VersionControl>()));
+                    // Replace works the same way as AddSingleton, but it still crashes at
+                    // HostedServiceExecutor#ExecuteAsync with logged NullReferenceException, yet it works properly.
+                    // This crash seems to be fixed by removing the IHostedService replacement,
+                    // letting it receive a replaced injected singleton provider instance.
 
-                    services.AddSingleton<IHostedService, EthereumProvider>(
-                        serviceProvider => serviceProvider.GetService<MockedEthereumProvider>()
+                    services.Replace(ServiceDescriptor.Singleton<EthereumProvider>(service =>
+                        new MockedEthereumProvider(
+                            service.GetService<ILogger<EthereumProvider>>(),
+                            service.GetService<WalletOperationService>(),
+                            service.GetService<EventHistoryService>(),
+                            service.GetService<RandomEntropyService>(),
+                            service.GetService<VersionControl>()))
                     );
 
-                    services.AddSingleton<BitcoinProvider>(service => new MockedBitcoinProvider(
-                        service.GetService<ILogger<EthereumProvider>>(),
-                        service.GetService<WalletOperationService>(),
-                        service.GetService<EventHistoryService>(),
-                        service.GetService<RandomEntropyService>(),
-                        service.GetService<VersionControl>()));
+//                    services.Replace(ServiceDescriptor.Singleton<IHostedService, EthereumProvider>(
+//                        serviceProvider => serviceProvider.GetService<MockedEthereumProvider>()
+//                    ));
 
-                    services.AddSingleton<IHostedService, BitcoinProvider>(
-                        serviceProvider => serviceProvider.GetService<MockedBitcoinProvider>()
+                    services.Replace(ServiceDescriptor.Singleton<BitcoinProvider>(service =>
+                        new MockedBitcoinProvider(
+                            service.GetService<ILogger<EthereumProvider>>(),
+                            service.GetService<WalletOperationService>(),
+                            service.GetService<EventHistoryService>(),
+                            service.GetService<RandomEntropyService>(),
+                            service.GetService<VersionControl>()))
                     );
+
+//                    services.Replace(ServiceDescriptor.Singleton<IHostedService, BitcoinProvider>(
+//                        serviceProvider => serviceProvider.GetService<MockedBitcoinProvider>()
+//                    ));
                 });
+
+                // NOTE: issue: a hosted service doesn't ensure the initialization is done before processing requests!
             }).CreateClient();
 
             // Prepare Convergence Service with injected View Service client
@@ -160,13 +172,17 @@ namespace IntegrationTests
 
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
             await GetWallets();
-            Try(20, () =>
+            Try(10, () =>
             {
                 var wallets = GetWallets().Result;
+                // Lets not flood it with too many duplicate generation requests
+                Task.Delay(1000).Wait();
                 Assert.Equal(100,
-                    wallets.First(wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)).Balance);
+                    Assert.Single(wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH))
+                        .Balance);
                 Assert.Equal(80,
-                    wallets.First(wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)).Balance);
+                    Assert.Single(wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC))
+                        .Balance);
             });
 
             // Prepare a buy order of 3.5 at price 0.2
@@ -178,37 +194,39 @@ namespace IntegrationTests
             await LimitOrder(OrderSide.Sell, 4.5, 0.1);
             _logger.LogInformation("Placed limit sell 4.5 @ 0.1");
 
-            // Wait for Trading Service to finish processing events
-            await Task.Delay(5000);
-
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
 
             // Make sure the second test user doesn't own any orders
             var orders = await GetOrders();
             Assert.Empty(orders);
 
-            // Check the new depth state
-            depth = await GetDepth();
-            var ask = Assert.Single(depth.Asks);
-            // Price
-            Assert.Equal(0.1m, ask[0]);
-            // Volume
-            Assert.Equal(1, ask[1]);
-            Assert.Empty(depth.Bids);
+            // Wait for Trading Service to finish processing events
+            Try(10, () =>
+            {
+                // Check the new depth state
+                depth = GetDepth().Result;
+                var ask = Assert.Single(depth.Asks);
+                // Price
+                Assert.Equal(0.1m, ask[0]);
+                // Volume
+                Assert.Equal(1, ask[1]);
+                Assert.Empty(depth.Bids);
+            });
 
             // Consume the sell order of 1 at price 0.1, and add a new buy order of 1 at price 0.8
             await LimitOrder(OrderSide.Buy, 2, 0.8);
             _logger.LogInformation("Placed limit buy 2 @ 1");
 
             // Wait for Trading Service to finish processing events
-            await Task.Delay(5000);
-
-            // Make sure there is the one partially filled expected order for the second test user
-            orders = await GetOrders();
-            var singleOrder = Assert.Single(orders);
-            Assert.Equal(0.8m, singleOrder.LimitPrice);
-            Assert.Equal(2, singleOrder.Qty);
-            Assert.Equal(1, singleOrder.FilledQty);
+            Try(10, () =>
+            {
+                // Make sure there is the one partially filled expected order for the second test user
+                orders = GetOrders().Result;
+                var singleOrder = Assert.Single(orders);
+                Assert.Equal(0.8m, singleOrder.LimitPrice);
+                Assert.Equal(2, singleOrder.Qty);
+                Assert.Equal(1, singleOrder.FilledQty);
+            });
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
@@ -234,12 +252,13 @@ namespace IntegrationTests
             _logger.LogInformation("Placed limit sell 1 @ 0.8");
 
             // Wait for Trading Service to finish processing events
-            await Task.Delay(5000);
-
-            // Make sure the depth is empty at the end
-            depth = await GetDepth();
-            Assert.Empty(depth.Asks);
-            Assert.Empty(depth.Bids);
+            Try(10, () =>
+            {
+                // Make sure the depth is empty at the end
+                depth = GetDepth().Result;
+                Assert.Empty(depth.Asks);
+                Assert.Empty(depth.Bids);
+            });
         }
 
         private async Task<T> RequestContentsOrError<T>(HttpResponseMessage response, bool directlyInsteadOfD = false)
@@ -354,9 +373,9 @@ namespace IntegrationTests
                     action();
                     return;
                 }
-                catch (AssertActualExpectedException e)
+                catch (XunitException e)
                 {
-                    _logger.LogDebug($"Try count {i + 1}/{maxSeconds} after {e.Message}");
+                    _logger.LogInformation($"Try count {i + 1}/{maxSeconds} after {e.Message}");
                     Task.Delay(1000).Wait();
                 }
             }

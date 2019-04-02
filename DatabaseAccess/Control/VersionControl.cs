@@ -52,7 +52,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
             }
         }
 
-        public void IncreaseVersion(Func<long> actionVersionNumber)
+        public void IncreaseVersion(Func<long> actionGetVersionNumber)
         {
             while (!_semaphore.Wait(TimeSpan.FromSeconds(10)))
             {
@@ -62,7 +62,16 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
 
             try
             {
-                CurrentVersion = actionVersionNumber();
+                CurrentVersion = actionGetVersionNumber();
+            }
+            catch (AggregateException e)
+            {
+                foreach (var innerException in e.InnerExceptions)
+                {
+                    _logger.LogError($"{innerException.Message}\n{innerException.StackTrace}");
+                }
+
+                throw;
             }
             finally
             {

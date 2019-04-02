@@ -22,7 +22,9 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
         private readonly ILogger<WalletEventListener> _logger;
         private bool _stopped;
 
-        public WalletEventListener(EventHistoryService eventHistoryService, VersionControl versionControl,
+        public WalletEventListener(
+            EventHistoryService eventHistoryService,
+            VersionControl versionControl,
             ILogger<WalletEventListener> logger)
         {
             _eventHistoryService = eventHistoryService;

@@ -69,6 +69,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 if (currentDatabaseVersionNumber + 1 != versionNumber)
                 {
                     versionNumberOutdatedAlready = true;
+                    return;
                 }
 
                 // Attempt to atomically insert all entries
@@ -116,7 +117,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             foreach (var failedEntry in failedEntries)
             {
                 _logger.LogError(
-                    $"Note: removing duplicate (uncommitted) failed event entry @ version number {versionNumber}");
+                    $"Note: removing duplicate (uncommitted) failed event entry {failedEntry.GetType().Name} @ version number {versionNumber}");
                 // Re-written to be sequential, as there were issues with DeleteMany LINQ selector
                 await EventHistoryRepository.Events().DeleteOneAsync(
                     e => failedEntry.Id.Equals(e.Id)
