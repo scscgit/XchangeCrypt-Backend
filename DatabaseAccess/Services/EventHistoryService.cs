@@ -113,7 +113,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 }
             }
 
-            // A nasty workaround to clean up invalid events. This is not guaranteed to execute though, so TODO!
+            // A nasty workaround to clean up invalid events. They won't be processed, so it's not vital for operation.
+            // This is not guaranteed to execute though, so TODO change or make another cleanup!
             foreach (var failedEntry in failedEntries)
             {
                 _logger.LogError(

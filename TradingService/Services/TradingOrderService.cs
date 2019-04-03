@@ -133,12 +133,13 @@ namespace XchangeCrypt.Backend.TradingService.Services
 //            var actionOrderId = matchOrderRelatedCreateOrder.Id;
 
             var now = DateTime.Now;
+            // NOTE: We use First instead of Single because of the nature of our custom Event Sourcing persistence
             var actionOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
-            ).Single();
+            ).First();
             var targetOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.TargetOrderOnVersionNumber)
-            ).Single();
+            ).First();
             AssertMatchOrderQty(matchOrder, actionOrder, targetOrder);
 
             if (matchOrder.ActionOrderQtyRemaining == 0)
@@ -329,7 +330,6 @@ namespace XchangeCrypt.Backend.TradingService.Services
         {
             return await OrderBook
                 .Find(e => e.Side == OrderSide.Sell && e.LimitPrice <= belowOrAt && e.Instrument.Equals(instrument))
-                // TODO: verify
                 .Sort(Builders<OrderBookEntry>.Sort.Ascending(e => e.LimitPrice))
                 .ToCursorAsync();
         }
@@ -338,7 +338,6 @@ namespace XchangeCrypt.Backend.TradingService.Services
         {
             return await OrderBook
                 .Find(e => e.Side == OrderSide.Buy && e.LimitPrice >= aboveOrAt && e.Instrument.Equals(instrument))
-                // TODO: verify
                 .Sort(Builders<OrderBookEntry>.Sort.Descending(e => e.LimitPrice))
                 .ToCursorAsync();
         }

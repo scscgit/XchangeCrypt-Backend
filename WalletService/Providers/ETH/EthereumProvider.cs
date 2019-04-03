@@ -108,7 +108,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             }
 
                             _logger.LogInformation(
-                                $"Detected {ThisCoinSymbol} blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}, {(retry ? "retrying" : "trying")} deposit event persistence @ version number {currentVersion + 1}");
+                                $"{(retry ? "Retrying" : "Trying")} a detected {ThisCoinSymbol} blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}, event persistence @ version number {currentVersion + 1}");
 
                             var deposit = new WalletDepositEventEntry
                             {

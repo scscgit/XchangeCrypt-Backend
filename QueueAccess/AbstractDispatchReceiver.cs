@@ -209,7 +209,20 @@ namespace XchangeCrypt.Backend.QueueAccess
                 try
                 {
                     // Process the message and throw invalid message exception on error
-                    await Dispatch(queueMessage, message);
+                    try
+                    {
+                        await Dispatch(queueMessage, message);
+                    }
+                    catch (AggregateException e)
+                    {
+                        if (e.InnerExceptions.Count == 1)
+                        {
+                            // Rethrow a possible InvalidMessageException
+                            throw e.InnerException;
+                        }
+
+                        throw;
+                    }
                 }
                 catch (InvalidMessageException e)
                 {

@@ -68,7 +68,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
             queueNamePostfix = new Random().Next(100).ToString();
 
             _dispatcherPostfixCleanupTimer++;
-            if (_dispatcherPostfixCleanupTimer > 50)
+            if (_dispatcherPostfixCleanupTimer > 10)
             {
                 _dispatcherPostfixCleanupTimer = 0;
                 // Clean up old queues (asynchronously)

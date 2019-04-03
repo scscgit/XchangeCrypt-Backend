@@ -45,20 +45,29 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             }
 
             public readonly Dictionary<string, decimal> MockedBalances = new Dictionary<string, decimal>();
+            public bool FirstDeposit = true;
 
             public override Task<decimal> GetBalance(string publicKey)
             {
                 if (!MockedBalances.ContainsKey(publicKey))
                 {
-                    MockedBalances.Add(publicKey, 100);
+                    MockedBalances.Add(publicKey, FirstDeposit ? 100 : 0);
+                    FirstDeposit = false;
                 }
 
                 return Task.FromResult(MockedBalances[publicKey]);
             }
 
-            public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
-                decimal value)
+            public override async Task<bool> Withdraw(
+                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
             {
+                if (!MockedBalances.ContainsKey(walletPublicKeyUserReference)
+                    || MockedBalances[walletPublicKeyUserReference] < value)
+                {
+                    return false;
+                }
+
+                MockedBalances[walletPublicKeyUserReference] -= value;
                 return true;
             }
         }
@@ -77,20 +86,29 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             }
 
             public readonly Dictionary<string, decimal> MockedBalances = new Dictionary<string, decimal>();
+            public bool FirstDeposit = true;
 
             public override Task<decimal> GetBalance(string publicKey)
             {
                 if (!MockedBalances.ContainsKey(publicKey))
                 {
-                    MockedBalances.Add(publicKey, 80);
+                    MockedBalances.Add(publicKey, FirstDeposit ? 80 : 0);
+                    FirstDeposit = false;
                 }
 
                 return Task.FromResult(MockedBalances[publicKey]);
             }
 
-            public override async Task<bool> Withdraw(string walletPublicKeyUserReference, string withdrawToPublicKey,
-                decimal value)
+            public override async Task<bool> Withdraw(
+                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
             {
+                if (!MockedBalances.ContainsKey(walletPublicKeyUserReference)
+                    || MockedBalances[walletPublicKeyUserReference] < value)
+                {
+                    return false;
+                }
+
+                MockedBalances[walletPublicKeyUserReference] -= value;
                 return true;
             }
         }
@@ -184,6 +202,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
             // Generate the wallets
+            _ethProvider.FirstDeposit = true;
+            _btcProvider.FirstDeposit = true;
             Try(10, () =>
             {
                 var wallets = GetWallets().Result;
@@ -200,10 +220,11 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             });
 
             // Try to properly withdraw
+            Task.Delay(2000).Wait();
             Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
 
             // Try to withdraw unavailable funds
-            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
+            Assert.NotNull(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
 
             // Make sure the balance gets updated
             Try(10, () =>
@@ -227,6 +248,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // We are using test users
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
+            _ethProvider.FirstDeposit = true;
+            _btcProvider.FirstDeposit = true;
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
             Try(10, () =>
             {

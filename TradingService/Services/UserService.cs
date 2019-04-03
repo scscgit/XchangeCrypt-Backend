@@ -57,6 +57,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
                         userWallet.Balance + relativeValue
                     )
                 );
+                _logger.LogInformation(
+                    $"Modified {coinSymbol} balance of {user} by {relativeValue} to {userWallet.Balance + relativeValue}");
                 if (result == null)
                 {
                     _logger.LogError(
@@ -89,6 +91,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
                         userWallet.ReservedBalance + relativeValue
                     )
                 );
+                _logger.LogInformation(
+                    $"Modified {coinSymbol} reserved balance of {user} by {relativeValue} to {userWallet.ReservedBalance + relativeValue} out of balance {userWallet.Balance}");
                 if (result == null)
                 {
                     _logger.LogError(

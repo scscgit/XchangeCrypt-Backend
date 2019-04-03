@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -41,8 +42,9 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             Func<string, Exception> reportInvalidMessage)
         {
             var retry = false;
-            Action afterPersistence = null;
+            Action<IList<EventEntry>> afterPersistence = null;
             IList<EventEntry> eventEntries = null;
+            IList<EventEntry> success;
             do
             {
                 switch (walletCommandType)
@@ -71,14 +73,14 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
                 _logger.LogInformation(
                     $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
-                var success = await EventHistoryService.Persist(eventEntries);
+                success = await EventHistoryService.Persist(eventEntries);
                 retry = success == null;
                 // Assuming the event listener has attempted to acquire the lock meanwhile
             }
             while (retry);
 
             _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
-            afterPersistence?.Invoke();
+            afterPersistence?.Invoke(success);
         }
 
         private async Task<IList<EventEntry>> PlanGenerateEvents(
@@ -127,19 +129,24 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         private Task<IList<EventEntry>> PlanWithdrawalEvents(
             string user, string accountId, string coinSymbol, string withdrawalTargetPublicKey, decimal amount,
-            string requestId, Func<string, Exception> reportInvalidMessage, out Action afterPersistence,
-            IList<EventEntry> previousEventEntries)
+            string requestId, Func<string, Exception> reportInvalidMessage,
+            out Action<IList<EventEntry>> afterPersistence, IList<EventEntry> previousEventEntries)
         {
-            WalletWithdrawalEventEntry withdrawalEventEntry = null;
             string walletPublicKey = null;
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
                 walletPublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
+                // Note: this is not user's available balance!
                 var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
                     .Result;
-                withdrawalEventEntry = new WalletWithdrawalEventEntry
+                if (balance < amount)
+                {
+                    throw reportInvalidMessage("Insufficient balance for withdrawal");
+                }
+
+                var withdrawalEventEntry = new WalletWithdrawalEventEntry
                 {
                     VersionNumber = eventVersionNumber,
                     User = user,
@@ -154,8 +161,9 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 plannedEvents.Add(withdrawalEventEntry);
             });
             // Executes the withdrawal, or a compensating event, only after the event is successfully stored
-            afterPersistence = () =>
+            afterPersistence = eventEntries =>
             {
+                WalletWithdrawalEventEntry withdrawalEventEntry = eventEntries.First() as WalletWithdrawalEventEntry;
                 var success = AbstractProvider.ProviderLookup[coinSymbol]
                     .Withdraw(walletPublicKey, withdrawalTargetPublicKey, amount).Result;
                 _logger.LogInformation(
