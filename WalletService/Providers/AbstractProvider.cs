@@ -65,6 +65,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         public abstract Task<bool> Withdraw(
             string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value);
 
+        public abstract Task PrepareWithdrawalAsync(
+            WalletWithdrawalEventEntry withdrawalEventEntry, Action revocationAction);
+
         public abstract void OnDeposit(string fromPublicKey, string toPublicKey, decimal value);
 
         public abstract Task<decimal> GetBalance(string publicKey);

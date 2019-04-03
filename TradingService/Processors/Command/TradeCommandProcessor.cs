@@ -8,6 +8,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.TradingService.Processors.Event;
 using XchangeCrypt.Backend.TradingService.Services;
 
 namespace XchangeCrypt.Backend.TradingService.Processors.Command
@@ -17,6 +18,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
         private readonly ILogger<TradeCommandProcessor> _logger;
         private VersionControl VersionControl { get; }
         private TradingOrderService TradingOrderService { get; }
+        private UserService UserService { get; }
         private EventHistoryService EventHistoryService { get; }
 
         /// <summary>
@@ -25,12 +27,14 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
         public TradeCommandProcessor(
             VersionControl versionControl,
             TradingOrderService tradingOrderService,
+            UserService userService,
             EventHistoryService eventHistoryService,
             ILogger<TradeCommandProcessor> logger)
         {
             _logger = logger;
             VersionControl = versionControl;
             TradingOrderService = tradingOrderService;
+            UserService = userService;
             EventHistoryService = eventHistoryService;
         }
 
@@ -144,7 +148,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
 
                         quantityRemaining -= matchedQuantity;
 
-                        plannedEvents.Add(new MatchOrderEventEntry
+                        var matchEvent = new MatchOrderEventEntry
                         {
                             VersionNumber = eventVersionNumber,
                             ActionUser = user,
@@ -156,14 +160,34 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                             Qty = matchedQuantity,
                             ActionSide = orderSide,
                             Price = other.LimitPrice,
-                            // TODO: new balances
-                            ActionBaseNewBalance = 999,
-                            ActionQuoteNewBalance = 999,
-                            TargetBaseNewBalance = 999,
-                            TargetQuoteNewBalance = 999,
                             ActionOrderQtyRemaining = quantityRemaining,
                             TargetOrderQtyRemaining = other.Qty - other.FilledQty - matchedQuantity,
-                        });
+                        };
+
+                        // Calculating new balances for double-check purposes
+                        var currencies = instrument.Split("_");
+                        var baseCurrency = currencies[0];
+                        var quoteCurrency = currencies[1];
+                        var (actionBaseMod, actionQuoteMod, targetBaseMod, targetQuoteMod) =
+                            TradeEventProcessor.MatchOrderBalanceModifications(matchEvent);
+                        matchEvent.ActionBaseNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.ActionUser, matchEvent.ActionAccountId, baseCurrency
+                            ).Item1 + actionBaseMod;
+                        matchEvent.ActionQuoteNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.ActionUser, matchEvent.ActionAccountId, quoteCurrency
+                            ).Item1 + actionQuoteMod;
+                        matchEvent.TargetBaseNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.TargetUser, matchEvent.TargetAccountId, baseCurrency
+                            ).Item1 + targetBaseMod;
+                        matchEvent.TargetQuoteNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.TargetUser, matchEvent.TargetAccountId, quoteCurrency
+                            ).Item1 + targetQuoteMod;
+
+                        plannedEvents.Add(matchEvent);
                         if (quantityRemaining == 0)
                         {
                             break;

@@ -119,7 +119,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                         User = user,
                         AccountId = accountId,
                         CoinSymbol = coinSymbol,
-                        NewBalance = 0,
+                        NewPublicKeyBalance = 0,
                         LastWalletPublicKey = walletPublicKey,
                     }
                 );
@@ -138,14 +138,6 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             {
                 var eventVersionNumber = currentVersionNumber + 1;
                 walletPublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
-                // Note: this is not user's available balance!
-                var balance = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(walletPublicKey)
-                    .Result;
-                if (balance < amount)
-                {
-                    throw reportInvalidMessage("Insufficient balance for withdrawal");
-                }
-
                 var withdrawalEventEntry = new WalletWithdrawalEventEntry
                 {
                     VersionNumber = eventVersionNumber,
@@ -153,29 +145,28 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     AccountId = accountId,
                     CoinSymbol = coinSymbol,
                     LastWalletPublicKey = walletPublicKey,
-                    NewBalance = balance - amount,
+                    // Note: the new public key balance can go to negative values, as there can be a consolidation
+                    NewPublicKeyBalance = AbstractProvider.ProviderLookup[coinSymbol]
+                        .GetCurrentlyCachedBalance(walletPublicKey)
+                        .Result,
                     //BlockchainTransactionId = ,
                     WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
                     WithdrawalQty = amount,
+                    OverdrawnAndCanceledOrders = false,
+                    Validated = null,
                 };
                 plannedEvents.Add(withdrawalEventEntry);
             });
-            // Executes the withdrawal, or a compensating event, only after the event is successfully stored
+            // Prepares the withdrawal, or a compensating event, only after the event is successfully stored
             afterPersistence = eventEntries =>
             {
                 WalletWithdrawalEventEntry withdrawalEventEntry = eventEntries.First() as WalletWithdrawalEventEntry;
-                var success = AbstractProvider.ProviderLookup[coinSymbol]
-                    .Withdraw(walletPublicKey, withdrawalTargetPublicKey, amount).Result;
-                _logger.LogInformation(
-                    $"Withdrawal of {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey} {(success ? "successful" : "has failed, this is a critical error and the event will be revoked")}");
-                if (!success)
+                AbstractProvider.ProviderLookup[coinSymbol].PrepareWithdrawalAsync(withdrawalEventEntry, () =>
                 {
                     ExecuteWalletOperationCommand(user, accountId, coinSymbol,
                         MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amount, withdrawalEventEntry.Id, null,
-                        requestId, reportInvalidMessage).Wait();
-                    reportInvalidMessage(
-                        $"Couldn't withdraw {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey}");
-                }
+                        requestId, silentErrors => null).Wait();
+                }).Start();
             };
             return Task.FromResult(plannedEvents);
         }
@@ -211,7 +202,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     VersionNumber = eventVersionNumber,
                     CoinSymbol = coinSymbol,
                     LastWalletPublicKey = walletPublicKey,
-                    NewBalance = balance,
+                    NewPublicKeyBalance = balance,
                 });
             });
             return Task.FromResult(plannedEvents);

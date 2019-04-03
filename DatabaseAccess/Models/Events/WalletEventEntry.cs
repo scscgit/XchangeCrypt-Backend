@@ -17,6 +17,6 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public string LastWalletPublicKey;
 
-        public decimal NewBalance;
+        public decimal NewPublicKeyBalance;
     }
 }

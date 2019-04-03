@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
@@ -43,9 +44,67 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
             _tradingOrderService.CreateOrder(eventEntry);
         }
 
+        public static (decimal, decimal, decimal, decimal) MatchOrderBalanceModifications(
+            MatchOrderEventEntry eventEntry)
+        {
+            int actionUserBaseModifier;
+            int actionUserQuoteModifier;
+            switch (eventEntry.ActionSide)
+            {
+                case OrderSide.Buy:
+                    actionUserBaseModifier = 1;
+                    actionUserQuoteModifier = -1;
+                    break;
+                case OrderSide.Sell:
+                    actionUserBaseModifier = -1;
+                    actionUserQuoteModifier = 1;
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
+
+            // Action user Base
+            // Action user Quote
+            // Target user Base
+            // Target user Quote
+            return (
+                actionUserBaseModifier * eventEntry.Qty,
+                actionUserQuoteModifier * eventEntry.Qty * eventEntry.Price,
+                -actionUserBaseModifier * eventEntry.Qty,
+                -actionUserQuoteModifier * eventEntry.Qty * eventEntry.Price);
+        }
+
         public void ProcessEvent(MatchOrderEventEntry eventEntry)
         {
             _tradingOrderService.MatchOrder(eventEntry);
+            var currencies = eventEntry.Instrument.Split("_");
+            var baseCurrency = currencies[0];
+            var quoteCurrency = currencies[1];
+            var (actionBase, actionQuote, targetBase, targetQuote) = MatchOrderBalanceModifications(eventEntry);
+
+            _userService.ModifyBalance(
+                eventEntry.ActionUser,
+                eventEntry.ActionAccountId,
+                baseCurrency,
+                actionBase);
+
+            _userService.ModifyBalance(
+                eventEntry.ActionUser,
+                eventEntry.ActionAccountId,
+                quoteCurrency,
+                actionQuote);
+
+            _userService.ModifyBalance(
+                eventEntry.TargetUser,
+                eventEntry.TargetAccountId,
+                baseCurrency,
+                targetBase);
+
+            _userService.ModifyBalance(
+                eventEntry.TargetUser,
+                eventEntry.TargetAccountId,
+                quoteCurrency,
+                targetQuote);
         }
 
         public void ProcessEvent(TransactionCommitEventEntry eventEntry)
@@ -98,13 +157,36 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
             // The trade command processor has strict sequential rules => such trade event persistence won't be allowed.
             // Another issue occurs when a user has balance reserved in an open position.
             // In that case we close his positions, so the trade command processor no longer uses them in calculation.
+            // Lastly, there is an issue with Wallet Service not having access to the user's current balance.
+            // This is solved using a Saga approach, so that we must validate the Withdrawal Event entry here,
+            // while the Wallet Service actively waits using a parallel thread. If the thread ever gets killed,
+            // the withdrawal process will get stuck, waiting for administrator to consolidate such transaction.
+            // In the future, an alternative approach to unstuck such ignored withdrawals can be added.
+
+            if (eventEntry.Validated == false)
+            {
+                // Withdrawal was invalid anyway
+                return;
+            }
 
             var overdrawn = eventEntry.OverdrawnAndCanceledOrders;
-            if (!overdrawn)
+            if (!overdrawn || eventEntry.Validated == null)
             {
                 var (balance, reservedBalance) = _userService
                     .GetBalanceAndReservedBalance(eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol);
-                if (balance - reservedBalance < eventEntry.WithdrawalQty)
+                if (eventEntry.Validated == null)
+                {
+                    if (balance < eventEntry.WithdrawalQty)
+                    {
+                        _eventHistoryService.ReportWithdrawalValidation(eventEntry, false);
+                        // Withdrawal is invalid
+                        return;
+                    }
+
+                    _eventHistoryService.ReportWithdrawalValidation(eventEntry, true);
+                }
+
+                if (!overdrawn && balance - reservedBalance < eventEntry.WithdrawalQty)
                 {
                     // First time the event has detected an overdraw, it will be persisted for reference purposes
                     // (and for a marginal calculation speedup next time the event gets processed after restart)

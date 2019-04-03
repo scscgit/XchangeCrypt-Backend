@@ -132,7 +132,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
 //            ).First();
 //            var actionOrderId = matchOrderRelatedCreateOrder.Id;
 
-            var now = DateTime.Now;
+            var now = matchOrder.EntryTime;
             // NOTE: We use First instead of Single because of the nature of our custom Event Sourcing persistence
             var actionOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
@@ -185,7 +185,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     AccountId = matchOrder.ActionAccountId,
                     Instrument = matchOrder.Instrument,
                     Side = targetOrder.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy,
-                    OrderId = matchOrder.Id,
+                    OrderId = actionOrder.Id,
                     // The entire quantity was filled
                     FilledQty = matchOrder.Qty,
                     Price = targetOrder.LimitPrice,

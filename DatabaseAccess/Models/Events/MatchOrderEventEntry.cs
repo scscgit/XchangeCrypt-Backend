@@ -8,9 +8,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 {
     public class MatchOrderEventEntry : EventEntry
     {
-        // ActionOrderId is not available directly,
-        // but there is always a (first) CreateOrderEventEntry with the same versionNumber, which should be used!
-        // Correction: we will use version number instead
+        // ActionOrderId is not available directly, but there is always a (first) CreateOrderEventEntry
+        // with the same VersionNumber, which will be used!
         //public ObjectId ActionOrderId;
 
         // Redundant, contained in ActionOrderId

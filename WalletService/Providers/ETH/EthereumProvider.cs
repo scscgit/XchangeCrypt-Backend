@@ -97,7 +97,18 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             lastTriedVersion = currentVersion;
 
                             // We have acquired a lock, so the deposit event may have been already processed
-                            balance = GetBalance(publicKey).Result;
+                            try
+                            {
+                                balance = GetBalance(publicKey).Result;
+                            }
+                            catch (Exception)
+                            {
+                                _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
+                                                 $"service is probably offline, skipping the single run");
+                                retry = false;
+                                return;
+                            }
+
                             oldBalance = _knownPublicKeyBalances[publicKey];
                             if (balance <= oldBalance)
                             {
@@ -116,7 +127,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                                 AccountId = depositHotWallet.AccountId,
                                 CoinSymbol = ThisCoinSymbol,
                                 DepositQty = balance - oldBalance,
-                                NewBalance = balance,
+                                NewPublicKeyBalance = balance,
                                 LastWalletPublicKey = _walletOperationService.GetLastPublicKey(publicKey),
                                 DepositWalletPublicKey = publicKey,
                                 VersionNumber = currentVersion + 1
@@ -154,14 +165,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var oldBalance = GetCurrentlyCachedBalance(eventEntry.LastWalletPublicKey).Result;
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
-            if (newBalance != eventEntry.NewBalance)
+            if (newBalance != eventEntry.NewPublicKeyBalance)
             {
                 throw new Exception(
                     $"{typeof(EthereumProvider).Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewBalance} should be {newBalance}");
+                    $"new balance event value of {eventEntry.NewPublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewPublicKeyBalance;
         }
 
         private void ProcessEvent(WalletRevokeEventEntry eventEntry)
@@ -188,14 +199,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
             var newBalance = oldBalance + eventEntry.DepositQty;
-            if (newBalance != eventEntry.NewBalance)
+            if (newBalance != eventEntry.NewPublicKeyBalance)
             {
                 throw new Exception(
                     $"{typeof(EthereumProvider).Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewBalance} should be {newBalance}");
+                    $"new balance event value of {eventEntry.NewPublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewPublicKeyBalance;
         }
 
         public override async Task<string> GenerateHdWallet()
@@ -241,6 +252,53 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             var success = transaction.HasErrors() ?? true;
             // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;
+        }
+
+        public override async Task PrepareWithdrawalAsync(
+            WalletWithdrawalEventEntry withdrawalEventEntry, Action revocationAction)
+        {
+            // Saga operation: we wait for TradingService to confirm the withdrawal event
+            var withdrawalDescription =
+                $"Withdrawal of {withdrawalEventEntry.WithdrawalQty} {withdrawalEventEntry.CoinSymbol} of user {withdrawalEventEntry.User} to wallet {withdrawalEventEntry.WithdrawalTargetPublicKey}";
+            for (var i = 0; i < 60; i++)
+            {
+                await Task.Delay(1000);
+                var validated = ((WalletWithdrawalEventEntry)
+                    _eventHistoryService.FindById(withdrawalEventEntry.Id)).Validated;
+                switch (validated)
+                {
+                    case true:
+                    {
+                        var success = Withdraw(
+                            withdrawalEventEntry.LastWalletPublicKey,
+                            withdrawalEventEntry.WithdrawalTargetPublicKey,
+                            withdrawalEventEntry.WithdrawalQty
+                        ).Result;
+                        _logger.LogInformation(
+                            $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
+                        if (!success)
+                        {
+                            // Validation successful, yet the blockchain refused the transaction,
+                            // so we can immediately unlock user's balance for trading or another retry
+                            revocationAction();
+                        }
+
+                        return;
+                    }
+                    case false:
+                        // Validation failed
+                        _logger.LogInformation(
+                            $"{withdrawalDescription} has failed due to negative response of a Trading Backend validation, revocation initiated");
+                        revocationAction();
+                        return;
+                }
+
+                _logger.LogInformation($"{withdrawalDescription} still waiting for a validation...");
+            }
+
+            // Timed out
+            _logger.LogInformation($"{withdrawalDescription} has failed due to a timeout, revocation initiated");
+            revocationAction();
         }
 
 //        public override void OnWithdraw(string fromPublicKey, string toPublicKey, decimal value)

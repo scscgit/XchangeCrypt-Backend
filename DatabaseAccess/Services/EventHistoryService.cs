@@ -192,5 +192,16 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                 )
             );
         }
+
+        public void ReportWithdrawalValidation(WalletWithdrawalEventEntry withdrawal, bool validation)
+        {
+            EventHistoryRepository.Events().FindOneAndUpdate(
+                eventEntry => eventEntry.Id.Equals(withdrawal.Id),
+                Builders<EventEntry>.Update.Set(
+                    eventEntry => ((WalletWithdrawalEventEntry) eventEntry).Validated,
+                    validation
+                )
+            );
+        }
     }
 }
