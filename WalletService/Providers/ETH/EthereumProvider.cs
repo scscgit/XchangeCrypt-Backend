@@ -22,7 +22,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
     {
         public const string ETH = "ETH";
 
-        public string ThisCoinSymbol = ETH;
+        public string ThisCoinSymbol { get; protected set; } = ETH;
         private const string Web3Url = "https://rinkeby.infura.io";
         private readonly ILogger<EthereumProvider> _logger;
         private readonly WalletOperationService _walletOperationService;
@@ -77,21 +77,39 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 var oldBalance = _knownPublicKeyBalances[publicKey];
                 if (balance > oldBalance)
                 {
-                    _logger.LogInformation(
-                        $"Detected blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}");
                     //var generateEvent = _eventHistoryService.FindWalletGenerateByPublicKey(publicKey);
                     var retry = false;
                     do
                     {
+                        // Hot wallet does not change, so we won't request it multiple times
+                        var depositHotWallet = _walletOperationService.GetHotWallet(publicKey, ThisCoinSymbol);
+                        long lastTriedVersion = 0;
                         _versionControl.ExecuteUsingFixedVersion(currentVersion =>
                         {
-                            if (retry)
+                            if (retry && currentVersion == lastTriedVersion)
                             {
                                 _logger.LogInformation(
-                                    $"Retrying {ThisCoinSymbol} deposit event persistence @ version number {currentVersion + 1}");
+                                    $"Blockchain deposit @ version number {currentVersion + 1} waiting for new events' integration...");
+                                Task.Delay(1000).Wait();
+                                return;
                             }
 
-                            var depositHotWallet = _walletOperationService.GetHotWallet(publicKey, ThisCoinSymbol);
+                            lastTriedVersion = currentVersion;
+
+                            // We have acquired a lock, so the deposit event may have been already processed
+                            balance = GetBalance(publicKey).Result;
+                            oldBalance = _knownPublicKeyBalances[publicKey];
+                            if (balance <= oldBalance)
+                            {
+                                _logger.LogInformation(
+                                    "Blockchain deposit canceled, it was already processed by a newer event");
+                                retry = false;
+                                return;
+                            }
+
+                            _logger.LogInformation(
+                                $"Detected {ThisCoinSymbol} blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}, {(retry ? "retrying" : "trying")} deposit event persistence @ version number {currentVersion + 1}");
+
                             var deposit = new WalletDepositEventEntry
                             {
                                 User = depositHotWallet.User,

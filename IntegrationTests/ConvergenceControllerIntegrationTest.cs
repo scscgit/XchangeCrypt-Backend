@@ -199,8 +199,11 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                     ).Balance);
             });
 
-            // Try to withdraw
+            // Try to properly withdraw
             Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
+
+            // Try to withdraw unavailable funds
+            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
 
             // Make sure the balance gets updated
             Try(10, () =>

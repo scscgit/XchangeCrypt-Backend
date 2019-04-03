@@ -42,26 +42,27 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
         {
             var retry = false;
             Action afterPersistence = null;
+            IList<EventEntry> eventEntries = null;
             do
             {
-                IList<EventEntry> eventEntries;
                 switch (walletCommandType)
                 {
                     case MessagingConstants.WalletCommandTypes.Generate:
                         eventEntries = await PlanGenerateEvents(
-                            user, accountId, coinSymbol, requestId, reportInvalidMessage);
+                            user, accountId, coinSymbol, requestId, reportInvalidMessage, eventEntries);
                         break;
 
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
                         eventEntries = await PlanWithdrawalEvents(
                             user, accountId, coinSymbol, withdrawalTargetPublicKey, amount.Value, requestId,
-                            reportInvalidMessage, out afterPersistence);
+                            reportInvalidMessage, out afterPersistence, eventEntries);
                         break;
 
                     case MessagingConstants.WalletCommandTypes.RevokeDeposit:
                     case MessagingConstants.WalletCommandTypes.RevokeWithdrawal:
                         eventEntries = await PlanRevokeEvents(
-                            user, accountId, coinSymbol, walletEventIdReference.Value, requestId, reportInvalidMessage);
+                            user, accountId, coinSymbol, walletEventIdReference.Value, requestId, reportInvalidMessage,
+                            eventEntries);
                         break;
 
                     default:
@@ -72,6 +73,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
                 var success = await EventHistoryService.Persist(eventEntries);
                 retry = success == null;
+                // Assuming the event listener has attempted to acquire the lock meanwhile
             }
             while (retry);
 
@@ -79,19 +81,33 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             afterPersistence?.Invoke();
         }
 
-        private Task<IList<EventEntry>> PlanGenerateEvents(
+        private async Task<IList<EventEntry>> PlanGenerateEvents(
             string user, string accountId, string coinSymbol, string requestId,
-            Func<string, Exception> reportInvalidMessage)
+            Func<string, Exception> reportInvalidMessage, IList<EventEntry> previousEventEntries)
         {
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
+                var eventVersionNumber = currentVersionNumber + 1;
+                // Wallet generation is determined statically, so after private key gets persisted, we have the event
+                if (previousEventEntries != null)
+                {
+                    foreach (var previousEventEntry in previousEventEntries)
+                    {
+                        previousEventEntry.VersionNumber = eventVersionNumber;
+                        plannedEvents.Add(previousEventEntry);
+                    }
+
+                    return;
+                }
+
                 // Do the actual seed generation, storing it during a version control lock
                 var hdSeed = AbstractProvider.ProviderLookup[coinSymbol].GenerateHdWallet().Result;
                 var walletPublicKey = AbstractProvider
                     .ProviderLookup[coinSymbol].GetPublicKeyFromHdWallet(hdSeed).Result;
+                _logger.LogInformation($"User {user} generated {coinSymbol} wallet with public key {walletPublicKey}");
 
-                var eventVersionNumber = currentVersionNumber + 1;
+                // TODO: based on specific cryptocurrency, we could omit wallet persistence and just increase HD index
                 WalletOperationService.StoreHdWallet(
                     hdSeed, walletPublicKey, user, accountId, coinSymbol, eventVersionNumber);
                 plannedEvents.Add(
@@ -106,12 +122,13 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     }
                 );
             });
-            return Task.FromResult(plannedEvents);
+            return plannedEvents;
         }
 
         private Task<IList<EventEntry>> PlanWithdrawalEvents(
             string user, string accountId, string coinSymbol, string withdrawalTargetPublicKey, decimal amount,
-            string requestId, Func<string, Exception> reportInvalidMessage, out Action afterPersistence)
+            string requestId, Func<string, Exception> reportInvalidMessage, out Action afterPersistence,
+            IList<EventEntry> previousEventEntries)
         {
             WalletWithdrawalEventEntry withdrawalEventEntry = null;
             string walletPublicKey = null;
@@ -142,7 +159,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 var success = AbstractProvider.ProviderLookup[coinSymbol]
                     .Withdraw(walletPublicKey, withdrawalTargetPublicKey, amount).Result;
                 _logger.LogInformation(
-                    $"Withdrawal of {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey} {(success ? "successful" : "has failed, this is a critical error")}");
+                    $"Withdrawal of {amount} {coinSymbol} of user {user} to wallet {withdrawalTargetPublicKey} {(success ? "successful" : "has failed, this is a critical error and the event will be revoked")}");
                 if (!success)
                 {
                     ExecuteWalletOperationCommand(user, accountId, coinSymbol,
@@ -157,7 +174,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         private Task<IList<EventEntry>> PlanRevokeEvents(
             string user, string accountId, string coinSymbol, ObjectId walletEventIdReference, string requestId,
-            Func<string, Exception> reportInvalidMessage)
+            Func<string, Exception> reportInvalidMessage, IList<EventEntry> previousEventEntries)
         {
             // Administrator only
             IList<EventEntry> plannedEvents = new List<EventEntry>();
