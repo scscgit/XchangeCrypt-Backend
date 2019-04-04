@@ -299,6 +299,8 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
                 plannedEvents.Add(new WalletRevokeEventEntry
                 {
+                    User = user,
+                    AccountId = accountId,
                     VersionNumber = eventVersionNumber,
                     CoinSymbol = coinSymbol,
                     LastWalletPublicKey = walletPublicKey,

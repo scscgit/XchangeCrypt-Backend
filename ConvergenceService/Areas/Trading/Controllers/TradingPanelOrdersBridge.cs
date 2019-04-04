@@ -89,11 +89,14 @@ namespace IO.Swagger.Controllers
                 {
                     S = Status.OkEnum,
                     Errmsg = null,
-                    D = GlobalConfiguration.Instruments.Select(
-                        (baseCurrency, quoteCurrency) => new Instrument
+                    D = GlobalConfiguration.Instruments.Select(instrument =>
                         {
-                            Name = $"{baseCurrency}_{quoteCurrency}",
-                            Description = $"{baseCurrency}_{quoteCurrency}",
+                            var (baseCurrency, quoteCurrency) = instrument;
+                            return new Instrument
+                            {
+                                Name = $"{baseCurrency}_{quoteCurrency}",
+                                Description = $"{baseCurrency}_{quoteCurrency}",
+                            };
                         }
                     ).ToList()
                 }
