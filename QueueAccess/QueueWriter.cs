@@ -52,7 +52,7 @@ namespace XchangeCrypt.Backend.QueueAccess
                 var message = new CloudQueueMessage(JsonConvert.SerializeObject(userProperties));
 
                 // Send the message to the queue
-                await _queue.AddMessageAsync(message);
+                await _queue.AddMessageAsync(message, TimeSpan.FromSeconds(15), new TimeSpan?(), null, null);
             }
             catch (Exception e)
             {

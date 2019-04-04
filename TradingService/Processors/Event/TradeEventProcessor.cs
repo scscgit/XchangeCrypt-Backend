@@ -150,6 +150,53 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 relativeBalance);
         }
 
+        public void ProcessEvent(WalletConsolidationTransferEventEntry eventEntry)
+        {
+            if (eventEntry.Valid != null)
+            {
+                // Consolidation was either invalid anyway, or it's already validated
+                return;
+            }
+
+            // Validate the consolidation's withdrawal - Wallet Server actively waits for this!
+            var currentVersionNumberEvents = _eventHistoryService.FindByVersionNumber(eventEntry.VersionNumber)
+                .ToList();
+            var consolidationList = currentVersionNumberEvents.FindAll(e => e is WalletConsolidationTransferEventEntry);
+            var withdrawalList = currentVersionNumberEvents.FindAll(e => e is WalletWithdrawalEventEntry);
+            if (withdrawalList.Count == 0)
+            {
+                throw new Exception("Standalone consolidation not implemented yet");
+            }
+
+            var withdrawal = (WalletWithdrawalEventEntry) withdrawalList.Single();
+            bool valid;
+            if (withdrawal.Validated.HasValue)
+            {
+                valid = withdrawal.Validated.Value;
+            }
+            else
+            {
+                var (balance, reservedBalance) = _userService
+                    .GetBalanceAndReservedBalance(eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol);
+                if (!IsValidWithdrawal(withdrawal, balance))
+                {
+                    valid = false;
+                    // Withdrawal is invalid
+                    _eventHistoryService.ReportWithdrawalValidation(withdrawal, valid);
+                }
+                else
+                {
+                    valid = true;
+                    _eventHistoryService.ReportWithdrawalValidation(withdrawal, valid);
+                }
+            }
+
+            foreach (var consolidation in consolidationList)
+            {
+                _eventHistoryService.ReportConsolidationValidated(eventEntry, valid);
+            }
+        }
+
         public void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
         {
             // This event was created by Wallet Service, so that it couldn't really access user's reserved balance.
@@ -176,7 +223,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     .GetBalanceAndReservedBalance(eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol);
                 if (eventEntry.Validated == null)
                 {
-                    if (balance < eventEntry.WithdrawalQty)
+                    if (!IsValidWithdrawal(eventEntry, balance))
                     {
                         _eventHistoryService.ReportWithdrawalValidation(eventEntry, false);
                         // Withdrawal is invalid
@@ -253,6 +300,11 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 eventEntry.AccountId,
                 eventEntry.CoinSymbol,
                 -eventEntry.WithdrawalQty);
+        }
+
+        private bool IsValidWithdrawal(WalletWithdrawalEventEntry eventEntry, decimal userCoinBalance)
+        {
+            return userCoinBalance >= eventEntry.WithdrawalQty;
         }
     }
 }

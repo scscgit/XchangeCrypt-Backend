@@ -28,4 +28,10 @@
       <ProjectReference Include="..\WalletService\WalletService.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="IntegrationTests.xunit.runner.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

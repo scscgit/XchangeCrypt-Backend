@@ -109,6 +109,9 @@ namespace XchangeCrypt.Backend.ViewService.Services
                 .OrderHistory()
                 .Find(e => e.User.Equals(user) && e.AccountId.Equals(accountId))
                 .SortByDescending(e => e.CloseTime)
+                // Id is the true guarantee, but we use CloseTime as the priority in case future implementation changes
+                // (e.g. with a Trade Service parallelization)
+                .SortByDescending(e => e.Id)
                 .Limit(maxCount)
                 .ToList()
                 .Select(e => new Order

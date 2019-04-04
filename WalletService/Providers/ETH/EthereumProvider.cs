@@ -127,7 +127,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                                 AccountId = depositHotWallet.AccountId,
                                 CoinSymbol = ThisCoinSymbol,
                                 DepositQty = balance - oldBalance,
-                                NewPublicKeyBalance = balance,
+                                NewSourcePublicKeyBalance = balance,
                                 LastWalletPublicKey = _walletOperationService.GetLastPublicKey(publicKey),
                                 DepositWalletPublicKey = publicKey,
                                 VersionNumber = currentVersion + 1
@@ -165,14 +165,84 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var oldBalance = GetCurrentlyCachedBalance(eventEntry.LastWalletPublicKey).Result;
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
-            if (newBalance != eventEntry.NewPublicKeyBalance)
+            if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
-                    $"{typeof(EthereumProvider).Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewPublicKeyBalance} should be {newBalance}");
+                    $"{GetType().Name} detected fatal event inconsistency of wallet values, " +
+                    $"new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewPublicKeyBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
+        }
+
+        private void ProcessEvent(WalletConsolidationTransferEventEntry eventEntry)
+        {
+            while (eventEntry.Valid == null)
+            {
+                _logger.LogError($"Consolidation {eventEntry.Id} is not validated by Trading Service yet, waiting...");
+                Task.Delay(1000);
+                eventEntry = (WalletConsolidationTransferEventEntry) _eventHistoryService.FindById(eventEntry.Id);
+            }
+
+            if (eventEntry.Valid == false)
+            {
+                return;
+            }
+
+            var oldBalanceSrc = GetCurrentlyCachedBalance(eventEntry.TransferSourcePublicKey).Result;
+            var newBalanceSrc = oldBalanceSrc - eventEntry.TransferQty;
+            var oldBalanceTarget = GetCurrentlyCachedBalance(eventEntry.TransferTargetPublicKey).Result;
+            var newBalanceTarget = oldBalanceTarget + eventEntry.TransferQty;
+            if (!eventEntry.Executed)
+            {
+                if (oldBalanceSrc == eventEntry.NewSourcePublicKeyBalance
+                    && oldBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
+                {
+                    // Already seems to be consolidated properly
+                    _logger.LogError(
+                        "Consolidation event already seems to have been successfully finished, even though it was unexpected. Marking the event as executed");
+                }
+                else if (newBalanceSrc == eventEntry.NewSourcePublicKeyBalance
+                         && newBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
+                {
+                    // Sanity check successful, we can execute the consolidation
+                    // We start by expecting the deposit, not yielding it to user as his own deposit
+                    _knownPublicKeyBalances[eventEntry.TransferTargetPublicKey] = newBalanceTarget;
+
+                    var success = Withdraw(
+                        eventEntry.TransferSourcePublicKey,
+                        eventEntry.TransferTargetPublicKey,
+                        eventEntry.TransferQty
+                    ).Result;
+                    if (!success)
+                    {
+                        throw new Exception(
+                            $"Consolidation event id {eventEntry.Id} failed to execute the withdrawal. {GetType().Name} has to stop processing further events, requiring administrator to solve this issue");
+                    }
+                }
+                else
+                {
+                    throw new Exception(
+                        $"{GetType().Name} detected fatal event inconsistency of expected wallet balances during consolidation event id {eventEntry.Id} processing. Expecting source {oldBalanceSrc} -> {newBalanceSrc} to reach {eventEntry.NewSourcePublicKeyBalance}, target {oldBalanceTarget} -> {newBalanceTarget} to reach {eventEntry.NewTargetPublicKeyBalance}");
+                }
+
+                _eventHistoryService.ReportConsolidationExecuted(eventEntry);
+            }
+            // If the transfer was already executed, simply assert expected values and switch cached balances
+            else
+            {
+                if (oldBalanceSrc != eventEntry.NewSourcePublicKeyBalance
+                    || oldBalanceTarget != eventEntry.NewTargetPublicKeyBalance)
+                {
+                    throw new Exception(
+                        $"{GetType().Name} detected fatal event inconsistency of expected wallet balances during consolidation event id {eventEntry.Id} processing. Expecting source {oldBalanceSrc} to be {eventEntry.NewSourcePublicKeyBalance} and reach {newBalanceSrc}, target {oldBalanceTarget} to be {eventEntry.NewTargetPublicKeyBalance} and reach {newBalanceTarget}");
+                }
+
+                _knownPublicKeyBalances[eventEntry.TransferTargetPublicKey] = newBalanceTarget;
+            }
+
+            // Unlock balance for deposit detection
+            _knownPublicKeyBalances[eventEntry.TransferSourcePublicKey] = newBalanceSrc;
         }
 
         private void ProcessEvent(WalletRevokeEventEntry eventEntry)
@@ -199,14 +269,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
             var newBalance = oldBalance + eventEntry.DepositQty;
-            if (newBalance != eventEntry.NewPublicKeyBalance)
+            if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
-                    $"{typeof(EthereumProvider).Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewPublicKeyBalance} should be {newBalance}");
+                    $"{GetType().Name} detected fatal event inconsistency of wallet values, " +
+                    $"new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewPublicKeyBalance;
+            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
         }
 
         public override async Task<string> GenerateHdWallet()
@@ -234,11 +304,6 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         public override async Task<bool> Withdraw(
             string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
         {
-            if (GetCurrentlyCachedBalance(walletPublicKeyUserReference).Result < value)
-            {
-                Consolidate(walletPublicKeyUserReference, value, true);
-            }
-
             var transaction = await new Web3(
                     new Account(
                         new Wallet(
@@ -291,9 +356,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             $"{withdrawalDescription} has failed due to negative response of a Trading Backend validation, revocation initiated");
                         revocationAction();
                         return;
-                }
 
-                _logger.LogInformation($"{withdrawalDescription} still waiting for a validation...");
+                    case null:
+                        _logger.LogInformation($"{withdrawalDescription} still waiting for a validation...");
+                        break;
+                }
             }
 
             // Timed out
@@ -315,43 +382,6 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(publicKey);
             return Web3.Convert.FromWei(balance.Value);
-        }
-
-        public override void Consolidate(string targetPublicKey, decimal targetBalance, bool allowMoreBalance)
-        {
-            _logger.LogInformation(
-                $"Consolidation initiated for wallet {targetPublicKey}, target {targetBalance} {ThisCoinSymbol} {(allowMoreBalance ? "or more" : "")}");
-            var currentBalance = GetCurrentlyCachedBalance(targetPublicKey).Result;
-            var otherWallets = _walletOperationService.GetAllHotWallets(targetPublicKey, ThisCoinSymbol);
-            // Don't try to move balance from the same wallet
-            otherWallets.RemoveAll(wallet => wallet.PublicKey.Equals(targetPublicKey));
-            // Sort descending from largest balance
-            otherWallets.Sort(
-                (a, b) =>
-                    GetCurrentlyCachedBalance(b.PublicKey).Result
-                        .CompareTo(GetCurrentlyCachedBalance(a.PublicKey).Result)
-            );
-            foreach (var hotWallet in otherWallets)
-            {
-                if (currentBalance >= targetBalance)
-                {
-                    return;
-                }
-
-                var balanceToWithdraw = GetCurrentlyCachedBalance(hotWallet.PublicKey).Result;
-                if (!allowMoreBalance && currentBalance + balanceToWithdraw > targetBalance)
-                {
-                    balanceToWithdraw = targetBalance - currentBalance;
-                }
-
-                _logger.LogInformation(
-                    $"Consolidation withdrawal of {balanceToWithdraw} {ThisCoinSymbol} from {hotWallet.PublicKey} to {targetPublicKey} initiated");
-                // Mark target as already deposited, listener ignores such states
-                _knownPublicKeyBalances[targetPublicKey] += balanceToWithdraw;
-                // Withdraw and start listening for deposits on the other hot wallet
-                Withdraw(hotWallet.PublicKey, targetPublicKey, balanceToWithdraw).Wait();
-                _logger.LogInformation($"Consolidation withdrawal to {targetPublicKey} successful");
-            }
         }
 
         public override async Task<decimal> GetCurrentlyCachedBalance(string publicKey)

@@ -8,6 +8,10 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 {
     public class AlphabeticalOrderer : ITestCaseOrderer
     {
+        public AlphabeticalOrderer(TestFrameworkProxy.MessageSinkWrapper messageSinkWrapper)
+        {
+        }
+
         public IEnumerable<TTestCase> OrderTestCases<TTestCase>(IEnumerable<TTestCase> testCases)
             where TTestCase : ITestCase
         {

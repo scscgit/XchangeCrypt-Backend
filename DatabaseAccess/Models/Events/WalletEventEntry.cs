@@ -15,8 +15,9 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public string CoinSymbol;
 
+        // Used as a source when needed, otherwise represents a most recent public key of the user
         public string LastWalletPublicKey;
 
-        public decimal NewPublicKeyBalance;
+        public decimal NewSourcePublicKeyBalance;
     }
 }

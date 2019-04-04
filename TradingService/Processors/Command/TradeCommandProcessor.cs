@@ -139,11 +139,15 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                         {
                             // Entire command order remainder is consumed by the seller offer
                             matchedQuantity = quantityRemaining;
+                            _logger.LogInformation(
+                                $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning entirely matched order id {other.Id}");
                         }
                         else
                         {
                             // Fraction of order will remain, but the seller offer will be consumed
                             matchedQuantity = otherRemaining;
+                            _logger.LogInformation(
+                                $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning partially matched order id {other.Id}");
                         }
 
                         quantityRemaining -= matchedQuantity;
@@ -170,22 +174,31 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                         var quoteCurrency = currencies[1];
                         var (actionBaseMod, actionQuoteMod, targetBaseMod, targetQuoteMod) =
                             TradeEventProcessor.MatchOrderBalanceModifications(matchEvent);
-                        matchEvent.ActionBaseNewBalance =
-                            UserService.GetBalanceAndReservedBalance(
-                                matchEvent.ActionUser, matchEvent.ActionAccountId, baseCurrency
-                            ).Item1 + actionBaseMod;
-                        matchEvent.ActionQuoteNewBalance =
-                            UserService.GetBalanceAndReservedBalance(
-                                matchEvent.ActionUser, matchEvent.ActionAccountId, quoteCurrency
-                            ).Item1 + actionQuoteMod;
-                        matchEvent.TargetBaseNewBalance =
-                            UserService.GetBalanceAndReservedBalance(
-                                matchEvent.TargetUser, matchEvent.TargetAccountId, baseCurrency
-                            ).Item1 + targetBaseMod;
-                        matchEvent.TargetQuoteNewBalance =
-                            UserService.GetBalanceAndReservedBalance(
-                                matchEvent.TargetUser, matchEvent.TargetAccountId, quoteCurrency
-                            ).Item1 + targetQuoteMod;
+                        try
+                        {
+                            matchEvent.ActionBaseNewBalance =
+                                UserService.GetBalanceAndReservedBalance(
+                                    matchEvent.ActionUser, matchEvent.ActionAccountId, baseCurrency
+                                ).Item1 + actionBaseMod;
+                            matchEvent.ActionQuoteNewBalance =
+                                UserService.GetBalanceAndReservedBalance(
+                                    matchEvent.ActionUser, matchEvent.ActionAccountId, quoteCurrency
+                                ).Item1 + actionQuoteMod;
+                            matchEvent.TargetBaseNewBalance =
+                                UserService.GetBalanceAndReservedBalance(
+                                    matchEvent.TargetUser, matchEvent.TargetAccountId, baseCurrency
+                                ).Item1 + targetBaseMod;
+                            matchEvent.TargetQuoteNewBalance =
+                                UserService.GetBalanceAndReservedBalance(
+                                    matchEvent.TargetUser, matchEvent.TargetAccountId, quoteCurrency
+                                ).Item1 + targetQuoteMod;
+                        }
+                        catch (Exception e)
+                        {
+                            // This can happen if a user didn't generate his balances yet, so it's not a fatal error
+                            throw reportInvalidMessage(
+                                $"There was a problem with your coin balances. {e.GetType().Name}: {e.Message}");
+                        }
 
                         plannedEvents.Add(matchEvent);
                         if (quantityRemaining == 0)

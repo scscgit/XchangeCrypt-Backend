@@ -17,6 +17,7 @@ using XchangeCrypt.Backend.ConvergenceService;
 using XchangeCrypt.Backend.ConvergenceService.Areas.User.Models;
 using XchangeCrypt.Backend.ConvergenceService.Services;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
@@ -28,7 +29,7 @@ using Xunit.Sdk;
 
 namespace XchangeCrypt.Backend.Tests.IntegrationTests
 {
-    [TestCaseOrderer("XchangeCrypt.Backend.Tests.IntegrationTests.AlphabeticalOrderer", "XchangeCrypt.Backend")]
+    [TestCaseOrderer("XchangeCrypt.Backend.Tests.IntegrationTests.AlphabeticalOrderer", "IntegrationTests")]
     public class ConvergenceControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
     {
         private class MockedEthereumProvider : EthereumProvider
@@ -126,6 +127,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         private MockedBitcoinProvider _btcProvider;
 
         private string _instrument = "ETH_BTC";
+        private WebApplicationFactory<TradingService.Startup> _tradingService;
+        private WebApplicationFactory<WalletService.Startup> _walletService;
 
         public ConvergenceControllerIntegrationTest(
             WebApplicationFactory<Startup> factory)
@@ -135,51 +138,57 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Wipe the testing DB
             _eventHistoryRepository = new EventHistoryRepository(new DataAccess(TestingConnectionString));
             _eventHistoryRepository.Events().DeleteMany(MongoDB.Driver.Builders<EventEntry>.Filter.Where(e => true));
+            new WalletRepository(new DataAccess(TestingConnectionString))
+                .HotWallets()
+                .DeleteMany(MongoDB.Driver.Builders<HotWallet>.Filter.Where(e => true));
 
             // Start a view service as a direct client, bypassing convergence service proxy middleman
             // (This is required because the started client doesn't expose itself - we would have to inject it somehow)
             var viewClient = new WebApplicationFactory<XchangeCrypt.Backend.ViewService.Startup>().CreateClient();
 
             // Start other queue-based supporting micro-services
-            new WebApplicationFactory<XchangeCrypt.Backend.TradingService.Startup>().CreateClient();
-            new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>().WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureTestServices(services =>
+            _tradingService = new WebApplicationFactory<XchangeCrypt.Backend.TradingService.Startup>();
+            _tradingService.CreateClient();
+            _walletService = new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>().WithWebHostBuilder(
+                builder =>
                 {
-                    // Replace works the same way as AddSingleton, but it still crashes at
-                    // HostedServiceExecutor#ExecuteAsync with logged NullReferenceException, yet it works properly.
-                    // This crash seems to be fixed by removing the IHostedService replacement,
-                    // letting it receive a replaced injected singleton provider instance.
+                    builder.ConfigureTestServices(services =>
+                    {
+                        // Replace works the same way as AddSingleton, but it still crashes at
+                        // HostedServiceExecutor#ExecuteAsync with logged NullReferenceException, yet it works properly.
+                        // This crash seems to be fixed by removing the IHostedService replacement,
+                        // letting it receive a replaced injected singleton provider instance.
 
-                    services.Replace(ServiceDescriptor.Singleton<EthereumProvider>(service =>
-                        _ethProvider = new MockedEthereumProvider(
-                            service.GetService<ILogger<EthereumProvider>>(),
-                            service.GetService<WalletOperationService>(),
-                            service.GetService<EventHistoryService>(),
-                            service.GetService<RandomEntropyService>(),
-                            service.GetService<VersionControl>()))
-                    );
+                        services.Replace(ServiceDescriptor.Singleton<EthereumProvider>(service =>
+                            _ethProvider = new MockedEthereumProvider(
+                                service.GetService<ILogger<EthereumProvider>>(),
+                                service.GetService<WalletOperationService>(),
+                                service.GetService<EventHistoryService>(),
+                                service.GetService<RandomEntropyService>(),
+                                service.GetService<VersionControl>()))
+                        );
 
 //                    services.Replace(ServiceDescriptor.Singleton<IHostedService, EthereumProvider>(
 //                        serviceProvider => serviceProvider.GetService<MockedEthereumProvider>()
 //                    ));
 
-                    services.Replace(ServiceDescriptor.Singleton<BitcoinProvider>(service =>
-                        _btcProvider = new MockedBitcoinProvider(
-                            service.GetService<ILogger<EthereumProvider>>(),
-                            service.GetService<WalletOperationService>(),
-                            service.GetService<EventHistoryService>(),
-                            service.GetService<RandomEntropyService>(),
-                            service.GetService<VersionControl>()))
-                    );
+                        services.Replace(ServiceDescriptor.Singleton<BitcoinProvider>(service =>
+                            _btcProvider = new MockedBitcoinProvider(
+                                service.GetService<ILogger<EthereumProvider>>(),
+                                service.GetService<WalletOperationService>(),
+                                service.GetService<EventHistoryService>(),
+                                service.GetService<RandomEntropyService>(),
+                                service.GetService<VersionControl>()))
+                        );
 
 //                    services.Replace(ServiceDescriptor.Singleton<IHostedService, BitcoinProvider>(
 //                        serviceProvider => serviceProvider.GetService<MockedBitcoinProvider>()
 //                    ));
-                });
+                    });
 
-                // NOTE: issue: a hosted service doesn't ensure the initialization is done before processing requests!
-            }).CreateClient();
+                    // NOTE: issue: a hosted service doesn't ensure the initialization is done before processing requests!
+                });
+            _walletService.CreateClient();
 
             // Prepare Convergence Service with injected View Service client
             _client = factory.WithWebHostBuilder(builder =>
@@ -223,8 +232,11 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             Task.Delay(2000).Wait();
             Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
 
-            // Try to withdraw unavailable funds
-            Assert.NotNull(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
+            // Try to withdraw unavailable funds; this will fail asynchronously without error message
+            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
+
+            // Give some time to the second withdrawal, as its failure would still make the test pass
+            Task.Delay(2000).Wait();
 
             // Make sure the balance gets updated
             Try(10, () =>
@@ -235,6 +247,9 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
                     ).Balance);
             });
+
+            _tradingService.Dispose();
+            _walletService.Dispose();
         }
 
         [Fact]
@@ -266,6 +281,29 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                     ).Balance);
             });
 
+            // Second user will need to own generated wallets too later on when trading
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
+
+            _ethProvider.FirstDeposit = true;
+            _btcProvider.FirstDeposit = true;
+            // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
+            Try(10, () =>
+            {
+                var wallets = GetWallets().Result;
+                // Lets not flood it with too many duplicate generation requests
+                Task.Delay(1000).Wait();
+                Assert.Equal(100,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
+            });
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
+
             // Prepare a buy order of 3.5 at price 0.2
             await LimitOrder(OrderSide.Buy, 2.5, 0.2);
             _logger.LogInformation("Placed limit buy 2.5 @ 0.2");
@@ -274,6 +312,21 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Consume both buy orders at price 0.2, and add a new sell order of 1 at price 0.1
             await LimitOrder(OrderSide.Sell, 4.5, 0.1);
             _logger.LogInformation("Placed limit sell 4.5 @ 0.1");
+
+            // Wait for Trading Service to finish processing events
+            Try(10, () =>
+            {
+                // Expect the user balances to stay unchanged after equal buy and sell of 3.5 * price 0.2 = 0.7
+                var wallets = GetWallets().Result;
+                Assert.Equal(100,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
+            });
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
 
@@ -307,6 +360,17 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 Assert.Equal(0.8m, singleOrder.LimitPrice);
                 Assert.Equal(2, singleOrder.Qty);
                 Assert.Equal(1, singleOrder.FilledQty);
+
+                // Expect the user balance to change after an ETH buy of 1 * price 0.1 = 0.1
+                var wallets = GetWallets().Result;
+                Assert.Equal(101,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(79.9m,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
             });
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
@@ -339,6 +403,17 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 depth = GetDepth().Result;
                 Assert.Empty(depth.Asks);
                 Assert.Empty(depth.Bids);
+
+                // Expect the user balance to change after an ETH sell of 1 at 0.1 and another sell of 1 at 0.8
+                var wallets = GetWallets().Result;
+                Assert.Equal(98,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80.9m,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
             });
         }
 

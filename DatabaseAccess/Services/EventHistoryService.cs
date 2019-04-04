@@ -72,6 +72,15 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                     return;
                 }
 
+                // We are under synchronization, so we can double-check that we are ahead against other services
+                if (EventHistoryRepository.Events()
+                        .Find(e => e.VersionNumber > currentDatabaseVersionNumber)
+                        .CountDocuments() != 0)
+                {
+                    versionNumberOutdatedAlready = true;
+                    return;
+                }
+
                 // Attempt to atomically insert all entries
                 EventHistoryRepository.Events().InsertMany(events, new InsertManyOptions {IsOrdered = true});
             }
@@ -202,6 +211,35 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                     validation
                 )
             );
+        }
+
+        public void ReportConsolidationExecuted(WalletConsolidationTransferEventEntry consolidation)
+        {
+            EventHistoryRepository.Events().FindOneAndUpdate(
+                eventEntry => eventEntry.Id.Equals(consolidation.Id),
+                Builders<EventEntry>.Update.Set(
+                    eventEntry => ((WalletConsolidationTransferEventEntry) eventEntry).Executed,
+                    true
+                )
+            );
+        }
+
+        public void ReportConsolidationValidated(WalletConsolidationTransferEventEntry consolidation, bool validation)
+        {
+            EventHistoryRepository.Events().FindOneAndUpdate(
+                eventEntry => eventEntry.Id.Equals(consolidation.Id),
+                Builders<EventEntry>.Update.Set(
+                    eventEntry => ((WalletConsolidationTransferEventEntry) eventEntry).Valid,
+                    validation
+                )
+            );
+        }
+
+        public List<EventEntry> FindByVersionNumber(long versionNumber)
+        {
+            return EventHistoryRepository.Events()
+                .Find(eventEntry => eventEntry.VersionNumber.Equals(versionNumber))
+                .ToList();
         }
     }
 }
