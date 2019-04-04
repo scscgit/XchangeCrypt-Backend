@@ -11,6 +11,7 @@ using Nethereum.HdWallet;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
@@ -70,8 +71,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 catch (Exception)
                 {
                     _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
-                                     $"service is probably offline, skipping the entire run");
-                    return;
+                                     $"service is probably offline, skipping the wallet and waiting a few seconds");
+                    Task.Delay(2000).Wait();
+                    continue;
                 }
 
                 var oldBalance = _knownPublicKeyBalances[publicKey];
@@ -94,8 +96,6 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                                 return;
                             }
 
-                            lastTriedVersion = currentVersion;
-
                             // We have acquired a lock, so the deposit event may have been already processed
                             try
                             {
@@ -104,10 +104,13 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             catch (Exception)
                             {
                                 _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
-                                                 $"service is probably offline, skipping the single run");
-                                retry = false;
+                                                 $"service is probably offline, waiting a few seconds");
+                                Task.Delay(5000).Wait();
+                                retry = true;
                                 return;
                             }
+
+                            lastTriedVersion = currentVersion;
 
                             oldBalance = _knownPublicKeyBalances[publicKey];
                             if (balance <= oldBalance)
@@ -163,6 +166,27 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
         {
+            // We cannot reduce our cached balance, unlocking it for detection as a deposit,
+            // until we are sure the withdrawal is valid and it has been executed in a previous service run
+            while (eventEntry.Validated == null)
+            {
+                _logger.LogError(
+                    $"Withdrawal event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
+                Task.Delay(1000);
+                eventEntry = (WalletWithdrawalEventEntry) _eventHistoryService.FindById(eventEntry.Id);
+            }
+
+            if (eventEntry.Validated == false || eventEntry.Executed == false)
+            {
+                return;
+            }
+
+            // We only process the balance unlock if it hasn't been executed in this service run
+            OnWithdrawal(eventEntry);
+        }
+
+        private void OnWithdrawal(WalletWithdrawalEventEntry eventEntry)
+        {
             var oldBalance = GetCurrentlyCachedBalance(eventEntry.LastWalletPublicKey).Result;
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
             if (newBalance != eventEntry.NewSourcePublicKeyBalance)
@@ -179,7 +203,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             while (eventEntry.Valid == null)
             {
-                _logger.LogError($"Consolidation {eventEntry.Id} is not validated by Trading Service yet, waiting...");
+                _logger.LogError(
+                    $"Consolidation event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
                 Task.Delay(1000);
                 eventEntry = (WalletConsolidationTransferEventEntry) _eventHistoryService.FindById(eventEntry.Id);
             }
@@ -256,6 +281,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     newBalance = oldBalance - deposit.DepositQty;
                     break;
                 case WalletWithdrawalEventEntry withdrawal:
+                    if (withdrawal.Validated == false)
+                    {
+                        // Not revoking event that was not executed
+                        return;
+                    }
+
                     newBalance = oldBalance + withdrawal.WithdrawalQty;
                     break;
                 default:
@@ -322,9 +353,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         public override async Task PrepareWithdrawalAsync(
             WalletWithdrawalEventEntry withdrawalEventEntry, Action revocationAction)
         {
-            // Saga operation: we wait for TradingService to confirm the withdrawal event
             var withdrawalDescription =
                 $"Withdrawal of {withdrawalEventEntry.WithdrawalQty} {withdrawalEventEntry.CoinSymbol} of user {withdrawalEventEntry.User} to wallet {withdrawalEventEntry.WithdrawalTargetPublicKey}";
+
+            // Saga operation: we wait for TradingService to confirm the withdrawal event
             for (var i = 0; i < 60; i++)
             {
                 await Task.Delay(1000);
@@ -341,7 +373,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                         ).Result;
                         _logger.LogInformation(
                             $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
-                        if (!success)
+                        if (success)
+                        {
+                            // Note: this must occur after event processing by this own service
+                            _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry);
+                            // We just avoided re-processing the withdrawal event, so we have to fire it manually
+                            OnWithdrawal(withdrawalEventEntry);
+                        }
+                        else
                         {
                             // Validation successful, yet the blockchain refused the transaction,
                             // so we can immediately unlock user's balance for trading or another retry
@@ -380,6 +419,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         public override async Task<decimal> GetBalance(string publicKey)
         {
+            // Adding a limit of 4 requests per second, TODO switch to a local fast node
+            Task.Delay(250).Wait();
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(publicKey);
             return Web3.Convert.FromWei(balance.Value);
         }

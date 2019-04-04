@@ -5,6 +5,7 @@ using IO.Swagger.Models;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.ConvergenceService.Extensions;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 
@@ -166,6 +167,84 @@ namespace XchangeCrypt.Backend.ViewService.Services
                         limitPrice.Key, limitPrice.Sum(e => e.Qty - e.FilledQty)
                     })
                     .ToList(),
+            };
+        }
+
+        public BarsArrays GetHistoryBars(
+            string instrument, string resolution, decimal? from, decimal? to, decimal? countback)
+        {
+            var result = new List<(decimal, decimal, decimal, decimal, decimal, decimal)>();
+            var cursor = TradingRepository
+                .TransactionHistory()
+                .MapReduce(
+                    new BsonJavaScript(@"
+function() {
+    var transaction = this;
+    emit(transaction.ExecutionTime, { count: 1, keyName: transaction.Field });
+}"
+                    ),
+                    new BsonJavaScript(@"
+function(key, values) {
+    var result = {count: 0, keyName: 0 };
+
+    values.forEach(function(value){
+        result.count += value.count;
+        result.keyName += value.keyName;
+    });
+
+return result;
+}"
+                    ),
+                    new MapReduceOptions<
+                        TransactionHistoryEntry,
+                        (decimal, decimal, decimal, decimal, decimal, decimal)
+                    >
+                    {
+                        OutputOptions = MapReduceOutputOptions.Inline,
+                        Scope = new BsonDocument(new Dictionary<string, object>
+                        {
+                            // Values passed to global scope of the map, reduce, and finalize functions
+                            {"instrument", instrument},
+                            {"resolution", resolution},
+                        }),
+                    }
+                );
+            while (cursor.MoveNext())
+            {
+                result.AddRange(cursor.Current);
+            }
+
+            var (O, H, L, C, V, T) = result.Aggregate((
+                    new List<decimal?>(),
+                    new List<decimal?>(),
+                    new List<decimal?>(),
+                    new List<decimal?>(),
+                    new List<decimal?>(),
+                    new List<decimal?>()),
+                (lists, tuples) =>
+                {
+                    var (o, h, l, c, v, t) = lists;
+                    var (open, high, low, close, volume, time) = tuples;
+                    o.Add(open);
+                    h.Add(high);
+                    l.Add(low);
+                    c.Add(close);
+                    v.Add(volume);
+                    t.Add(time);
+                    return (o, h, l, c, v, t);
+                }
+            );
+            return new BarsArrays
+            {
+                S = SEnum.OkEnum,
+                Errmsg = null,
+                Nb = null,
+                O = O,
+                H = H,
+                L = L,
+                C = C,
+                V = V,
+                T = T,
             };
         }
 

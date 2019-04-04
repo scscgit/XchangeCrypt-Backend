@@ -202,6 +202,37 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             );
         }
 
+        public void ReportWithdrawalExecuted(WalletWithdrawalEventEntry withdrawal)
+        {
+            // Note: this must occur after withdrawal event processing by this own service
+            var retry = true;
+            while (retry)
+            {
+                VersionControl.ExecuteUsingFixedVersion(currentVersion =>
+                {
+                    if (currentVersion < withdrawal.VersionNumber)
+                    {
+                        return;
+                    }
+
+                    EventHistoryRepository.Events().FindOneAndUpdate(
+                        eventEntry => eventEntry.Id.Equals(withdrawal.Id),
+                        Builders<EventEntry>.Update.Set(
+                            eventEntry => ((WalletWithdrawalEventEntry) eventEntry).Executed,
+                            true
+                        )
+                    );
+                    retry = false;
+                });
+                if (retry)
+                {
+                    _logger.LogInformation(
+                        $"{nameof(ReportWithdrawalExecuted)} waiting for integration of version number {withdrawal.VersionNumber}");
+                    Task.Delay(1000).Wait();
+                }
+            }
+        }
+
         public void ReportWithdrawalValidation(WalletWithdrawalEventEntry withdrawal, bool validation)
         {
             EventHistoryRepository.Events().FindOneAndUpdate(

@@ -130,13 +130,19 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
         public void ProcessEvent(WalletRevokeEventEntry eventEntry)
         {
             var relativeBalance = 0m;
-            var revoke = _eventHistoryService.FindById(eventEntry.RevokeWalletEventEntryId);
-            switch (revoke)
+            var revoked = _eventHistoryService.FindById(eventEntry.RevokeWalletEventEntryId);
+            switch (revoked)
             {
                 case WalletDepositEventEntry deposit:
                     relativeBalance = -deposit.DepositQty;
                     break;
                 case WalletWithdrawalEventEntry withdrawal:
+                    if (withdrawal.Validated == false)
+                    {
+                        // Not revoking event that was not executed
+                        return;
+                    }
+
                     relativeBalance = withdrawal.WithdrawalQty;
                     break;
                 default:
@@ -191,9 +197,10 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 }
             }
 
-            foreach (var consolidation in consolidationList)
+            foreach (var consolidationEntry in consolidationList)
             {
-                _eventHistoryService.ReportConsolidationValidated(eventEntry, valid);
+                var consolidation = (WalletConsolidationTransferEventEntry) consolidationEntry;
+                _eventHistoryService.ReportConsolidationValidated(consolidation, valid);
             }
         }
 

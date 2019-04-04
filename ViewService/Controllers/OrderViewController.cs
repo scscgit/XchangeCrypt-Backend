@@ -64,5 +64,17 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
         {
             return _orderCaching.GetDepth(instrument);
         }
+
+        [HttpGet]
+        [Route("historyBars")]
+        public BarsArrays HistoryBarsGet(
+            [FromQuery] [Required] string instrument,
+            [FromQuery] [Required] string resolution,
+            [FromQuery] [Required] decimal? from,
+            [FromQuery] [Required] decimal? to,
+            [FromQuery] decimal? countback)
+        {
+            return _orderCaching.GetHistoryBars(instrument, resolution, from, to, countback);
+        }
     }
 }

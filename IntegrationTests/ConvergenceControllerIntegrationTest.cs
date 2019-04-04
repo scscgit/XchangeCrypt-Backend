@@ -305,12 +305,12 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
             // Prepare a buy order of 3.5 at price 0.2
-            await LimitOrder(OrderSide.Buy, 2.5, 0.2);
+            await LimitOrder(OrderSide.Buy, 2.5m, 0.2m);
             _logger.LogInformation("Placed limit buy 2.5 @ 0.2");
-            await LimitOrder(OrderSide.Buy, 1, 0.2);
+            await LimitOrder(OrderSide.Buy, 1, 0.2m);
             _logger.LogInformation("Placed limit buy 1 @ 0.2");
             // Consume both buy orders at price 0.2, and add a new sell order of 1 at price 0.1
-            await LimitOrder(OrderSide.Sell, 4.5, 0.1);
+            await LimitOrder(OrderSide.Sell, 4.5m, 0.1m);
             _logger.LogInformation("Placed limit sell 4.5 @ 0.1");
 
             // Wait for Trading Service to finish processing events
@@ -348,7 +348,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             });
 
             // Consume the sell order of 1 at price 0.1, and add a new buy order of 1 at price 0.8
-            await LimitOrder(OrderSide.Buy, 2, 0.8);
+            await LimitOrder(OrderSide.Buy, 2, 0.8m);
             _logger.LogInformation("Placed limit buy 2 @ 1");
 
             // Wait for Trading Service to finish processing events
@@ -393,7 +393,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             Assert.Equal(0.2m, ordersHistory.Last().LimitPrice);
 
             // Cleanup
-            await LimitOrder(OrderSide.Sell, 1, 0.8);
+            await LimitOrder(OrderSide.Sell, 1, 0.8m);
             _logger.LogInformation("Placed limit sell 1 @ 0.8");
 
             // Wait for Trading Service to finish processing events
@@ -415,6 +415,101 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
                     ).Balance);
             });
+
+            _tradingService.Dispose();
+            _walletService.Dispose();
+        }
+
+        [Fact]
+        public async Task T99_PopulateMockHistory()
+        {
+            // Generate the wallets
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
+            _ethProvider.FirstDeposit = true;
+            _btcProvider.FirstDeposit = true;
+            Try(10, () =>
+            {
+                var wallets = GetWallets().Result;
+                // Lets not flood it with too many duplicate generation requests
+                Task.Delay(1000).Wait();
+                Assert.Equal(100,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
+            });
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
+            _ethProvider.FirstDeposit = true;
+            _btcProvider.FirstDeposit = true;
+            Try(10, () =>
+            {
+                var wallets = GetWallets().Result;
+                // Lets not flood it with too many duplicate generation requests
+                Task.Delay(1000).Wait();
+                Assert.Equal(100,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                    ).Balance);
+                Assert.Equal(80,
+                    Assert.Single(
+                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                    ).Balance);
+            });
+
+            const int days = 5;
+            const int eventsPerDay = 40;
+            const int secondsPerDay = 24 * 60 * 60;
+            var pseudoRandom = new Random(1234567890);
+            var events = _eventHistoryRepository.Events();
+            var now = DateTime.Now;
+            decimal[] orders = {0, 0};
+            for (var day = 0; day < days; day++)
+            {
+                var time = now.Subtract(TimeSpan.FromDays(days - day));
+                for (var i = 0; i < eventsPerDay; i++)
+                {
+                    var seconds = i * secondsPerDay / (float) eventsPerDay
+                                  + (pseudoRandom.Next(200) / 100f - 1) * (secondsPerDay / (float) eventsPerDay);
+                    time = time.AddSeconds(seconds);
+
+                    _client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", $"test_{i % 2 + 1}");
+                    var qty = pseudoRandom.Next(4000) / 1000m - 2;
+                    if (qty == 0)
+                    {
+                        qty += 0.0001m;
+                    }
+
+                    var limit = pseudoRandom.Next(1000) / 1000m;
+
+                    // Reverse the order if the wallet is becoming overdrawn
+                    if (orders[i % 2] > 30 && qty > 0
+                        || orders[i % 2] < -30 && qty < 0)
+                    {
+                        qty = -qty;
+                    }
+
+                    orders[i % 2] += qty * limit;
+
+                    try
+                    {
+                        await LimitOrder(qty > 0 ? OrderSide.Buy : OrderSide.Sell, qty > 0 ? qty : -qty, limit);
+                    }
+                    catch (Exception)
+                    {
+                        // If cannot put an order, take the existing order of the opposite side
+                        await LimitOrder(
+                            qty < 0 ? OrderSide.Buy : OrderSide.Sell,
+                            qty > 0 ? qty : -qty,
+                            GetDepth().Result.Asks[0][0].Value);
+                    }
+                }
+            }
         }
 
         private async Task<T> RequestContentsOrError<T>(HttpResponseMessage response, bool directlyInsteadOfD = false)
@@ -501,7 +596,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             );
         }
 
-        private async Task<InlineResponse2005D> LimitOrder(OrderSide orderSide, double qty, double limitPrice)
+        private async Task<InlineResponse2005D> LimitOrder(OrderSide orderSide, decimal qty, decimal limitPrice)
         {
             string side;
             switch (orderSide)

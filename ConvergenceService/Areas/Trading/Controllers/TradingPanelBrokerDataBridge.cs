@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using IO.Swagger.Attributes;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.Annotations;
 using XchangeCrypt.Backend.ConvergenceService.Extensions;
@@ -19,13 +20,20 @@ namespace IO.Swagger.Controllers
     [Route("api/v1/trading/")]
     public sealed class TradingPanelBrokerDataBridge : Controller
     {
-        private readonly CommandService _commandService;
+        private readonly ILogger<TradingPanelBrokerDataBridge> _logger;
+        public CommandService CommandService { get; }
+        public ViewProxyService ViewProxyService { get; }
 
         /// <summary>
         /// </summary>
-        public TradingPanelBrokerDataBridge(CommandService commandService)
+        public TradingPanelBrokerDataBridge(
+            ILogger<TradingPanelBrokerDataBridge> logger,
+            CommandService commandService,
+            ViewProxyService viewProxyService)
         {
-            _commandService = commandService;
+            _logger = logger;
+            CommandService = commandService;
+            ViewProxyService = viewProxyService;
         }
 
         /// <summary>
@@ -45,12 +53,17 @@ namespace IO.Swagger.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(BarsArrays),
             description:
             "Response is expected to be an object with properties listed below. Each property is treated as a table column")]
-        public IActionResult HistoryGet([FromQuery] [Required] string symbol,
-            [FromQuery] [Required] string resolution, [FromQuery] [Required] decimal? from,
-            [FromQuery] [Required] decimal? to, [FromQuery] decimal? countback)
+        public IActionResult HistoryGet(
+            [FromQuery] [Required] string symbol,
+            [FromQuery] [Required] string resolution,
+            [FromQuery] [Required] decimal? from,
+            [FromQuery] [Required] decimal? to,
+            [FromQuery] decimal? countback)
         {
             return StatusCode(
                 200,
+                ViewProxyService.GetHistoryBars(symbol, resolution, from, to, countback)
+                /*
                 new BarsArrays
                 {
                     S = SEnum.OkEnum,
@@ -84,6 +97,7 @@ namespace IO.Swagger.Controllers
                         new DateTime(2019, 03, 21, 1, 1, 1).GetUnixEpochMillis(),
                     },
                 }
+                */
             );
         }
 

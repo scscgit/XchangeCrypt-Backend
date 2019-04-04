@@ -163,6 +163,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
                     WithdrawalQty = amount,
                     OverdrawnAndCanceledOrders = false,
+                    Executed = false,
                     Validated = null,
                 };
                 plannedEvents.Add(withdrawalEventEntry);
@@ -170,7 +171,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             // Prepares the withdrawal, or a compensating event, only after the event is successfully stored
             afterPersistence = eventEntries =>
             {
-                WalletWithdrawalEventEntry withdrawalEventEntry =
+                var withdrawalEventEntry =
                     eventEntries.Single(eventEntry => eventEntry is WalletWithdrawalEventEntry)
                         as WalletWithdrawalEventEntry;
                 // The withdrawal is asynchronous, we don't wait here
@@ -212,7 +213,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             );
             if (targetBalance < expectedCurrentBalance)
             {
-                // TODO
+                // TODO: Direct consolidation command available to the user
                 throw reportInvalidMessage(
                     "Consolidation for rule targetBalance < expectedCurrentBalance is not implemented yet");
             }
@@ -258,6 +259,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     TransferTargetPublicKey = targetPublicKey,
                     TransferQty = balanceToWithdraw,
                     Executed = false,
+                    Valid = null,
                 });
             }
 

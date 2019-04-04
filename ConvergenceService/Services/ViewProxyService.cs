@@ -114,6 +114,24 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             );
         }
 
+        public BarsArrays GetHistoryBars(
+            string instrument, string resolution, decimal? from, decimal? to, decimal? countback)
+        {
+            return JsonConvert.DeserializeObject<BarsArrays>(
+                _client.GetStringAsync(Uri(
+                    "historyBars",
+                    new Dictionary<string, string>
+                    {
+                        {"instrument", instrument},
+                        {"resolution", resolution},
+                        {"from", from.HasValue ? $"{from}" : null},
+                        {"to", to.HasValue ? $"{to}" : null},
+                        {"countback", countback.HasValue ? $"{countback}" : null},
+                    }
+                )).Result
+            );
+        }
+
         private string Uri(string name, IDictionary<string, string> parameters)
         {
             var uri = $"{_remoteUrl}{name}?";

@@ -43,8 +43,8 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                     $"Initialized {GetType().Name}, listening for wallet event entries to be processed");
                 while (!_stopped)
                 {
-                    var missingEvents =
-                        await _eventHistoryService.LoadMissingEvents(_currentVersion, _currentVersion + 1);
+                    // We can batch events by using a second parameter, just make sure to consume the entire version
+                    var missingEvents = await _eventHistoryService.LoadMissingEvents(_currentVersion);
                     if (missingEvents.Count > 0)
                     {
                         // Only integrate new events as long as no one is currently assuming a fixed current version
@@ -55,10 +55,23 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                                 if (missingEvent is WalletEventEntry walletEvent)
                                 {
                                     AbstractProvider.ProviderLookup[walletEvent.CoinSymbol].ProcessEvent(walletEvent);
+                                    var eventVersionNumber = missingEvent.VersionNumber;
+                                    if (eventVersionNumber == _currentVersion)
+                                    {
+                                        continue;
+                                    }
+
+                                    if (eventVersionNumber == _currentVersion + 1)
+                                    {
+                                        _currentVersion++;
+                                        continue;
+                                    }
+
+                                    throw new Exception(
+                                        $"Integrity error: the event ID {missingEvent.Id} attempted to jump version from {_currentVersion} to {eventVersionNumber}. This cannot be recovered from and requires a manual fix by administrator");
                                 }
                             }
 
-                            _currentVersion++;
                             _logger.LogInformation($"Current version is increased to {_currentVersion}");
                             return _currentVersion;
                         });
