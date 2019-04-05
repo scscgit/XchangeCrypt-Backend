@@ -44,25 +44,25 @@ namespace XchangeCrypt.Backend.WalletService.Services
                 .ToList();
         }
 
-        public List<HotWallet> GetAllHotWallets(string otherPublicKey, string coinSymbol)
-        {
-            var otherHotWallet = HotWallets.Find(hotWalletEntry =>
-                    hotWalletEntry.PublicKey.Equals(otherPublicKey))
-                .SortByDescending(e => e.CreatedOnVersionNumber)
-                .First();
+//        public List<HotWallet> GetAllHotWallets(string otherPublicKey, string coinSymbol)
+//        {
+//            var otherHotWallet = HotWallets.Find(hotWalletEntry =>
+//                    hotWalletEntry.PublicKey.Equals(otherPublicKey))
+//                .SortByDescending(e => e.CreatedOnVersionNumber)
+//                .First();
+//
+//            return HotWallets.Find(hotWalletEntry =>
+//                    hotWalletEntry.User.Equals(otherHotWallet.User)
+//                    && hotWalletEntry.AccountId.Equals(otherHotWallet.AccountId)
+//                    // Coin symbol could be extracted from the public key too, this is just a failsafe double-check
+//                    && hotWalletEntry.CoinSymbol.Equals(coinSymbol))
+//                .ToList();
+//        }
 
-            return HotWallets.Find(hotWalletEntry =>
-                    hotWalletEntry.User.Equals(otherHotWallet.User)
-                    && hotWalletEntry.AccountId.Equals(otherHotWallet.AccountId)
-                    // Coin symbol could be extracted from the public key too, this is just a failsafe double-check
-                    && hotWalletEntry.CoinSymbol.Equals(coinSymbol))
-                .ToList();
-        }
-
-        public HotWallet GetHotWallet(string otherPublicKey, string coinSymbol)
+        public HotWallet GetHotWallet(string publicKey, string coinSymbol)
         {
             return HotWallets.Find(hotWalletEntry =>
-                    hotWalletEntry.PublicKey.Equals(otherPublicKey)
+                    hotWalletEntry.PublicKey.Equals(publicKey)
                     // Coin symbol could be extracted from the public key too, this is just a failsafe double-check
                     && hotWalletEntry.CoinSymbol.Equals(coinSymbol))
                 .First();

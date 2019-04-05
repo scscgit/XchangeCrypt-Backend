@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
@@ -136,18 +137,19 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
-                var walletPublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
-                var walletPublicKeyBalance = AbstractProvider.ProviderLookup[coinSymbol]
-                    .GetCurrentlyCachedBalance(walletPublicKey)
+                var sourcePublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
+                var sourcePublicKeyBalance = AbstractProvider.ProviderLookup[coinSymbol]
+                    .GetCurrentlyCachedBalance(sourcePublicKey)
                     .Result;
 
                 // The consolidation events will be first validated by TradingService
-                if (walletPublicKeyBalance < amount)
+                if (sourcePublicKeyBalance < amount)
                 {
                     var (consolidationEvents, expectedTargetBalance) = PlanConsolidateLocked(
-                        walletPublicKey, coinSymbol, amount, true, reportInvalidMessage, currentVersionNumber).Result;
+                        user, accountId, sourcePublicKey, coinSymbol, amount, true, reportInvalidMessage,
+                        currentVersionNumber).Result;
                     consolidationEvents.ForEach(plannedEvents.Add);
-                    walletPublicKeyBalance = expectedTargetBalance;
+                    sourcePublicKeyBalance = expectedTargetBalance;
                 }
 
                 var withdrawalEventEntry = new WalletWithdrawalEventEntry
@@ -156,9 +158,10 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     User = user,
                     AccountId = accountId,
                     CoinSymbol = coinSymbol,
-                    LastWalletPublicKey = walletPublicKey,
+                    LastWalletPublicKey = sourcePublicKey,
+                    WithdrawalSourcePublicKey = sourcePublicKey,
                     // Note: the new public key balance can go to negative values, as there can be a consolidation
-                    NewSourcePublicKeyBalance = walletPublicKeyBalance - amount,
+                    NewSourcePublicKeyBalance = sourcePublicKeyBalance - amount,
                     //BlockchainTransactionId = ,
                     WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
                     WithdrawalQty = amount,
@@ -188,52 +191,59 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
         }
 
         private async Task<(List<EventEntry>, decimal)> PlanConsolidateLocked(
-            string targetPublicKey, string coinSymbol, decimal targetBalance, bool allowMoreBalance,
-            Func<string, Exception> reportInvalidMessage, long lockedCurrentVersionNumber)
+            string user, string accountId, string targetPublicKey, string coinSymbol, decimal targetBalance,
+            bool allowMoreBalance, Func<string, Exception> reportInvalidMessage, long lockedCurrentVersionNumber)
         {
             var eventVersionNumber = lockedCurrentVersionNumber + 1;
             var plannedEvents = new List<EventEntry>();
             _logger.LogInformation(
                 $"Consolidation calculation for wallet {targetPublicKey}, target {targetBalance} {coinSymbol} {(allowMoreBalance ? "or more" : "")}");
-            var expectedCurrentBalance = AbstractProvider.ProviderLookup[coinSymbol]
-                .GetCurrentlyCachedBalance(targetPublicKey)
-                .Result;
-            var otherWallets = WalletOperationService.GetAllHotWallets(targetPublicKey, coinSymbol);
-            // Don't try to move balance from the same wallet
-            otherWallets.RemoveAll(wallet => wallet.PublicKey.Equals(targetPublicKey));
-            // Sort descending from largest balance
-            otherWallets.Sort(
-                (a, b) =>
-                    AbstractProvider.ProviderLookup[coinSymbol]
-                        .GetCurrentlyCachedBalance(b.PublicKey)
-                        .Result
-                        .CompareTo(AbstractProvider.ProviderLookup[coinSymbol]
-                            .GetCurrentlyCachedBalance(a.PublicKey)
-                            .Result)
-            );
+            var expectedCurrentBalance = await AbstractProvider.ProviderLookup[coinSymbol]
+                .GetCurrentlyCachedBalance(targetPublicKey);
+
             if (targetBalance < expectedCurrentBalance)
             {
-                // TODO: Direct consolidation command available to the user
-                throw reportInvalidMessage(
-                    "Consolidation for rule targetBalance < expectedCurrentBalance is not implemented yet");
+                // Direct consolidation command of reducing the target balance available to the user always
+                // withdraws the remainder to the newest wallet
+                var balanceReduction = expectedCurrentBalance - targetBalance;
+                var destinationPublicKey = WalletOperationService.GetLastPublicKey(targetPublicKey);
+                var destinationPreviousBalance = await AbstractProvider.ProviderLookup[coinSymbol]
+                    .GetCurrentlyCachedBalance(destinationPublicKey);
+                if (destinationPublicKey.Equals(targetPublicKey))
+                {
+                    throw reportInvalidMessage(
+                        "Negative balance consolidation cannot be executed, because there was no newer wallet to receive the funds. Please generate a new wallet before cleaning up the old one");
+                }
+
+                _logger.LogInformation(
+                    $"Consolidation withdrawal (balance reducing) of {balanceReduction} {coinSymbol} from {targetPublicKey} to {destinationPublicKey} planned");
+                plannedEvents.Add(new WalletConsolidationTransferEventEntry
+                {
+                    VersionNumber = eventVersionNumber,
+                    User = user,
+                    AccountId = accountId,
+                    CoinSymbol = coinSymbol,
+                    // Not needed, we can fill this in later if ever needed, as it can be statically calculated
+                    LastWalletPublicKey = null,
+                    // Note: the new public key balance can go to negative values, as there can be a consolidation
+                    NewSourcePublicKeyBalance = targetBalance,
+                    NewTargetPublicKeyBalance = destinationPreviousBalance + balanceReduction,
+                    TransferSourcePublicKey = targetPublicKey,
+                    TransferTargetPublicKey = destinationPublicKey,
+                    TransferQty = balanceReduction,
+                    Executed = false,
+                    Valid = null,
+                });
+                return (plannedEvents, targetBalance);
             }
 
-            foreach (var hotWallet in otherWallets)
+            // Increasing the target wallet balance, there may be multiple required withdrawals
+            var missingBalance = targetBalance - expectedCurrentBalance;
+            var sourcePairs = await AbstractProvider.ProviderLookup[coinSymbol]
+                .GetWalletsHavingSumBalance(missingBalance, targetPublicKey);
+
+            foreach (var (sourcePublicKey, sourceBalance) in sourcePairs)
             {
-                if (expectedCurrentBalance >= targetBalance)
-                {
-                    return (plannedEvents, expectedCurrentBalance);
-                }
-
-                var sourceBalance = AbstractProvider.ProviderLookup[coinSymbol]
-                    .GetCurrentlyCachedBalance(hotWallet.PublicKey)
-                    .Result;
-                if (sourceBalance == 0)
-                {
-                    // Ignore empty wallets
-                    continue;
-                }
-
                 var balanceToWithdraw = sourceBalance;
                 if (!allowMoreBalance && expectedCurrentBalance + balanceToWithdraw > targetBalance)
                 {
@@ -243,19 +253,19 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 expectedCurrentBalance += balanceToWithdraw;
 
                 _logger.LogInformation(
-                    $"Consolidation withdrawal of {balanceToWithdraw} {coinSymbol} from {hotWallet.PublicKey} to {targetPublicKey} planned");
+                    $"Consolidation withdrawal of {balanceToWithdraw} {coinSymbol} from {sourcePublicKey} to {targetPublicKey} planned");
                 plannedEvents.Add(new WalletConsolidationTransferEventEntry
                 {
                     VersionNumber = eventVersionNumber,
-                    User = hotWallet.User,
-                    AccountId = hotWallet.AccountId,
+                    User = user,
+                    AccountId = accountId,
                     CoinSymbol = coinSymbol,
-                    // We can fill this in later if ever needed, can be statically calculated
+                    // Not needed, we can fill this in later if ever needed, as it can be statically calculated
                     LastWalletPublicKey = null,
                     // Note: the new public key balance can go to negative values, as there can be a consolidation
                     NewSourcePublicKeyBalance = sourceBalance - balanceToWithdraw,
                     NewTargetPublicKeyBalance = expectedCurrentBalance,
-                    TransferSourcePublicKey = hotWallet.PublicKey,
+                    TransferSourcePublicKey = sourcePublicKey,
                     TransferTargetPublicKey = targetPublicKey,
                     TransferQty = balanceToWithdraw,
                     Executed = false,

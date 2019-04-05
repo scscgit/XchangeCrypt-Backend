@@ -112,7 +112,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
                             lastTriedVersion = currentVersion;
 
-                            oldBalance = _knownPublicKeyBalances[publicKey];
+                            oldBalance = GetCurrentlyCachedBalance(publicKey).Result;
                             if (balance <= oldBalance)
                             {
                                 _logger.LogInformation(
@@ -143,6 +143,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                         });
                     }
                     while (retry);
+
+                    _logger.LogInformation(
+                        $"{ThisCoinSymbol} blockchain deposit event successfully persisted @ public key {publicKey}, balance {oldBalance} => {balance}");
                 }
                 else if (balance < oldBalance)
                 {
@@ -172,7 +175,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             {
                 _logger.LogError(
                     $"Withdrawal event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
-                Task.Delay(1000);
+                Task.Delay(1000).Wait();
                 eventEntry = (WalletWithdrawalEventEntry) _eventHistoryService.FindById(eventEntry.Id);
             }
 
@@ -187,13 +190,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void OnWithdrawal(WalletWithdrawalEventEntry eventEntry)
         {
-            var oldBalance = GetCurrentlyCachedBalance(eventEntry.LastWalletPublicKey).Result;
+            var oldBalance = GetCurrentlyCachedBalance(eventEntry.WithdrawalSourcePublicKey).Result;
             var newBalance = oldBalance - eventEntry.WithdrawalQty;
             if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
-                    $"{GetType().Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
+                    $"{GetType().Name} withdrawal event processing detected fatal event inconsistency of wallet values, new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
             _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
@@ -205,7 +207,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             {
                 _logger.LogError(
                     $"Consolidation event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
-                Task.Delay(1000);
+                Task.Delay(1000).Wait();
                 eventEntry = (WalletConsolidationTransferEventEntry) _eventHistoryService.FindById(eventEntry.Id);
             }
 
@@ -298,13 +300,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private void ProcessEvent(WalletDepositEventEntry eventEntry)
         {
-            var oldBalance = _knownPublicKeyBalances[eventEntry.LastWalletPublicKey];
+            var oldBalance = GetCurrentlyCachedBalance(eventEntry.DepositWalletPublicKey).Result;
             var newBalance = oldBalance + eventEntry.DepositQty;
             if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
-                    $"{GetType().Name} detected fatal event inconsistency of wallet values, " +
-                    $"new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
+                    $"{GetType().Name} deposit event processing detected fatal event inconsistency of wallet values, new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
             _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
@@ -430,6 +431,46 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             // The zero is only returned if there was no Wallet Generate event processed yet,
             // which means that the command method, which called this, will surely be deemed invalid before it persists
             return _knownPublicKeyBalances.ContainsKey(publicKey) ? _knownPublicKeyBalances[publicKey] : 0m;
+        }
+
+        public override async Task<List<(string, decimal)>> GetWalletsHavingSumBalance(
+            decimal sumBalance, string excludePublicKey)
+        {
+            var sortedPairs = _knownPublicKeyBalances
+                // Take the list, only considering non-zero balances and excluding target balance
+                .Where(pair => pair.Value > 0 && !pair.Key.Equals(excludePublicKey))
+                // Take the smallest possible wallets larger than sumBalance first, otherwise sort from largest
+                .GroupBy(pair => pair.Value >= sumBalance)
+                .SelectMany(
+                    group =>
+                    {
+                        var list = group.ToList();
+                        if (group.Key)
+                        {
+                            list.Sort((a, b) => b.Value.CompareTo(a.Value));
+                        }
+                        else
+                        {
+                            list.Sort((a, b) => a.Value.CompareTo(b.Value));
+                        }
+
+                        return list;
+                    }
+                ).ToList();
+
+            var result = new List<(string, decimal)>();
+            foreach (var (key, value) in sortedPairs)
+            {
+                result.Add((key, value));
+                sumBalance -= value;
+                if (sumBalance <= 0)
+                {
+                    // Already exceeded the sum
+                    break;
+                }
+            }
+
+            return result;
         }
     }
 }

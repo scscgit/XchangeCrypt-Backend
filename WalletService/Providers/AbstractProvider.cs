@@ -74,6 +74,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public abstract Task<decimal> GetCurrentlyCachedBalance(string publicKey);
 
+        public abstract Task<List<(string, decimal)>> GetWalletsHavingSumBalance(
+            decimal sumBalance, string excludePublicKey);
+
         public new async Task StopAsync(CancellationToken cancellationToken)
         {
             _stopped = true;

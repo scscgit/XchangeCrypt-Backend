@@ -6,6 +6,9 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
     {
         public string BlockchainTransactionId;
 
+        // Coincidentally same as LastWalletPublicKey
+        public string WithdrawalSourcePublicKey;
+
         public string WithdrawalTargetPublicKey;
 
         public decimal WithdrawalQty;
