@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IO.Swagger.Models;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.ConvergenceService.Extensions;
@@ -13,10 +14,12 @@ namespace XchangeCrypt.Backend.ViewService.Services
 {
     public class OrderCaching
     {
+        private readonly ILogger<OrderCaching> _logger;
         public TradingRepository TradingRepository { get; }
 
-        public OrderCaching(TradingRepository tradingRepository)
+        public OrderCaching(TradingRepository tradingRepository, ILogger<OrderCaching> logger)
         {
+            _logger = logger;
             TradingRepository = tradingRepository;
         }
 
@@ -173,17 +176,46 @@ namespace XchangeCrypt.Backend.ViewService.Services
         public BarsArrays GetHistoryBars(
             string instrument, string resolution, decimal? from, decimal? to, decimal? countback)
         {
-            var result = new List<(decimal, decimal, decimal, decimal, decimal, decimal)>();
-            var cursor = TradingRepository
-                .TransactionHistory()
-                .MapReduce(
-                    new BsonJavaScript(@"
+            long secondsInterval;
+            switch (resolution.ToCharArray()[1].ToString())
+            {
+                case "m":
+                    secondsInterval = 60;
+                    break;
+                case "H":
+                    secondsInterval = 60 * 60;
+                    break;
+                case "D":
+                    secondsInterval = 60 * 60 * 24;
+                    break;
+                case "W":
+                    secondsInterval = 60 * 60 * 24 * 7;
+                    break;
+                case "M":
+                    // Approximately
+                    //secondsInterval = 60 * 60 * 24 * 7 * 30;
+                    // Mocking as 10 seconds
+                    secondsInterval = 10;
+                    break;
+                default:
+                    throw new Exception($"Unsupported resolution {resolution}");
+            }
+
+            secondsInterval *= long.Parse($"{resolution.ToCharArray()[0].ToString()}");
+
+            var transactionHistory = TradingRepository.TransactionHistory();
+            var result = new List<(decimal, decimal, decimal, decimal, decimal, long)>();
+            try
+            {
+                var cursor = transactionHistory
+                    .MapReduce(
+                        new BsonJavaScript(@"
 function() {
     var transaction = this;
     emit(transaction.ExecutionTime, { count: 1, keyName: transaction.Field });
 }"
-                    ),
-                    new BsonJavaScript(@"
+                        ),
+                        new BsonJavaScript(@"
 function(key, values) {
     var result = {count: 0, keyName: 0 };
 
@@ -194,24 +226,53 @@ function(key, values) {
 
 return result;
 }"
-                    ),
-                    new MapReduceOptions<
-                        TransactionHistoryEntry,
-                        (decimal, decimal, decimal, decimal, decimal, decimal)
-                    >
-                    {
-                        OutputOptions = MapReduceOutputOptions.Inline,
-                        Scope = new BsonDocument(new Dictionary<string, object>
+                        ),
+                        new MapReduceOptions<
+                            TransactionHistoryEntry,
+                            (decimal, decimal, decimal, decimal, decimal, long)
+                        >
                         {
-                            // Values passed to global scope of the map, reduce, and finalize functions
-                            {"instrument", instrument},
-                            {"resolution", resolution},
-                        }),
-                    }
-                );
-            while (cursor.MoveNext())
+                            OutputOptions = MapReduceOutputOptions.Inline,
+                            Scope = new BsonDocument(new Dictionary<string, object>
+                            {
+                                // Values passed to global scope of the map, reduce, and finalize functions
+                                {"instrument", instrument},
+                                {"resolution", resolution},
+                            }),
+                        }
+                    );
+                while (cursor.MoveNext())
+                {
+                    result.AddRange(cursor.Current);
+                }
+            }
+            catch (MongoCommandException)
             {
-                result.AddRange(cursor.Current);
+                // MapReduce not supported by MongoDB
+                _logger.LogError("MongoDB MapReduce unavailable, using fallback");
+                var fromDate = ((long) from.Value).GetDateTimeFromUnixEpochMillis();
+                var toDate = ((long) to.Value).GetDateTimeFromUnixEpochMillis();
+                var grouping = transactionHistory
+                    .Find(transaction =>
+                        instrument.Equals(transaction.Instrument)
+                        // The GetUnixEpochMillis() conversion isn't supported by MongoDB, we need an alternative
+                        && transaction.ExecutionTime >= fromDate
+                        && transaction.ExecutionTime <= toDate
+                    )
+                    .Sort(Builders<TransactionHistoryEntry>.Sort.Ascending(e => e.ExecutionTime))
+                    .ToList()
+                    .GroupBy(e => e.ExecutionTime.GetUnixEpochMillis() / (1000 * secondsInterval));
+                result = grouping.Select(interval =>
+                        (
+                            interval.First().Price,
+                            interval.Max(tx => tx.Price),
+                            interval.Min(tx => tx.Price),
+                            interval.Last().Price,
+                            interval.Sum(tx => tx.FilledQty),
+                            interval.Key * 1000 * secondsInterval
+                        )
+                    )
+                    .ToList();
             }
 
             var (O, H, L, C, V, T) = result.Aggregate((
