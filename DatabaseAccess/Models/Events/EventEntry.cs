@@ -12,6 +12,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
         typeof(WalletDepositEventEntry),
         //typeof(WalletEventEntry),
         typeof(WalletRevokeEventEntry),
+        typeof(WalletConsolidationTransferEventEntry),
         typeof(WalletWithdrawalEventEntry))]
     public abstract class EventEntry
     {

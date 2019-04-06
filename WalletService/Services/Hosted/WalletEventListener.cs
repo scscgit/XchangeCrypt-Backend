@@ -55,21 +55,22 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                                 if (missingEvent is WalletEventEntry walletEvent)
                                 {
                                     AbstractProvider.ProviderLookup[walletEvent.CoinSymbol].ProcessEvent(walletEvent);
-                                    var eventVersionNumber = missingEvent.VersionNumber;
-                                    if (eventVersionNumber == _currentVersion)
-                                    {
-                                        continue;
-                                    }
-
-                                    if (eventVersionNumber == _currentVersion + 1)
-                                    {
-                                        _currentVersion++;
-                                        continue;
-                                    }
-
-                                    throw new Exception(
-                                        $"Integrity error: the event ID {missingEvent.Id} attempted to jump version from {_currentVersion} to {eventVersionNumber}. This cannot be recovered from and requires a manual fix by administrator");
                                 }
+
+                                var eventVersionNumber = missingEvent.VersionNumber;
+                                if (eventVersionNumber == _currentVersion)
+                                {
+                                    continue;
+                                }
+
+                                if (eventVersionNumber == _currentVersion + 1)
+                                {
+                                    _currentVersion++;
+                                    continue;
+                                }
+
+                                throw new Exception(
+                                    $"Integrity error: the event ID {missingEvent.Id} attempted to jump version from {_currentVersion} to {eventVersionNumber}. This cannot be recovered from and requires a manual fix by administrator");
                             }
 
                             _logger.LogInformation($"Current version is increased to {_currentVersion}");

@@ -111,7 +111,7 @@ namespace XchangeCrypt.Backend.QueueAccess
                 $"Initialized {GetType().Name}, listening for messages on queue \"{_queueName}\" and storing dead letters in \"{_deadLetterQueueName}\"");
             while (!_stopped)
             {
-                await ReceiveMessagesAsync();
+                ReceiveMessagesAsync().Wait(cancellationToken);
                 // Don't pass the cancellationToken, because we don't want the receiver
                 // to shutdown application from a simple testing API call timeout. // Edit: actually nevermind.
                 await Task.Delay(_listeningInterval, cancellationToken);

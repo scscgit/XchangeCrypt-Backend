@@ -77,83 +77,90 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 }
 
                 var oldBalance = _knownPublicKeyBalances[publicKey];
-                if (balance > oldBalance)
+                if (balance == oldBalance)
                 {
-                    //var generateEvent = _eventHistoryService.FindWalletGenerateByPublicKey(publicKey);
-                    var retry = false;
-                    do
+                    continue;
+                }
+
+                if (balance <= oldBalance)
+                {
+                    if (balance < oldBalance)
                     {
-                        // Hot wallet does not change, so we won't request it multiple times
-                        var depositHotWallet = _walletOperationService.GetHotWallet(publicKey, ThisCoinSymbol);
-                        long lastTriedVersion = 0;
-                        _versionControl.ExecuteUsingFixedVersion(currentVersion =>
-                        {
-                            if (retry && currentVersion == lastTriedVersion)
-                            {
-                                _logger.LogInformation(
-                                    $"Blockchain deposit @ version number {currentVersion + 1} waiting for new events' integration...");
-                                Task.Delay(1000).Wait();
-                                return;
-                            }
-
-                            // We have acquired a lock, so the deposit event may have been already processed
-                            try
-                            {
-                                balance = GetBalance(publicKey).Result;
-                            }
-                            catch (Exception)
-                            {
-                                _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
-                                                 $"service is probably offline, waiting a few seconds");
-                                Task.Delay(5000).Wait();
-                                retry = true;
-                                return;
-                            }
-
-                            lastTriedVersion = currentVersion;
-
-                            oldBalance = GetCurrentlyCachedBalance(publicKey).Result;
-                            if (balance <= oldBalance)
-                            {
-                                _logger.LogInformation(
-                                    "Blockchain deposit canceled, it was already processed by a newer event");
-                                retry = false;
-                                return;
-                            }
-
-                            _logger.LogInformation(
-                                $"{(retry ? "Retrying" : "Trying")} a detected {ThisCoinSymbol} blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}, event persistence @ version number {currentVersion + 1}");
-
-                            var deposit = new WalletDepositEventEntry
-                            {
-                                User = depositHotWallet.User,
-                                AccountId = depositHotWallet.AccountId,
-                                CoinSymbol = ThisCoinSymbol,
-                                DepositQty = balance - oldBalance,
-                                NewSourcePublicKeyBalance = balance,
-                                LastWalletPublicKey = _walletOperationService.GetLastPublicKey(publicKey),
-                                DepositWalletPublicKey = publicKey,
-                                VersionNumber = currentVersion + 1
-                            };
-                            IList<EventEntry> persist = new List<EventEntry>
-                            {
-                                deposit
-                            };
-                            retry = null == _eventHistoryService.Persist(persist, currentVersion).Result;
-                        });
+                        _logger.LogInformation(
+                            "Detected a negative value deposit event; assuming there is a withdrawal going on");
+                        //throw new Exception(
+                        //    "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
                     }
-                    while (retry);
 
-                    _logger.LogInformation(
-                        $"{ThisCoinSymbol} blockchain deposit event successfully persisted @ public key {publicKey}, balance {oldBalance} => {balance}");
+                    continue;
                 }
-                else if (balance < oldBalance)
+
+                // Generate event does not change, so we won't request it multiple times
+                var generateEvent = _eventHistoryService.FindWalletGenerateByPublicKey(publicKey);
+                var retry = false;
+                do
                 {
-                    _logger.LogInformation(
-                        "Detected a negative value deposit event; assuming there is a withdrawal going on");
-                    //throw new Exception(
-                    //    "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
+                    long lastTriedVersion = 0;
+                    _versionControl.ExecuteUsingFixedVersion(currentVersion =>
+                    {
+                        if (retry && currentVersion == lastTriedVersion)
+                        {
+                            _logger.LogInformation(
+                                $"Blockchain deposit @ version number {currentVersion + 1} waiting for new events' integration...");
+                            Task.Delay(1000).Wait();
+                            return;
+                        }
+
+                        // We have acquired a lock, so the deposit event may have been already processed
+                        try
+                        {
+                            balance = GetBalance(publicKey).Result;
+                        }
+                        catch (Exception)
+                        {
+                            _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
+                                             $"service is probably offline, waiting a few seconds");
+                            Task.Delay(5000).Wait();
+                            retry = true;
+                            return;
+                        }
+
+                        lastTriedVersion = currentVersion;
+
+                        oldBalance = GetCurrentlyCachedBalance(publicKey).Result;
+                        if (balance <= oldBalance)
+                        {
+                            _logger.LogInformation(
+                                "Blockchain deposit canceled, it was already processed by a newer event");
+                            retry = false;
+                            return;
+                        }
+
+                        _logger.LogInformation(
+                            $"{(retry ? "Retrying" : "Trying")} a detected {ThisCoinSymbol} blockchain deposit event @ public key {publicKey}, balance {oldBalance} => {balance}, event persistence @ version number {currentVersion + 1}");
+
+                        var deposit = new WalletDepositEventEntry
+                        {
+                            User = generateEvent.User,
+                            AccountId = generateEvent.AccountId,
+                            CoinSymbol = ThisCoinSymbol,
+                            DepositQty = balance - oldBalance,
+                            NewSourcePublicKeyBalance = balance,
+                            LastWalletPublicKey = _walletOperationService.GetLastPublicKey(publicKey),
+                            DepositWalletPublicKey = publicKey,
+                            VersionNumber = currentVersion + 1
+                        };
+                        IList<EventEntry> persist = new List<EventEntry>
+                        {
+                            deposit
+                        };
+                        retry = null == _eventHistoryService.Persist(persist, currentVersion).Result;
+                    });
                 }
+                while (retry);
+
+                _logger.LogInformation(
+                    $"{ThisCoinSymbol} blockchain deposit event successfully persisted @ public key {publicKey}, balance {oldBalance} => {balance}");
             }
         }
 
@@ -275,11 +282,14 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         private void ProcessEvent(WalletRevokeEventEntry eventEntry)
         {
             var revoke = (WalletEventEntry) _eventHistoryService.FindById(eventEntry.RevokeWalletEventEntryId);
-            var oldBalance = _knownPublicKeyBalances[revoke.LastWalletPublicKey];
+            decimal oldBalance;
             decimal newBalance;
+            string revokedPublicKey;
             switch (revoke)
             {
                 case WalletDepositEventEntry deposit:
+                    revokedPublicKey = deposit.DepositWalletPublicKey;
+                    oldBalance = _knownPublicKeyBalances[revokedPublicKey];
                     newBalance = oldBalance - deposit.DepositQty;
                     break;
                 case WalletWithdrawalEventEntry withdrawal:
@@ -289,13 +299,15 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                         return;
                     }
 
+                    revokedPublicKey = withdrawal.WithdrawalSourcePublicKey;
+                    oldBalance = _knownPublicKeyBalances[revokedPublicKey];
                     newBalance = oldBalance + withdrawal.WithdrawalQty;
                     break;
                 default:
                     throw new Exception("Unsupported wallet revoke event type " + revoke.GetType().Name);
             }
 
-            _knownPublicKeyBalances[revoke.LastWalletPublicKey] = newBalance;
+            _knownPublicKeyBalances[revokedPublicKey] = newBalance;
         }
 
         private void ProcessEvent(WalletDepositEventEntry eventEntry)
@@ -308,7 +320,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     $"{GetType().Name} deposit event processing detected fatal event inconsistency of wallet values, new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
+            _knownPublicKeyBalances[eventEntry.DepositWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
         }
 
         public override async Task<string> GenerateHdWallet()
