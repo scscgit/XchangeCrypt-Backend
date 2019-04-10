@@ -55,13 +55,14 @@ namespace XchangeCrypt.Backend.ConvergenceService
                 })
                 .AddJwtBearer(jwtOptions =>
                 {
-                    jwtOptions.Authority = Configuration["Authentication:AzureAD:Authority"];
-//                    jwtOptions.Authority =
-//                        $"{Configuration["Authentication:AzureAD:AuthorityPrefix"]}/" +
-//                        $"{Configuration["Authentication:AzureAD:Tenant"]}/" +
-//                        $"{Configuration["Authentication:AzureAD:Policy"]}/" +
-//                        $"{Configuration["Authentication:AzureAD:AuthorityPostfix"]}/";
+//                    jwtOptions.Authority = Configuration["Authentication:AzureAD:Authority"];
+                    jwtOptions.Authority =
+                        $"{Configuration["Authentication:AzureAD:AuthorityPrefix"]}/" +
+                        $"{Configuration["Authentication:AzureAD:Tenant"]}/" +
+                        $"{Configuration["Authentication:AzureAD:Policy"]}/" +
+                        $"{Configuration["Authentication:AzureAD:AuthorityPostfix"]}/";
                     jwtOptions.Audience = Configuration["Authentication:AzureAD:ClientId"];
+                    jwtOptions.ClaimsIssuer = "B2C_1_signupsignin";
                     jwtOptions.Events = new JwtBearerEvents
                     {
                         OnAuthenticationFailed = AuthenticationFailed
