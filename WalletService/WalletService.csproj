@@ -4,7 +4,6 @@
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
         <UserSecretsId>aspnet-WalletService-9591AD9C-C5CF-4E78-8673-C6ED27D4BDA0</UserSecretsId>
-        <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
         <RootNamespace>XchangeCrypt.Backend.WalletService</RootNamespace>
     </PropertyGroup>
 

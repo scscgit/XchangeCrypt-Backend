@@ -4,9 +4,6 @@
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
         <RootNamespace>XchangeCrypt.Backend.ConvergenceService</RootNamespace>
-        <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
-        <ApplicationInsightsResourceId>/subscriptions/dd57a382-d007-4623-bcfe-ae62c455d6e0/resourcegroups/XchangeCryptTest/providers/microsoft.insights/components/ConvergenceBackendTestInsights</ApplicationInsightsResourceId>
-        <ApplicationInsightsAnnotationResourceId>/subscriptions/dd57a382-d007-4623-bcfe-ae62c455d6e0/resourcegroups/XchangeCryptTest/providers/microsoft.insights/components/ConvergenceBackendTestInsights</ApplicationInsightsAnnotationResourceId>
     </PropertyGroup>
 
     <!-- Swagger generation required by IncludeXmlComments -->

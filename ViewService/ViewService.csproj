@@ -4,7 +4,6 @@
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
         <UserSecretsId>aspnet-ViewService-BBEEE010-AB0B-4F6C-A463-A497F7A7C0DD</UserSecretsId>
-        <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
         <RootNamespace>XchangeCrypt.Backend.ViewService</RootNamespace>
     </PropertyGroup>
 
