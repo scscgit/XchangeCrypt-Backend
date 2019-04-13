@@ -62,7 +62,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
                         $"{Configuration["Authentication:AzureAD:Policy"]}/" +
                         $"{Configuration["Authentication:AzureAD:AuthorityPostfix"]}/";
                     jwtOptions.Audience = Configuration["Authentication:AzureAD:ClientId"];
-                    jwtOptions.ClaimsIssuer = "B2C_1_signupsignin";
+//                    jwtOptions.ClaimsIssuer = $"{Configuration["Authentication:AzureAD:Policy"]}";
                     jwtOptions.Events = new JwtBearerEvents
                     {
                         OnAuthenticationFailed = AuthenticationFailed

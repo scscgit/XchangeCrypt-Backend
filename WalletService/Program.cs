@@ -15,6 +15,7 @@ namespace XchangeCrypt.Backend.WalletService
 
         private static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseApplicationInsights()
                 .UseStartup<Startup>();
 
         public static void Shutdown()
