@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -98,6 +99,9 @@ namespace XchangeCrypt.Backend.TradingService
                 // index.html for redirect
                 .UseDefaultFiles()
                 .UseStaticFiles();
+
+            // Getting rid of the spam in Debug Output
+            TelemetryDebugWriter.IsTracingDisabled = true;
         }
     }
 }

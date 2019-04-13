@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.ApplicationInsights.Extensibility.Implementation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.AzureADB2C.UI;
 using Microsoft.AspNetCore.Builder;
@@ -114,6 +115,9 @@ namespace XchangeCrypt.Backend.WalletService
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseMvc();
+
+            // Getting rid of the spam in Debug Output
+            TelemetryDebugWriter.IsTracingDisabled = true;
         }
     }
 }
