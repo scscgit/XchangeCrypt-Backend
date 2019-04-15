@@ -246,9 +246,10 @@ return result;
                     result.AddRange(cursor.Current);
                 }
             }
-            catch (MongoCommandException)
+            catch (Exception ex) when (ex is MongoCommandException || ex is BsonSerializationException)
             {
-                // MapReduce not supported by MongoDB
+                // MongoCommandException means MapReduce not supported by MongoDB server
+                // Alternatively, BsonSerializationException means the MapReduce is not implemented properly
                 _logger.LogError("MongoDB MapReduce unavailable, using fallback");
                 var fromDate = ((long) from.Value).GetDateTimeFromUnixEpochMillis();
                 var toDate = ((long) to.Value).GetDateTimeFromUnixEpochMillis();
