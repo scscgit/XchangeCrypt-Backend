@@ -199,6 +199,7 @@ namespace XchangeCrypt.Backend.ConvergenceService
             }
             else
             {
+                app.UseDeveloperExceptionPage();
                 app.UseHsts();
                 // Error handling
                 //TODO: Enable production exception handling (https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling)

@@ -4,6 +4,7 @@
         <TargetFramework>netcoreapp2.2</TargetFramework>
         <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
         <RootNamespace>XchangeCrypt.Backend.ConvergenceService</RootNamespace>
+        <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     </PropertyGroup>
 
     <!-- Swagger generation required by IncludeXmlComments -->
