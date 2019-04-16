@@ -85,10 +85,10 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services.Hosted
         public void ExpectAnswer(string user, string requestId)
         {
             // Asserting that user and requestId never contain space, and they are both reasonably bounded
-            _expectingAnswers[user + " " + requestId] = new ExpectingAnswerPayload
+            _expectingAnswers.Add(user + " " + requestId, new ExpectingAnswerPayload
             {
                 Semaphore = new SemaphoreSlim(0, 2)
-            };
+            });
         }
 
         public async Task<IDictionary<string, object>> WaitForAnswer(string user, string requestId, TimeSpan timeout)

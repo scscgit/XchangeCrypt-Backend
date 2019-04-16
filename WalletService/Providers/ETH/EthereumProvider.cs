@@ -180,7 +180,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             // until we are sure the withdrawal is valid and it has been executed in a previous service run
             while (eventEntry.Validated == null)
             {
-                _logger.LogError(
+                _logger.LogWarning(
                     $"Withdrawal event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
                 Task.Delay(1000).Wait();
                 eventEntry = (WalletWithdrawalEventEntry) _eventHistoryService.FindById(eventEntry.Id);
@@ -212,7 +212,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         {
             while (eventEntry.Valid == null)
             {
-                _logger.LogError(
+                _logger.LogWarning(
                     $"Consolidation event {eventEntry.Id} is not validated by Trading Service yet, waiting...");
                 Task.Delay(1000).Wait();
                 eventEntry = (WalletConsolidationTransferEventEntry) _eventHistoryService.FindById(eventEntry.Id);
@@ -354,11 +354,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                             _walletOperationService.GetHotWallet(walletPublicKeyUserReference, ThisCoinSymbol).HdSeed,
                             ""
                         ).GetAccount(0).PrivateKey
-                    )
+                    ),
+                    Web3Url
                 ).Eth
                 .GetEtherTransferService()
                 .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasFee);
-            var success = transaction.HasErrors() ?? true;
+            var success = !(transaction.HasErrors() ?? true);
             // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;
         }

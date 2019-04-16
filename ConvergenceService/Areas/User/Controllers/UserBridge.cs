@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -60,30 +62,38 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         {
             IList<WalletDetails> wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
             // Generate missing empty wallets
+            var generateTasks = new Dictionary<string, Task<string>>();
             foreach (var expectedCoin in GlobalConfiguration.Currencies)
             {
                 if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
                 {
-                    var error = WalletGenerate(accountId, expectedCoin);
                     _logger.LogInformation($"Generating {expectedCoin} wallet for user {User.GetIdentifier()}");
-                    if (error != null)
+                    generateTasks.Add(expectedCoin, WalletGenerate(accountId, expectedCoin));
+                }
+            }
+
+            // Process the answers asynchronously
+            foreach (var expectedCoin in generateTasks.Keys)
+            {
+                var error = generateTasks[expectedCoin].Result;
+                _logger.LogInformation($"Generating {expectedCoin} wallet for user {User.GetIdentifier()}");
+                if (error != null)
+                {
+                    _logger.LogError("Error during wallet generation: " + error);
+                    wallets.Add(new WalletDetails
                     {
-                        _logger.LogError("Error during wallet generation: " + error);
-                        wallets.Add(new WalletDetails
-                        {
-                            CoinSymbol = expectedCoin,
-                            WalletPublicKey = null,
-                            Balance = 0
-                        });
-                    }
-                    else
+                        CoinSymbol = expectedCoin,
+                        WalletPublicKey = null,
+                        Balance = 0
+                    });
+                }
+                else
+                {
+                    // Retry getting the wallet after it's supposed to be generated
+                    wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
+                    if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
                     {
-                        // Retry getting the wallet after it's supposed to be generated
-                        wallets = ViewProxyService.GetWallets(User.GetIdentifier(), "0").ToList();
-                        if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
-                        {
-                            _logger.LogError("Wallet generation did not cause a wallet to be generated");
-                        }
+                        _logger.LogError("Wallet generation did not cause a wallet to be generated");
                     }
                 }
             }
@@ -138,13 +148,16 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
         /// <returns>Error if any</returns>
         [HttpPut("accounts/{accountId}/wallets/{coinSymbol}/generate")]
-        public string WalletGenerate(
+        public async Task<string> WalletGenerate(
             [FromRoute] [Required] string accountId,
             [FromRoute] [Required] string coinSymbol)
         {
-            return CommandService.GenerateWallet(
-                User.GetIdentifier(), accountId, coinSymbol.ToUpperInvariant(), ""
-            ).Result;
+            return await CommandService.GenerateWallet(
+                User.GetIdentifier(),
+                accountId,
+                coinSymbol.ToUpperInvariant(),
+                new Random().Next(100_000_000).ToString()
+            );
         }
     }
 }

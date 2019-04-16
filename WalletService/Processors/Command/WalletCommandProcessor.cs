@@ -133,6 +133,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             string requestId, Func<string, Exception> reportInvalidMessage,
             out Action<IList<EventEntry>> afterPersistence, IList<EventEntry> previousEventEntries)
         {
+            // TODO: block concurrent withdrawals, as their cached balance is not stable (NewBalance becomes incorrect)
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
@@ -287,7 +288,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             string user, string accountId, string coinSymbol, ObjectId walletEventIdReference, string requestId,
             Func<string, Exception> reportInvalidMessage, IList<EventEntry> previousEventEntries)
         {
-            // Administrator only
+            // Administrator manipulation, or automatic withdrawal revocation
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
@@ -302,7 +303,11 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 }
                 else if (referencedEventEntry is WalletWithdrawalEventEntry withdrawal)
                 {
-                    balance += withdrawal.WithdrawalQty;
+                    // If the withdrawal wasn't executed, we can still safely use the old value (+a-a=0)
+                    if (withdrawal.Executed)
+                    {
+                        balance += withdrawal.WithdrawalQty;
+                    }
                 }
                 else
                 {
