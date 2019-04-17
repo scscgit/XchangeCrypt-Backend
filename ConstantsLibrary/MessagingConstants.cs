@@ -24,6 +24,10 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string StopLoss = "StopLoss";
             public const string TakeProfit = "TakeProfit";
 
+            // Cancel order
+
+            public const string OrderCreatedOnVersionNumber = "OrderCreatedOnVersionNumber";
+
             // Wallet operation
 
             public const string WalletCommandType = "WalletCommandType";
@@ -53,6 +57,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string LimitOrder = "limit";
             public const string StopOrder = "stop";
             public const string MarketOrder = "market";
+            public const string Cancel = "cancel";
         }
 
         public static class OrderSides

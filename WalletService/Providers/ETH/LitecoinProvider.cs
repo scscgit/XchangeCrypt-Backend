@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
@@ -9,10 +10,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
     {
         public const string LTC = "LTC";
 
-        public LitecoinProvider(ILogger<EthereumProvider> logger, WalletOperationService walletOperationService,
+        public LitecoinProvider(ILogger<LitecoinProvider> logger, WalletOperationService walletOperationService,
             EventHistoryService eventHistoryService, RandomEntropyService randomEntropyService,
-            VersionControl versionControl) : base(logger,
-            walletOperationService, eventHistoryService, randomEntropyService, versionControl)
+            VersionControl versionControl, IConfiguration configuration) : base(logger,
+            walletOperationService, eventHistoryService, randomEntropyService, versionControl, configuration)
         {
             ThisCoinSymbol = LTC;
             // TODO: DEVELOPMENT ONLY, replace by actual provider!

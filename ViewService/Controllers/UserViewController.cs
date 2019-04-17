@@ -43,9 +43,10 @@ namespace XchangeCrypt.Backend.ViewService.Controllers
                 .Select(coinWallet =>
                     new WalletDetails
                     {
-                        Balance = coinWallet.Balance,
                         CoinSymbol = coinWallet.CoinSymbol,
                         WalletPublicKey = coinWallet.PublicKey,
+                        Balance = coinWallet.Balance,
+                        AvailableBalance = coinWallet.Balance - coinWallet.ReservedBalance,
                     }
                 )
                 .ToList();

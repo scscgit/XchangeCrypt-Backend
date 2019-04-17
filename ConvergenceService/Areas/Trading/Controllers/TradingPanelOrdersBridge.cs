@@ -171,21 +171,23 @@ namespace IO.Swagger.Controllers
         [SwaggerOperation("AccountsAccountIdOrdersOrderIdDelete", Tags = new[] {"Orders"})]
         [SwaggerResponse(statusCode: 200, type: typeof(InlineResponse2007), description: "OK")]
         [Authorize]
-        public IActionResult AccountsAccountIdOrdersOrderIdDelete([FromRoute] [Required] string accountId,
+        public async Task<IActionResult> AccountsAccountIdOrdersOrderIdDelete(
+            [FromRoute] [Required] string accountId,
             [FromRoute] [Required] string orderId)
         {
-            _logger.LogInformation("Mocking request to delete order ID " + orderId);
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(InlineResponse2007));
-
-            string exampleJson = null;
-            exampleJson = "{\n  \"s\" : \"ok\",\n  \"errmsg\" : \"errmsg\"\n}";
-
-            var example = exampleJson != null
-                ? JsonConvert.DeserializeObject<InlineResponse2007>(exampleJson)
-                : default(InlineResponse2007);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
+            var error = await CommandService.CancelOrder(
+                User.GetIdentifier(),
+                accountId,
+                orderId,
+                CommandService.RandomRequestId()
+            );
+            return StatusCode(200,
+                new InlineResponse2007
+                {
+                    Errmsg = error,
+                    S = error == null ? Status.OkEnum : Status.ErrorEnum,
+                }
+            );
         }
 
         /// <summary>

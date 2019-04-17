@@ -14,8 +14,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             new Dictionary<string, AbstractProvider>();
 
         private readonly TimeSpan _listeningInterval = TimeSpan.FromMilliseconds(2000);
-        private readonly ILogger _logger;
         private bool _stopped;
+        protected readonly ILogger _logger;
 
         protected AbstractProvider(ILogger logger)
         {

@@ -50,7 +50,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                 .ToList()
                 .Select(e => new Order
                 {
-                    Id = e.Id.ToString(),
+                    Id = e.CreatedOnVersionId.ToString(),
                     Instrument = e.Instrument,
                     Qty = e.Qty,
                     Side = MapSide(e.Side),
@@ -76,7 +76,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                         .ToList()
                         .Select(e => new Order
                         {
-                            Id = e.Id.ToString(),
+                            Id = e.CreatedOnVersionId.ToString(),
                             Instrument = e.Instrument,
                             Qty = e.Qty,
                             Side = MapSide(e.Side),

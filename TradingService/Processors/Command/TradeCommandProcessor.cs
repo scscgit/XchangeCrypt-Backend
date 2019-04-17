@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
@@ -41,7 +42,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
         public async Task ExecuteTradeOrderCommand(
             string user, string accountId, string instrument, decimal quantity, string side, string orderType,
             decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss,
-            decimal? takeProfit, string requestId, Func<string, Exception> reportInvalidMessage)
+            decimal? takeProfit, long? orderCreatedOnVersionNumber, string requestId,
+            Func<string, Exception> reportInvalidMessage)
         {
             var orderSideOptional = ParseSide(side);
             if (!orderSideOptional.HasValue)
@@ -75,6 +77,12 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                             takeProfit, requestId, reportInvalidMessage);
                         break;
 
+                    case MessagingConstants.OrderTypes.Cancel:
+                        eventEntries = await PlanCancelOrder(
+                            user, accountId, instrument, orderCreatedOnVersionNumber.Value, requestId,
+                            reportInvalidMessage);
+                        break;
+
                     default:
                         throw reportInvalidMessage($"Unrecognized order type: {orderType}");
                 }
@@ -86,6 +94,55 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             while (retry);
 
             _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
+        }
+
+        private async Task<IList<EventEntry>> PlanCancelOrder(string user, string accountId, string instrument,
+            long orderCreatedOnVersionNumber, string requestId, Func<string, Exception> reportInvalidMessage)
+        {
+            var cancelOrderEntry = new CancelOrderEventEntry
+            {
+                User = user,
+                AccountId = accountId,
+                Instrument = instrument,
+                CancelOrderCreatedOnVersionNumber = orderCreatedOnVersionNumber,
+            };
+            var plannedEvents = new List<EventEntry>();
+            VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+            {
+                var eventVersionNumber = currentVersionNumber + 1;
+                cancelOrderEntry.VersionNumber = eventVersionNumber;
+                var openOrder = TradingOrderService.FindOpenOrderCreatedByVersionNumber(
+                    cancelOrderEntry.CancelOrderCreatedOnVersionNumber
+                );
+                if (openOrder is OrderBookEntry limitOrder)
+                {
+                    if (!user.Equals(limitOrder.User)
+                        || !accountId.Equals(limitOrder.AccountId)
+                        || !instrument.Equals(limitOrder.Instrument))
+                    {
+                        throw reportInvalidMessage("Couldn't cancel order; user, accountId, or the instrument differs");
+                    }
+
+                    plannedEvents.Add(cancelOrderEntry);
+                    return;
+                }
+
+                if (openOrder is HiddenOrderEntry stopOrder)
+                {
+                    if (!user.Equals(stopOrder.User)
+                        || !accountId.Equals(stopOrder.AccountId)
+                        || !instrument.Equals(stopOrder.Instrument))
+                    {
+                        throw reportInvalidMessage("Couldn't cancel order; user, accountId, or the instrument differs");
+                    }
+
+                    plannedEvents.Add(cancelOrderEntry);
+                    return;
+                }
+
+                throw reportInvalidMessage("Couldn't find a matching limit or stop order to close");
+            });
+            return plannedEvents;
         }
 
         private async Task<IList<EventEntry>> PlanLimitOrderEvents(

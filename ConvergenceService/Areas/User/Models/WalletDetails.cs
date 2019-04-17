@@ -21,5 +21,10 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Models
         /// User balance of the wallet represented in multiplies of the lowest tradable amount, which is specified by the wallet.
         /// </summary>
         public decimal Balance;
+
+        /// <summary>
+        /// User balance of the wallet, that is not reserved by open orders, and is available for trading.
+        /// </summary>
+        public decimal AvailableBalance;
     }
 }

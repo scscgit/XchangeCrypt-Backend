@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using IO.Swagger.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -35,12 +36,14 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         private class MockedEthereumProvider : EthereumProvider
         {
             public MockedEthereumProvider(
-                ILogger<EthereumProvider> logger,
+                ILogger<MockedEthereumProvider> logger,
                 WalletOperationService walletOperationService,
                 EventHistoryService eventHistoryService,
                 RandomEntropyService randomEntropyService,
-                VersionControl versionControl)
-                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl)
+                VersionControl versionControl,
+                IConfiguration configuration)
+                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl,
+                    configuration)
             {
                 ProviderLookup[ThisCoinSymbol] = this;
             }
@@ -76,12 +79,14 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         private class MockedBitcoinProvider : BitcoinProvider
         {
             public MockedBitcoinProvider(
-                ILogger<EthereumProvider> logger,
+                ILogger<MockedBitcoinProvider> logger,
                 WalletOperationService walletOperationService,
                 EventHistoryService eventHistoryService,
                 RandomEntropyService randomEntropyService,
-                VersionControl versionControl)
-                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl)
+                VersionControl versionControl,
+                IConfiguration configuration)
+                : base(logger, walletOperationService, eventHistoryService, randomEntropyService, versionControl,
+                    configuration)
             {
                 ProviderLookup[ThisCoinSymbol] = this;
             }
@@ -161,11 +166,12 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
                         services.Replace(ServiceDescriptor.Singleton<EthereumProvider>(service =>
                             _ethProvider = new MockedEthereumProvider(
-                                service.GetService<ILogger<EthereumProvider>>(),
+                                service.GetService<ILogger<MockedEthereumProvider>>(),
                                 service.GetService<WalletOperationService>(),
                                 service.GetService<EventHistoryService>(),
                                 service.GetService<RandomEntropyService>(),
-                                service.GetService<VersionControl>()))
+                                service.GetService<VersionControl>(),
+                                service.GetService<IConfiguration>()))
                         );
 
 //                    services.Replace(ServiceDescriptor.Singleton<IHostedService, EthereumProvider>(
@@ -174,11 +180,12 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
                         services.Replace(ServiceDescriptor.Singleton<BitcoinProvider>(service =>
                             _btcProvider = new MockedBitcoinProvider(
-                                service.GetService<ILogger<EthereumProvider>>(),
+                                service.GetService<ILogger<MockedBitcoinProvider>>(),
                                 service.GetService<WalletOperationService>(),
                                 service.GetService<EventHistoryService>(),
                                 service.GetService<RandomEntropyService>(),
-                                service.GetService<VersionControl>()))
+                                service.GetService<VersionControl>(),
+                                service.GetService<IConfiguration>()))
                         );
 
 //                    services.Replace(ServiceDescriptor.Singleton<IHostedService, BitcoinProvider>(

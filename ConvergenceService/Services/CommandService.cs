@@ -160,9 +160,33 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             });
         }
 
+        /// <summary>
+        /// Deletes an order, identifying it's creation version number as an orderId.
+        /// </summary>
+        /// <returns>null on success, otherwise the error message</returns>
+        public async Task<string> CancelOrder(string user, string accountId, string orderId, string requestId)
+        {
+            requestId = Sha256Hash(requestId);
+            return await ExecuteForAnswer(user, requestId, async () =>
+            {
+                await _tradingQueueWriter.SendMessageAsync(
+                    new Dictionary<string, object>
+                    {
+                        {ParameterNames.MessageType, MessageTypes.TradeOrder},
+                        {ParameterNames.User, user},
+                        {ParameterNames.AccountId, accountId},
+
+                        {ParameterNames.OrderType, OrderTypes.Cancel},
+                        {ParameterNames.OrderCreatedOnVersionNumber, orderId},
+                        {ParameterNames.RequestId, requestId},
+                        {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
+                    }
+                );
+            });
+        }
 
         /// <summary>
-        /// Enqueues a Market order.
+        /// Generates a new wallet public key address.
         /// </summary>
         /// <returns>null on success, otherwise the error message</returns>
         public async Task<string> GenerateWallet(
@@ -248,6 +272,11 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
 
                 return builder.ToString();
             }
+        }
+
+        public static string RandomRequestId()
+        {
+            return new Random().Next(100_000_000).ToString();
         }
     }
 }

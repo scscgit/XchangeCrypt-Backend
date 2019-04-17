@@ -36,13 +36,15 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             var duration = (decimal?) message.GetValueOrDefault(ParameterNames.Duration);
             var stopLoss = (decimal?) message.GetValueOrDefault(ParameterNames.StopLoss);
             var takeProfit = (decimal?) message.GetValueOrDefault(ParameterNames.TakeProfit);
+            var orderCreatedOnVersionNumber =
+                (long?) message.GetValueOrDefault(ParameterNames.OrderCreatedOnVersionNumber);
             var requestId = (string) message.GetValueOrDefault(ParameterNames.RequestId);
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
 
             return ProcessorFactory.CreateTradeOrderPersistenceProcessor().ExecuteTradeOrderCommand(
                 user, accountId, instrument, quantity, side, orderType, limitPrice, stopPrice, durationType, duration,
-                stopLoss, takeProfit, requestId, reportInvalidMessage);
+                stopLoss, takeProfit, orderCreatedOnVersionNumber, requestId, reportInvalidMessage);
         }
     }
 }

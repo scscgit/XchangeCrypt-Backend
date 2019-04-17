@@ -156,7 +156,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
                 User.GetIdentifier(),
                 accountId,
                 coinSymbol.ToUpperInvariant(),
-                new Random().Next(100_000_000).ToString()
+                CommandService.RandomRequestId()
             );
         }
     }

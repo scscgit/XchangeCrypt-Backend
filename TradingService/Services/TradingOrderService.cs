@@ -235,39 +235,66 @@ namespace XchangeCrypt.Backend.TradingService.Services
         /// <returns>Remaining unmatched quantity of the order</returns>
         internal decimal CancelOrder(CancelOrderEventEntry cancelOrder)
         {
-            return CancelOrderById(cancelOrder.CancelOrderId, cancelOrder.EntryTime);
+            return CancelOrderByCreatedOnVersionNumber(
+                cancelOrder.CancelOrderCreatedOnVersionNumber,
+                cancelOrder.EntryTime
+            );
         }
 
         /// <summary>
         /// Cancels an active order, inserting a relevant order history entry.
         /// </summary>
-        /// <param name="cancelOrderId">Id of the order to be canceled</param>
+        /// <param name="cancelOrderCreatedOnVersionNumber">Version number of creation of the order to be canceled</param>
         /// <param name="orderHistoryTime">Time of the cancellation event</param>
         /// <returns>Remaining unmatched quantity of the order if it's limit order, zero if it's stop order</returns>
-        internal decimal CancelOrderById(ObjectId cancelOrderId, DateTime orderHistoryTime)
+        internal decimal CancelOrderByCreatedOnVersionNumber(
+            long cancelOrderCreatedOnVersionNumber,
+            DateTime orderHistoryTime)
         {
             decimal remainingQuantity;
+            var openOrder = FindOpenOrderCreatedByVersionNumber(cancelOrderCreatedOnVersionNumber);
+            if (openOrder is OrderBookEntry limitOrder)
+            {
+                InsertOrderHistoryEntry(limitOrder.FilledQty, limitOrder, OrderStatus.Cancelled, orderHistoryTime);
+                remainingQuantity = limitOrder.Qty - limitOrder.FilledQty;
+                OrderBook.DeleteOne(
+                    Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, cancelOrderCreatedOnVersionNumber)
+                );
+            }
+            else if (openOrder is HiddenOrderEntry stopOrder)
+            {
+                InsertOrderHistoryEntry(stopOrder, OrderStatus.Cancelled, orderHistoryTime);
+                remainingQuantity = 0;
+                HiddenOrders.DeleteOne(
+                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.CreatedOnVersionId,
+                        cancelOrderCreatedOnVersionNumber)
+                );
+            }
+            else
+            {
+                throw new Exception(
+                    $"Couldn't cancel order created on version number {cancelOrderCreatedOnVersionNumber}, as there was no such order open");
+            }
+
+            return remainingQuantity;
+        }
+
+        public object FindOpenOrderCreatedByVersionNumber(long cancelOrderCreatedOnVersionNumber)
+        {
             var targetOrder = OrderBook.Find(
-                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrderId)
+                Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, cancelOrderCreatedOnVersionNumber)
             ).SingleOrDefault();
             if (targetOrder != null)
             {
-                InsertOrderHistoryEntry(targetOrder.FilledQty, targetOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingQuantity = targetOrder.Qty - targetOrder.FilledQty;
+                return targetOrder;
             }
             else
             {
                 var hiddenOrder = HiddenOrders.Find(
-                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.Id, cancelOrderId)
-                ).Single();
-                InsertOrderHistoryEntry(hiddenOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingQuantity = 0;
+                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.CreatedOnVersionId, cancelOrderCreatedOnVersionNumber)
+                ).SingleOrDefault();
+                return hiddenOrder;
             }
-
-            OrderBook.DeleteOne(
-                Builders<OrderBookEntry>.Filter.Eq(e => e.Id, cancelOrderId)
-            );
-            return remainingQuantity;
         }
 
         private void InsertOrderHistoryEntry(

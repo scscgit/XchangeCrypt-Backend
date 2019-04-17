@@ -277,8 +277,10 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                         in _tradingOrderService.GetLimitOrders(
                             eventEntry.User, eventEntry.AccountId, instrument, cancelOrderSide))
                     {
-                        unreservedBalance +=
-                            _tradingOrderService.CancelOrderById(orderBookEntry.Id, eventEntry.EntryTime);
+                        unreservedBalance += _tradingOrderService.CancelOrderByCreatedOnVersionNumber(
+                            orderBookEntry.CreatedOnVersionId,
+                            eventEntry.EntryTime
+                        );
                         _logger.LogInformation(
                             $"Canceling {instrument} limit order due to balance overdraw, id {orderBookEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");
                     }
@@ -288,8 +290,10 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                         in _tradingOrderService.GetStopOrders(
                             eventEntry.User, eventEntry.AccountId, instrument, cancelOrderSide))
                     {
-                        unreservedBalance +=
-                            _tradingOrderService.CancelOrderById(stopOrderEntry.Id, eventEntry.EntryTime);
+                        unreservedBalance += _tradingOrderService.CancelOrderByCreatedOnVersionNumber(
+                            stopOrderEntry.CreatedOnVersionId,
+                            eventEntry.EntryTime
+                        );
                         _logger.LogInformation(
                             $"Canceling {instrument} stop order due to balance overdraw, id {stopOrderEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");
                     }
