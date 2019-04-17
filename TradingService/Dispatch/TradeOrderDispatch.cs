@@ -27,7 +27,7 @@ namespace XchangeCrypt.Backend.TradingService.Dispatch
             var user = (string) message.GetValueOrDefault(ParameterNames.User);
             var accountId = (string) message.GetValueOrDefault(ParameterNames.AccountId);
             var instrument = (string) message.GetValueOrDefault(ParameterNames.Instrument);
-            var quantity = (decimal) message.GetValueOrDefault(ParameterNames.Quantity);
+            var quantity = (decimal?) message.GetValueOrDefault(ParameterNames.Quantity);
             var side = (string) message.GetValueOrDefault(ParameterNames.Side);
             var orderType = (string) message.GetValueOrDefault(ParameterNames.OrderType);
             var limitPrice = (decimal?) message.GetValueOrDefault(ParameterNames.LimitPrice);

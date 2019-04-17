@@ -40,19 +40,11 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
         }
 
         public async Task ExecuteTradeOrderCommand(
-            string user, string accountId, string instrument, decimal quantity, string side, string orderType,
+            string user, string accountId, string instrument, decimal? quantity, string side, string orderType,
             decimal? limitPrice, decimal? stopPrice, string durationType, decimal? duration, decimal? stopLoss,
             decimal? takeProfit, long? orderCreatedOnVersionNumber, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
-            var orderSideOptional = ParseSide(side);
-            if (!orderSideOptional.HasValue)
-            {
-                throw reportInvalidMessage($"Unrecognized order side: {side}");
-            }
-
-            var orderSide = orderSideOptional.Value;
-
             var retry = false;
             do
             {
@@ -61,25 +53,27 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 {
                     case MessagingConstants.OrderTypes.LimitOrder:
                         eventEntries = await PlanLimitOrderEvents(
-                            user, accountId, instrument, quantity, orderSide, limitPrice.Value, durationType, duration,
-                            stopLoss, takeProfit, requestId, reportInvalidMessage);
+                            user, accountId, instrument, quantity.Value, ParseSide(side, reportInvalidMessage),
+                            limitPrice.Value, durationType, duration, stopLoss, takeProfit, requestId,
+                            reportInvalidMessage);
                         break;
 
                     case MessagingConstants.OrderTypes.StopOrder:
                         eventEntries = await PlanStopOrderEvents(
-                            user, accountId, instrument, quantity, orderSide, stopPrice.Value, durationType, duration,
-                            stopLoss, takeProfit, requestId, reportInvalidMessage);
+                            user, accountId, instrument, quantity.Value, ParseSide(side, reportInvalidMessage),
+                            stopPrice.Value, durationType, duration, stopLoss, takeProfit, requestId,
+                            reportInvalidMessage);
                         break;
 
                     case MessagingConstants.OrderTypes.MarketOrder:
                         eventEntries = await PlanMarketOrderEvents(
-                            user, accountId, instrument, quantity, orderSide, durationType, duration, stopLoss,
-                            takeProfit, requestId, reportInvalidMessage);
+                            user, accountId, instrument, quantity.Value, ParseSide(side, reportInvalidMessage),
+                            durationType, duration, stopLoss, takeProfit, requestId, reportInvalidMessage);
                         break;
 
                     case MessagingConstants.OrderTypes.Cancel:
                         eventEntries = await PlanCancelOrder(
-                            user, accountId, instrument, orderCreatedOnVersionNumber.Value, requestId,
+                            user, accountId, orderCreatedOnVersionNumber.Value, requestId,
                             reportInvalidMessage);
                         break;
 
@@ -96,47 +90,52 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
         }
 
-        private async Task<IList<EventEntry>> PlanCancelOrder(string user, string accountId, string instrument,
-            long orderCreatedOnVersionNumber, string requestId, Func<string, Exception> reportInvalidMessage)
+        private async Task<IList<EventEntry>> PlanCancelOrder(
+            string user, string accountId, long orderCreatedOnVersionNumber, string requestId,
+            Func<string, Exception> reportInvalidMessage)
         {
-            var cancelOrderEntry = new CancelOrderEventEntry
-            {
-                User = user,
-                AccountId = accountId,
-                Instrument = instrument,
-                CancelOrderCreatedOnVersionNumber = orderCreatedOnVersionNumber,
-            };
             var plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
-                cancelOrderEntry.VersionNumber = eventVersionNumber;
                 var openOrder = TradingOrderService.FindOpenOrderCreatedByVersionNumber(
-                    cancelOrderEntry.CancelOrderCreatedOnVersionNumber
+                    orderCreatedOnVersionNumber
                 );
                 if (openOrder is OrderBookEntry limitOrder)
                 {
                     if (!user.Equals(limitOrder.User)
-                        || !accountId.Equals(limitOrder.AccountId)
-                        || !instrument.Equals(limitOrder.Instrument))
+                        || !accountId.Equals(limitOrder.AccountId))
                     {
-                        throw reportInvalidMessage("Couldn't cancel order; user, accountId, or the instrument differs");
+                        throw reportInvalidMessage("Couldn't cancel limit order, user or accountId differs");
                     }
 
-                    plannedEvents.Add(cancelOrderEntry);
+                    plannedEvents.Add(new CancelOrderEventEntry
+                    {
+                        VersionNumber = eventVersionNumber,
+                        User = user,
+                        AccountId = accountId,
+                        Instrument = limitOrder.Instrument,
+                        CancelOrderCreatedOnVersionNumber = orderCreatedOnVersionNumber,
+                    });
                     return;
                 }
 
                 if (openOrder is HiddenOrderEntry stopOrder)
                 {
                     if (!user.Equals(stopOrder.User)
-                        || !accountId.Equals(stopOrder.AccountId)
-                        || !instrument.Equals(stopOrder.Instrument))
+                        || !accountId.Equals(stopOrder.AccountId))
                     {
-                        throw reportInvalidMessage("Couldn't cancel order; user, accountId, or the instrument differs");
+                        throw reportInvalidMessage("Couldn't cancel stop order, user or accountId differs");
                     }
 
-                    plannedEvents.Add(cancelOrderEntry);
+                    plannedEvents.Add(new CancelOrderEventEntry
+                    {
+                        VersionNumber = eventVersionNumber,
+                        User = user,
+                        AccountId = accountId,
+                        Instrument = stopOrder.Instrument,
+                        CancelOrderCreatedOnVersionNumber = orderCreatedOnVersionNumber,
+                    });
                     return;
                 }
 
@@ -306,7 +305,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             throw new NotImplementedException();
         }
 
-        private static OrderSide? ParseSide(string side)
+        private static OrderSide ParseSide(string side, Func<string, Exception> reportInvalidMessage)
         {
             switch (side)
             {
@@ -317,7 +316,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                     return OrderSide.Sell;
 
                 default:
-                    return null;
+                    throw reportInvalidMessage($"Unrecognized order side: {side}");
             }
         }
     }

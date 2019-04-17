@@ -173,7 +173,7 @@ namespace IO.Swagger.Controllers
         [Authorize]
         public async Task<IActionResult> AccountsAccountIdOrdersOrderIdDelete(
             [FromRoute] [Required] string accountId,
-            [FromRoute] [Required] string orderId)
+            [FromRoute] [Required] long orderId)
         {
             var error = await CommandService.CancelOrder(
                 User.GetIdentifier(),
@@ -297,7 +297,7 @@ namespace IO.Swagger.Controllers
         {
             if (requestId == null)
             {
-                requestId = "1";
+                requestId = CommandService.RandomRequestId();
             }
 
             string errorIfAny;

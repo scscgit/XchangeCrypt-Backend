@@ -6,7 +6,6 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
     {
         public ObjectId Id { get; set; }
 
-        // TODO maybe unique ID
         public string CoinSymbol { get; set; }
 
         public string User { get; set; }

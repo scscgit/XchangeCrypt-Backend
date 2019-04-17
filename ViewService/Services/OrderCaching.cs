@@ -193,9 +193,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                     break;
                 case "M":
                     // Approximately
-                    //secondsInterval = 60 * 60 * 24 * 7 * 30;
-                    // Mocking as 10 seconds
-                    secondsInterval = 10;
+                    secondsInterval = 60 * 60 * 24 * 7 * 30;
                     break;
                 default:
                     throw new Exception($"Unsupported resolution {resolution}");

@@ -338,7 +338,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     Instrument = orderToClose.Instrument,
                     Qty = orderToClose.Qty,
                     Side = orderToClose.Side,
-                    // Closed limit order
+                    // Closed stop order
                     Type = OrderType.Stop,
                     // The entire order quantity was filled
                     FilledQty = 0,

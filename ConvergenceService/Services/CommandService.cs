@@ -164,7 +164,8 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
         /// Deletes an order, identifying it's creation version number as an orderId.
         /// </summary>
         /// <returns>null on success, otherwise the error message</returns>
-        public async Task<string> CancelOrder(string user, string accountId, string orderId, string requestId)
+        public async Task<string> CancelOrder(
+            string user, string accountId, long orderCreatedOnVersionId, string requestId)
         {
             requestId = Sha256Hash(requestId);
             return await ExecuteForAnswer(user, requestId, async () =>
@@ -177,7 +178,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                         {ParameterNames.AccountId, accountId},
 
                         {ParameterNames.OrderType, OrderTypes.Cancel},
-                        {ParameterNames.OrderCreatedOnVersionNumber, orderId},
+                        {ParameterNames.OrderCreatedOnVersionNumber, orderCreatedOnVersionId},
                         {ParameterNames.RequestId, requestId},
                         {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
                     }
