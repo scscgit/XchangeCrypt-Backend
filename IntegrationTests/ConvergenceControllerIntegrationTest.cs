@@ -220,6 +220,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Generate the wallets
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
+            GetWallets().Wait();
+            Task.Delay(2000).Wait();
             Try(10, () =>
             {
                 var wallets = GetWallets().Result;
@@ -236,14 +238,13 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             });
 
             // Try to properly withdraw
-            Task.Delay(2000).Wait();
             Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
-
+            Task.Delay(2000).Wait();
             // Try to withdraw unavailable funds; this will fail asynchronously without error message
             Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
 
             // Give some time to the second withdrawal, as its failure would still make the test pass
-            Task.Delay(2000).Wait();
+            Task.Delay(3000).Wait();
 
             // Make sure the balance gets updated
             Try(10, () =>
@@ -272,6 +273,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
+            GetWallets().Wait();
+            Task.Delay(2000).Wait();
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
             Try(10, () =>
             {
@@ -293,6 +296,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
+            GetWallets().Wait();
+            Task.Delay(2000).Wait();
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
             Try(10, () =>
             {
@@ -320,6 +325,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             await LimitOrder(OrderSide.Sell, 4.5m, 0.1m);
             _logger.LogInformation("Placed limit sell 4.5 @ 0.1");
 
+            Task.Delay(3000).Wait();
             // Wait for Trading Service to finish processing events
             Try(10, () =>
             {
@@ -402,6 +408,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Cleanup
             await LimitOrder(OrderSide.Sell, 1, 0.8m);
             _logger.LogInformation("Placed limit sell 1 @ 0.8");
+            Task.Delay(2000).Wait();
 
             // Wait for Trading Service to finish processing events
             Try(10, () =>
@@ -435,6 +442,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
+            GetWallets().Wait();
+            Task.Delay(2000).Wait();
             Try(10, () =>
             {
                 var wallets = GetWallets().Result;
@@ -453,6 +462,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
+            GetWallets().Wait();
+            Task.Delay(2000).Wait();
             Try(10, () =>
             {
                 var wallets = GetWallets().Result;

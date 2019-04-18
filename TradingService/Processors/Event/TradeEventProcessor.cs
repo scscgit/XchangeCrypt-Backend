@@ -310,12 +310,12 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 eventEntry.User,
                 eventEntry.AccountId,
                 eventEntry.CoinSymbol,
-                -eventEntry.WithdrawalQty);
+                -eventEntry.WithdrawalQty - eventEntry.WithdrawalCombinedFee);
         }
 
         private bool IsValidWithdrawal(WalletWithdrawalEventEntry eventEntry, decimal userCoinBalance)
         {
-            return userCoinBalance >= eventEntry.WithdrawalQty;
+            return userCoinBalance >= eventEntry.WithdrawalQty + eventEntry.WithdrawalCombinedFee;
         }
     }
 }

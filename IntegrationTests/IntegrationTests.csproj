@@ -13,7 +13,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
         <PackageReference Include="xunit" Version="2.4.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.All" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="2.2.0" />
         <PackageReference Include="Moq" Version="4.9.0" />
         <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
@@ -22,16 +22,16 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ConvergenceService\ConvergenceService.csproj" />
-      <ProjectReference Include="..\TradingService\TradingService.csproj" />
-      <ProjectReference Include="..\ViewService\ViewService.csproj" />
-      <ProjectReference Include="..\WalletService\WalletService.csproj" />
+        <ProjectReference Include="..\ConvergenceService\ConvergenceService.csproj" />
+        <ProjectReference Include="..\TradingService\TradingService.csproj" />
+        <ProjectReference Include="..\ViewService\ViewService.csproj" />
+        <ProjectReference Include="..\WalletService\WalletService.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="IntegrationTests.xunit.runner.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <None Update="IntegrationTests.xunit.runner.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

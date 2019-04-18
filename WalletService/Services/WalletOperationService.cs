@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;

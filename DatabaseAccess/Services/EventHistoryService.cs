@@ -231,10 +231,15 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                     Task.Delay(1000).Wait();
                 }
             }
+
+            _logger.LogInformation(
+                $"Reported executed withdrawal of {withdrawal.WithdrawalQty} {withdrawal.CoinSymbol}");
         }
 
         public void ReportWithdrawalValidation(WalletWithdrawalEventEntry withdrawal, bool validation)
         {
+            _logger.LogInformation(
+                $"Validation of {withdrawal.WithdrawalQty} {withdrawal.CoinSymbol} withdrawal {(validation ? "successful" : "failed")}");
             EventHistoryRepository.Events().FindOneAndUpdate(
                 eventEntry => eventEntry.Id.Equals(withdrawal.Id),
                 Builders<EventEntry>.Update.Set(
@@ -246,6 +251,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
 
         public void ReportConsolidationExecuted(WalletConsolidationTransferEventEntry consolidation)
         {
+            _logger.LogInformation(
+                $"Reported executed consolidation of {consolidation.TransferQty} {consolidation.CoinSymbol}");
             EventHistoryRepository.Events().FindOneAndUpdate(
                 eventEntry => eventEntry.Id.Equals(consolidation.Id),
                 Builders<EventEntry>.Update.Set(
@@ -257,6 +264,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
 
         public void ReportConsolidationValidated(WalletConsolidationTransferEventEntry consolidation, bool validation)
         {
+            _logger.LogInformation(
+                $"Validation of {consolidation.TransferQty} {consolidation.CoinSymbol} consolidation {(validation ? "successful" : "failed")}");
             EventHistoryRepository.Events().FindOneAndUpdate(
                 eventEntry => eventEntry.Id.Equals(consolidation.Id),
                 Builders<EventEntry>.Update.Set(

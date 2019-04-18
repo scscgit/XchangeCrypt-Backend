@@ -12,6 +12,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public decimal TransferQty;
 
+        public decimal TransferFee;
+
         // This modifying field won't be the only deciding factor, the Wallet Service must also verify expected balance
         public bool Executed;
 

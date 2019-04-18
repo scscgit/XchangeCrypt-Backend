@@ -15,9 +15,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
     {
         public const string ETH = "ETH";
 
+        private readonly long WithdrawalGasMultiplier = 21000;
+        private readonly decimal Gwei = 0.000000001m;
         private readonly string Web3Url;
         private readonly Web3 _web3;
-        private readonly decimal _withdrawalGasFee;
+        private readonly decimal _withdrawalGasPriceGwei;
         private readonly WalletOperationService _walletOperationService;
         private readonly EventHistoryService _eventHistoryService;
         private readonly VersionControl _versionControl;
@@ -43,8 +45,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             _versionControl = versionControl;
             Web3Url = configuration["ETH:Web3Url"] ?? throw new ArgumentException("ETH:Web3Url");
             _web3 = new Web3(Web3Url);
-            _withdrawalGasFee = decimal.Parse(
-                configuration["ETH:WithdrawalGasFee"] ?? throw new ArgumentException("ETH:WithdrawalGasFee"));
+            _withdrawalGasPriceGwei = decimal.Parse(
+                configuration["ETH:WithdrawalGasPriceGwei"] ??
+                throw new ArgumentException("ETH:WithdrawalGasPriceGwei"));
             if (GetType() == typeof(EthereumProvider))
             {
                 // Do not implicitly call in (mocked) subclasses
@@ -68,6 +71,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         public override async Task<bool> Withdraw(
             string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
         {
+            // We intentionally let the provider's service fatally crash on exception, it's risky to cause a revocation
             var transaction = await new Web3(
                     new Account(
                         new Wallet(
@@ -78,10 +82,15 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     Web3Url
                 ).Eth
                 .GetEtherTransferService()
-                .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasFee);
+                .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasPriceGwei);
             var success = !(transaction.HasErrors() ?? true);
             // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;
+        }
+
+        public override decimal Fee()
+        {
+            return _withdrawalGasPriceGwei * WithdrawalGasMultiplier * Gwei;
         }
     }
 }

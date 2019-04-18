@@ -13,7 +13,6 @@ using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.WalletService.Dispatch;
 using XchangeCrypt.Backend.WalletService.Processors;
-using XchangeCrypt.Backend.WalletService.Processors.Command;
 using XchangeCrypt.Backend.WalletService.Providers.ETH;
 using XchangeCrypt.Backend.WalletService.Services;
 using XchangeCrypt.Backend.WalletService.Services.Hosted;

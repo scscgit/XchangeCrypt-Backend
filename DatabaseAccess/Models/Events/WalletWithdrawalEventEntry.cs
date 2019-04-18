@@ -13,6 +13,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public decimal WithdrawalQty;
 
+        public decimal WithdrawalCombinedFee;
+
         public bool OverdrawnAndCanceledOrders;
 
         // During the first processing run, this is guaranteed to be false, as the withdrawal occurs asynchronously,

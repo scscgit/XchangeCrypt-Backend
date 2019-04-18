@@ -181,7 +181,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         private void OnWithdrawal(WalletWithdrawalEventEntry eventEntry)
         {
             var oldBalance = GetCurrentlyCachedBalance(eventEntry.WithdrawalSourcePublicKey).Result;
-            var newBalance = oldBalance - eventEntry.WithdrawalQty;
+            var newBalance = oldBalance - eventEntry.WithdrawalQty - eventEntry.WithdrawalCombinedFee;
             if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
@@ -207,7 +207,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             }
 
             var oldBalanceSrc = GetCurrentlyCachedBalance(eventEntry.TransferSourcePublicKey).Result;
-            var newBalanceSrc = oldBalanceSrc - eventEntry.TransferQty;
+            var newBalanceSrc = oldBalanceSrc - eventEntry.TransferQty - eventEntry.TransferFee;
             var oldBalanceTarget = GetCurrentlyCachedBalance(eventEntry.TransferTargetPublicKey).Result;
             var newBalanceTarget = oldBalanceTarget + eventEntry.TransferQty;
             if (!eventEntry.Executed)
@@ -348,7 +348,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                             $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
                         if (success)
                         {
-                            // Note: this must occur after event processing by this own service
+                            // Note: this report will occur after event gets processed by this own service
                             _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry);
                             // We just avoided re-processing the withdrawal event, so we have to fire it manually
                             OnWithdrawal(withdrawalEventEntry);
@@ -398,7 +398,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         }
 
         public override async Task<List<(string, decimal)>> GetWalletsHavingSumBalance(
-            decimal sumBalance, string excludePublicKey)
+            decimal sumBalance, string excludePublicKey, bool expectedSumAfterDeductingFees)
         {
             var sortedPairs = _knownPublicKeyBalances
                 // Take the list, only considering non-zero balances and excluding target balance
@@ -426,7 +426,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             foreach (var (key, value) in sortedPairs)
             {
                 result.Add((key, value));
-                sumBalance -= value;
+                sumBalance -= value - (expectedSumAfterDeductingFees ? Fee() : 0m);
                 if (sumBalance <= 0)
                 {
                     // Already exceeded the sum

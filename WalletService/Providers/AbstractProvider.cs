@@ -75,7 +75,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         public abstract Task<decimal> GetCurrentlyCachedBalance(string publicKey);
 
         public abstract Task<List<(string, decimal)>> GetWalletsHavingSumBalance(
-            decimal sumBalance, string excludePublicKey);
+            decimal sumBalance, string excludePublicKey, bool expectedSumAfterDeductingFees);
 
         public new async Task StopAsync(CancellationToken cancellationToken)
         {
@@ -83,5 +83,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             _logger.LogWarning($"Stopping {GetType().Name}");
             await base.StopAsync(cancellationToken);
         }
+
+        /// <summary>
+        /// Expected fee to be paid by every single withdrawal, including consolidations.
+        /// </summary>
+        /// <returns></returns>
+        public abstract decimal Fee();
     }
 }
