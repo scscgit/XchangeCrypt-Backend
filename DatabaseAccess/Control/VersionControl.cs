@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace XchangeCrypt.Backend.DatabaseAccess.Control
@@ -76,6 +77,27 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Control
             finally
             {
                 _semaphore.Release();
+            }
+        }
+
+        public void WaitForIntegration(long versionNumber)
+        {
+            var retry = true;
+            while (retry)
+            {
+                if (CurrentVersion >= versionNumber)
+                {
+                    return;
+                }
+
+                Task.Delay(250).Wait();
+                ExecuteUsingFixedVersion(currentVersion =>
+                {
+                    if (currentVersion >= versionNumber)
+                    {
+                        retry = false;
+                    }
+                });
             }
         }
     }

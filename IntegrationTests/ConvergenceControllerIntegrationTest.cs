@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XchangeCrypt.Backend.ConstantsLibrary;
@@ -33,6 +34,36 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
     [TestCaseOrderer("XchangeCrypt.Backend.Tests.IntegrationTests.AlphabeticalOrderer", "IntegrationTests")]
     public class ConvergenceControllerIntegrationTest : IClassFixture<WebApplicationFactory<Startup>>
     {
+        private class TemporalEventHistoryService : EventHistoryService
+        {
+            public TemporalEventHistoryService(
+                EventHistoryRepository eventHistoryRepository,
+                VersionControl versionControl,
+                ILogger<EventHistoryService> logger
+            ) : base(eventHistoryRepository, versionControl, logger)
+            {
+            }
+
+            public bool Stopped;
+            public static DateTime? MockedCurrentTime;
+
+            protected override DateTime CurrentTime()
+            {
+                return MockedCurrentTime ?? base.CurrentTime();
+            }
+
+            public override Task<IList<EventEntry>> Persist(IEnumerable<EventEntry> eventTransaction,
+                long? alreadyLockedVersionNumber = null)
+            {
+                if (Stopped)
+                {
+                    throw new Exception("Already stopped");
+                }
+
+                return base.Persist(eventTransaction, alreadyLockedVersionNumber);
+            }
+        }
+
         private class MockedEthereumProvider : EthereumProvider
         {
             public MockedEthereumProvider(
@@ -63,15 +94,25 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             }
 
             public override async Task<bool> Withdraw(
-                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
+                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee)
             {
                 if (!MockedBalances.ContainsKey(walletPublicKeyUserReference)
-                    || MockedBalances[walletPublicKeyUserReference] < value)
+                    || MockedBalances[walletPublicKeyUserReference] < valueExclFee + Fee())
                 {
+                    _logger.LogWarning(
+                        $"Mocked {ThisCoinSymbol} wallet has denied withdrawal of {valueExclFee} + {Fee()} from wallet {walletPublicKeyUserReference} - the current balance is {MockedBalances[walletPublicKeyUserReference]}");
                     return false;
                 }
 
-                MockedBalances[walletPublicKeyUserReference] -= value;
+                MockedBalances[walletPublicKeyUserReference] -= valueExclFee + Fee();
+
+                // Simulate the consolidation too
+                if (!MockedBalances.ContainsKey(withdrawToPublicKey))
+                {
+                    MockedBalances.Add(withdrawToPublicKey, 0);
+                }
+
+                MockedBalances[withdrawToPublicKey] += valueExclFee;
                 return true;
             }
         }
@@ -106,15 +147,25 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             }
 
             public override async Task<bool> Withdraw(
-                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
+                string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee)
             {
                 if (!MockedBalances.ContainsKey(walletPublicKeyUserReference)
-                    || MockedBalances[walletPublicKeyUserReference] < value)
+                    || MockedBalances[walletPublicKeyUserReference] < valueExclFee + Fee())
                 {
+                    _logger.LogWarning(
+                        $"Mocked {ThisCoinSymbol} wallet has denied withdrawal of {valueExclFee} + {Fee()} from wallet {walletPublicKeyUserReference} - the current balance is {MockedBalances[walletPublicKeyUserReference]}");
                     return false;
                 }
 
-                MockedBalances[walletPublicKeyUserReference] -= value;
+                MockedBalances[walletPublicKeyUserReference] -= valueExclFee + Fee();
+
+                // Simulate the consolidation too
+                if (!MockedBalances.ContainsKey(withdrawToPublicKey))
+                {
+                    MockedBalances.Add(withdrawToPublicKey, 0);
+                }
+
+                MockedBalances[withdrawToPublicKey] += valueExclFee;
                 return true;
             }
         }
@@ -127,9 +178,12 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         private readonly ILogger _logger;
         private readonly EventHistoryRepository _eventHistoryRepository;
         private readonly HttpClient _client;
+        private HttpClient _viewClient;
 
         private MockedEthereumProvider _ethProvider;
         private MockedBitcoinProvider _btcProvider;
+        private TemporalEventHistoryService _walletServiceEventHistoryService;
+        private TemporalEventHistoryService _tradingServiceEventHistoryService;
 
         private string _instrument = "ETH_BTC";
         private WebApplicationFactory<TradingService.Startup> _tradingService;
@@ -138,27 +192,62 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         public ConvergenceControllerIntegrationTest(
             WebApplicationFactory<Startup> factory)
         {
-            _logger = new Logger<ConvergenceControllerIntegrationTest>(new LoggerFactory());
-
-            // Wipe the testing DB
-            _eventHistoryRepository = new EventHistoryRepository(new DataAccess(TestingConnectionString));
-            _eventHistoryRepository.Events().DeleteMany(MongoDB.Driver.Builders<EventEntry>.Filter.Where(e => true));
-            new WalletRepository(new DataAccess(TestingConnectionString))
-                .HotWallets()
-                .DeleteMany(MongoDB.Driver.Builders<HotWallet>.Filter.Where(e => true));
-
             // Start a view service as a direct client, bypassing convergence service proxy middleman
             // (This is required because the started client doesn't expose itself - we would have to inject it somehow)
-            var viewClient = new WebApplicationFactory<XchangeCrypt.Backend.ViewService.Startup>().CreateClient();
+            _viewClient = new WebApplicationFactory<XchangeCrypt.Backend.ViewService.Startup>().CreateClient();
+
+            // Prepare Convergence Service with injected View Service client
+            var clientFactory = factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureTestServices(services =>
+                {
+                    // Somehow this works too, even though there are now two services configured
+                    services.AddTransient(service => new ViewProxyService(_viewClient));
+                    services.AddTransient<Logger<ConvergenceControllerIntegrationTest>>();
+                });
+            });
+
+            _client = clientFactory.CreateClient();
+            _logger = clientFactory.Server.Host.Services.GetService<Logger<ConvergenceControllerIntegrationTest>>();
+
+            _logger.LogInformation("Wiping test DB");
+            // Wipe the testing DB
+            _eventHistoryRepository = new EventHistoryRepository(new DataAccess(TestingConnectionString));
+            _eventHistoryRepository.Events().DeleteMany(Builders<EventEntry>.Filter.Where(e => true));
+            new WalletRepository(new DataAccess(TestingConnectionString))
+                .HotWallets()
+                .DeleteMany(Builders<HotWallet>.Filter.Where(e => true));
+            _logger.LogInformation("Wiped test DB, preparing a new test run");
 
             // Start other queue-based supporting micro-services
-            _tradingService = new WebApplicationFactory<XchangeCrypt.Backend.TradingService.Startup>();
-            _tradingService.CreateClient();
-            _walletService = new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>().WithWebHostBuilder(
-                builder =>
+            _tradingService = new WebApplicationFactory<XchangeCrypt.Backend.TradingService.Startup>()
+                .WithWebHostBuilder(builder =>
                 {
                     builder.ConfigureTestServices(services =>
                     {
+                        services.Replace(ServiceDescriptor.Singleton<EventHistoryService>(service =>
+                            _tradingServiceEventHistoryService = new TemporalEventHistoryService(
+                                service.GetService<EventHistoryRepository>(),
+                                service.GetService<VersionControl>(),
+                                service.GetService<ILogger<TemporalEventHistoryService>>()
+                            )
+                        ));
+                    });
+                });
+            _tradingService.CreateClient();
+            _walletService = new WebApplicationFactory<XchangeCrypt.Backend.WalletService.Startup>()
+                .WithWebHostBuilder(builder =>
+                {
+                    builder.ConfigureTestServices(services =>
+                    {
+                        services.Replace(ServiceDescriptor.Singleton<EventHistoryService>(service =>
+                            _walletServiceEventHistoryService = new TemporalEventHistoryService(
+                                service.GetService<EventHistoryRepository>(),
+                                service.GetService<VersionControl>(),
+                                service.GetService<ILogger<TemporalEventHistoryService>>()
+                            )
+                        ));
+
                         // Replace works the same way as AddSingleton, but it still crashes at
                         // HostedServiceExecutor#ExecuteAsync with logged NullReferenceException, yet it works properly.
                         // This crash seems to be fixed by removing the IHostedService replacement,
@@ -197,14 +286,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 });
             _walletService.CreateClient();
 
-            // Prepare Convergence Service with injected View Service client
-            _client = factory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureTestServices(services =>
-                {
-                    services.AddTransient(service => new ViewProxyService(viewClient));
-                });
-            }).CreateClient();
+            // Make sure this is okay
+            Assert.Equal(0, _eventHistoryRepository.Events().Find(e => true).CountDocuments());
         }
 
         [Fact]
@@ -220,28 +303,30 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Generate the wallets
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
-            GetWallets().Wait();
-            Task.Delay(2000).Wait();
-            Try(10, () =>
-            {
-                var wallets = GetWallets().Result;
-                // Lets not flood it with too many duplicate generation requests
-                Task.Delay(1000).Wait();
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            // Integrate all wallets + 2 deposits
+            Integrate(() => GetWallets().Wait(), GlobalConfiguration.Currencies.Length + 2);
+            //Try(10, () =>
+            //{
+            var wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
             // Try to properly withdraw
-            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50));
-            Task.Delay(2000).Wait();
-            // Try to withdraw unavailable funds; this will fail asynchronously without error message
-            Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60));
+            Integrate(async () =>
+                Assert.Null(await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 50))
+            );
+            // Try to withdraw unavailable funds; this would fail asynchronously without error message if there were enough funds for consolidation
+            Assert.StartsWith(
+                "There are probably not enough collective funds",
+                await WalletWithdraw(MockedEthereumProvider.ETH, "mockedPublicKey", 60)
+            );
 
             // Give some time to the second withdrawal, as its failure would still make the test pass
             Task.Delay(3000).Wait();
@@ -249,15 +334,14 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Make sure the balance gets updated
             Try(10, () =>
             {
-                var wallets = GetWallets().Result;
+                wallets = GetWallets().Result;
                 Assert.Equal(50,
                     Assert.Single(
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
                     ).Balance);
             });
 
-            _tradingService.Dispose();
-            _walletService.Dispose();
+            AfterTest();
         }
 
         [Fact]
@@ -273,73 +357,72 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
-            GetWallets().Wait();
-            Task.Delay(2000).Wait();
+            // Integrate all wallets + 2 deposits
+            Integrate(() => GetWallets().Wait(), GlobalConfiguration.Currencies.Length + 2);
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
-            Try(10, () =>
-            {
-                var wallets = GetWallets().Result;
-                // Lets not flood it with too many duplicate generation requests
-                Task.Delay(1000).Wait();
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            //Try(10, () =>
+            //{
+            var wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
             // Second user will need to own generated wallets too later on when trading
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
 
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
-            GetWallets().Wait();
-            Task.Delay(2000).Wait();
+            // Integrate all wallets + 2 deposits
+            Integrate(() => GetWallets().Wait(), GlobalConfiguration.Currencies.Length + 2);
             // Assume test users have large balance: we generate wallets, and then wait for a mocked balance population
-            Try(10, () =>
-            {
-                var wallets = GetWallets().Result;
-                // Lets not flood it with too many duplicate generation requests
-                Task.Delay(1000).Wait();
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            //Try(10, () =>
+            //{
+            wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
+            // There is usually a large timeout following
+            Task.Delay(4000).Wait();
+
             // Prepare a buy order of 3.5 at price 0.2
-            await LimitOrder(OrderSide.Buy, 2.5m, 0.2m);
+            Integrate(async () => await LimitOrder(OrderSide.Buy, 2.5m, 0.2m));
             _logger.LogInformation("Placed limit buy 2.5 @ 0.2");
-            await LimitOrder(OrderSide.Buy, 1, 0.2m);
+            Integrate(async () => await LimitOrder(OrderSide.Buy, 1, 0.2m));
             _logger.LogInformation("Placed limit buy 1 @ 0.2");
             // Consume both buy orders at price 0.2, and add a new sell order of 1 at price 0.1
-            await LimitOrder(OrderSide.Sell, 4.5m, 0.1m);
+            Integrate(async () => await LimitOrder(OrderSide.Sell, 4.5m, 0.1m));
             _logger.LogInformation("Placed limit sell 4.5 @ 0.1");
 
             Task.Delay(3000).Wait();
             // Wait for Trading Service to finish processing events
-            Try(10, () =>
-            {
-                // Expect the user balances to stay unchanged after equal buy and sell of 3.5 * price 0.2 = 0.7
-                var wallets = GetWallets().Result;
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            //Try(10, () =>
+            //{
+            // Expect the user balances to stay unchanged after equal buy and sell of 3.5 * price 0.2 = 0.7
+            wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
 
@@ -362,7 +445,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
             // Consume the sell order of 1 at price 0.1, and add a new buy order of 1 at price 0.8
             await LimitOrder(OrderSide.Buy, 2, 0.8m);
-            _logger.LogInformation("Placed limit buy 2 @ 1");
+            _logger.LogInformation("Placed limit buy 2 @ 0.8");
 
             // Wait for Trading Service to finish processing events
             Try(10, () =>
@@ -375,7 +458,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 Assert.Equal(1, singleOrder.FilledQty);
 
                 // Expect the user balance to change after an ETH buy of 1 * price 0.1 = 0.1
-                var wallets = GetWallets().Result;
+                wallets = GetWallets().Result;
                 Assert.Equal(101,
                     Assert.Single(
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
@@ -405,10 +488,29 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             Assert.Equal(1, ordersHistory.Last().FilledQty);
             Assert.Equal(0.2m, ordersHistory.Last().LimitPrice);
 
-            // Cleanup
-            await LimitOrder(OrderSide.Sell, 1, 0.8m);
-            _logger.LogInformation("Placed limit sell 1 @ 0.8");
+            // Slowly prepare to cleanup by consuming half (0.5) of the remaining position @ 0.8
+            await LimitOrder(OrderSide.Sell, 0.5m, 0.8m);
+            _logger.LogInformation("Placed limit sell 0.5 @ 0.8");
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
+
+            // Close the remaining order
+            await CloseOrder((await GetOrders()).Single());
+            _logger.LogInformation("Closed limit sell 0.5/2 @ 0.8");
             Task.Delay(2000).Wait();
+
+            //Make sure it's closed
+            Try(10, () =>
+            {
+                Assert.Empty(GetOrders().Result);
+                ordersHistory = GetOrdersHistory(1).Result;
+                Assert.Equal(2, ordersHistory.Single().Qty);
+                Assert.Equal(1.5m, ordersHistory.Single().FilledQty);
+                Assert.Equal(0.8m, ordersHistory.Single().LimitPrice);
+                Assert.Equal(StatusEnum.CancelledEnum, ordersHistory.Single().Status);
+            });
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
 
             // Wait for Trading Service to finish processing events
             Try(10, () =>
@@ -418,20 +520,19 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 Assert.Empty(depth.Asks);
                 Assert.Empty(depth.Bids);
 
-                // Expect the user balance to change after an ETH sell of 1 at 0.1 and another sell of 1 at 0.8
-                var wallets = GetWallets().Result;
-                Assert.Equal(98,
+                // Expect the user balance to change after an ETH sell of 1 at 0.1 and another sell of 0.5 at 0.8
+                wallets = GetWallets().Result;
+                Assert.Equal(98.5m,
                     Assert.Single(
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
                     ).Balance);
-                Assert.Equal(80.9m,
+                Assert.Equal(80.5m,
                     Assert.Single(
                         wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
                     ).Balance);
             });
 
-            _tradingService.Dispose();
-            _walletService.Dispose();
+            AfterTest();
         }
 
         [Fact]
@@ -442,48 +543,43 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_1");
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
-            GetWallets().Wait();
-            Task.Delay(2000).Wait();
-            Try(10, () =>
-            {
-                var wallets = GetWallets().Result;
-                // Lets not flood it with too many duplicate generation requests
-                Task.Delay(1000).Wait();
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            // Integrate all wallets + 2 deposits
+            Integrate(() => GetWallets().Wait(), GlobalConfiguration.Currencies.Length + 2);
+            //Try(10, () =>
+            //{
+            var wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test_2");
             _ethProvider.FirstDeposit = true;
             _btcProvider.FirstDeposit = true;
-            GetWallets().Wait();
-            Task.Delay(2000).Wait();
-            Try(10, () =>
-            {
-                var wallets = GetWallets().Result;
-                // Lets not flood it with too many duplicate generation requests
-                Task.Delay(1000).Wait();
-                Assert.Equal(100,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
-                    ).Balance);
-                Assert.Equal(80,
-                    Assert.Single(
-                        wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
-                    ).Balance);
-            });
+            // Integrate all wallets + 2 deposits
+            Integrate(() => GetWallets().Wait(), GlobalConfiguration.Currencies.Length + 2);
+            //Try(10, () =>
+            //{
+            wallets = GetWallets().Result;
+            Assert.Equal(100,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedEthereumProvider.ETH)
+                ).Balance);
+            Assert.Equal(80,
+                Assert.Single(
+                    wallets, wallet => wallet.CoinSymbol.Equals(MockedBitcoinProvider.BTC)
+                ).Balance);
+            //});
 
-            const int days = 5;
-            const int eventsPerDay = 40;
+            const int days = 2;
+            const int eventsPerDay = 2;
             const int secondsPerDay = 24 * 60 * 60;
             var pseudoRandom = new Random(1234567890);
-            var events = _eventHistoryRepository.Events();
             var now = DateTime.Now;
             decimal[] orders = {0, 0};
             for (var day = 0; day < days; day++)
@@ -516,6 +612,7 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
 
                     try
                     {
+                        TemporalEventHistoryService.MockedCurrentTime = time;
                         await LimitOrder(qty > 0 ? OrderSide.Buy : OrderSide.Sell, qty > 0 ? qty : -qty, limit);
                     }
                     catch (Exception)
@@ -528,6 +625,88 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                     }
                 }
             }
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"test_1");
+
+            // If the order count keeps changing, then we still have to wait a little (this is assert of timeout < 5s)
+            IEnumerable<Order> openOrders;
+            do
+            {
+                openOrders = GetOrders().Result;
+                Task.Delay(5000).Wait();
+            }
+            while (GetOrders().Result.Count() != openOrders.Count());
+
+            foreach (var openOrder in openOrders)
+            {
+                await CloseOrder(openOrder);
+                Task.Delay(1000).Wait();
+            }
+
+            wallets = await GetWallets();
+            foreach (var wallet in wallets)
+            {
+                // TODO: safely handle also very small values of balance < fee
+                if (wallet.Balance == 0)
+                {
+                    continue;
+                }
+
+                Integrate(async () =>
+                    Assert.Null(await WalletWithdraw(wallet.CoinSymbol, "mockedCleanupKey", wallet.Balance))
+                );
+                Task.Delay(3000).Wait();
+            }
+
+            foreach (var wallet in await GetWallets())
+            {
+                Assert.Equal(0, wallet.Balance);
+            }
+
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", $"test_2");
+            foreach (var openOrder in GetOrders().Result)
+            {
+                await CloseOrder(openOrder);
+                Task.Delay(1000).Wait();
+            }
+
+            wallets = await GetWallets();
+            foreach (var wallet in wallets)
+            {
+                // TODO: safely handle also very small values of balance < fee
+                if (wallet.Balance == 0)
+                {
+                    continue;
+                }
+
+                Integrate(async () =>
+                    Assert.Null(await WalletWithdraw(wallet.CoinSymbol, "mockedCleanupKey", wallet.Balance))
+                );
+                Task.Delay(3000).Wait();
+            }
+
+            foreach (var wallet in await GetWallets())
+            {
+                Assert.Equal(0, wallet.Balance);
+            }
+
+            AfterTest();
+        }
+
+        private void AfterTest()
+        {
+            // TODO: somehow make sure the previous hosted background service is stopped,
+            // because there is a hazard of previous test creating a high-versioned event
+            _tradingServiceEventHistoryService.Stopped = true;
+            _walletServiceEventHistoryService.Stopped = true;
+            _tradingService.Server.Host.StopAsync();
+            _walletService.Server.Host.StopAsync();
+//            _tradingService.Dispose();
+//            _walletService.Dispose();
+//            _client.Dispose();
+//            _viewClient.Dispose();
+            Task.Delay(4000).Wait();
+            _logger.LogInformation("Test ended");
         }
 
         private async Task<T> RequestContentsOrError<T>(HttpResponseMessage response, bool directlyInsteadOfD = false)
@@ -571,8 +750,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         private async Task<IEnumerable<WalletDetails>> GetWallets()
         {
             return await RequestContentsOrError<IEnumerable<WalletDetails>>(
-                await _client.GetAsync($"{UserPrefix}accounts/0/wallets")
-                , true
+                await _client.GetAsync($"{UserPrefix}accounts/0/wallets"),
+                true
             );
         }
 
@@ -589,7 +768,8 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 await _client.PostAsync(
                     $"{UserPrefix}accounts/0/wallets/{coinSymbol}/withdraw",
                     encodedContent
-                ), true
+                ),
+                true
             );
         }
 
@@ -650,6 +830,17 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             );
         }
 
+        private async Task<InlineResponse2007> CloseOrder(Order openOrder)
+        {
+            var result = await RequestContentsOrError<InlineResponse2007>(
+                await _client.DeleteAsync($"{TradingPrefix}accounts/0/orders/{openOrder.Id}"),
+                true
+            );
+            Assert.Null(result.Errmsg);
+            Assert.Equal(Status.OkEnum, result.S);
+            return result;
+        }
+
         private void Try(int maxSeconds, Action action)
         {
             for (var i = 0; i < maxSeconds; i++)
@@ -667,6 +858,19 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             }
 
             action();
+        }
+
+        private void Integrate(Action action, int events = 1)
+        {
+            var oldVersion = _eventHistoryRepository
+                                 .Events()
+                                 .Find(e => true)
+                                 .SortByDescending(e => e.VersionNumber)
+                                 .FirstOrDefault()
+                                 ?.VersionNumber ?? 0;
+            action();
+            _tradingServiceEventHistoryService.VersionControl.WaitForIntegration(oldVersion + events);
+            _walletServiceEventHistoryService.VersionControl.WaitForIntegration(oldVersion + events);
         }
     }
 }

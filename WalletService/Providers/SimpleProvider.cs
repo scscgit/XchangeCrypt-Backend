@@ -32,11 +32,13 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             IConfiguration configuration
         ) : base(logger)
         {
-            ThisCoinSymbol = thisCoinSymbol;
-            _walletOperationService = walletOperationService;
-            _eventHistoryService = eventHistoryService;
-            _randomEntropyService = randomEntropyService;
-            _versionControl = versionControl;
+            ThisCoinSymbol = thisCoinSymbol ?? throw new ArgumentNullException(nameof(thisCoinSymbol));
+            _walletOperationService =
+                walletOperationService ?? throw new ArgumentNullException(nameof(walletOperationService));
+            _eventHistoryService = eventHistoryService ?? throw new ArgumentNullException(nameof(eventHistoryService));
+            _randomEntropyService =
+                randomEntropyService ?? throw new ArgumentNullException(nameof(randomEntropyService));
+            _versionControl = versionControl ?? throw new ArgumentNullException(nameof(versionControl));
         }
 
         protected override async Task ListenForBlockchainEvents()
@@ -223,7 +225,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                          && newBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
                 {
                     // Sanity check successful, we can execute the consolidation
-                    // We start by expecting the deposit, not yielding it to user as his own deposit
+                    // We start by expecting the target deposit, not yielding it to user as his own deposit
                     _knownPublicKeyBalances[eventEntry.TransferTargetPublicKey] = newBalanceTarget;
 
                     var success = Withdraw(
@@ -248,17 +250,18 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             // If the transfer was already executed, simply assert expected values and switch cached balances
             else
             {
-                if (oldBalanceSrc != eventEntry.NewSourcePublicKeyBalance
-                    || oldBalanceTarget != eventEntry.NewTargetPublicKeyBalance)
+                if (newBalanceSrc != eventEntry.NewSourcePublicKeyBalance
+                    || newBalanceTarget != eventEntry.NewTargetPublicKeyBalance)
                 {
                     throw new Exception(
-                        $"{GetType().Name} detected fatal event inconsistency of expected wallet balances during consolidation event id {eventEntry.Id} processing. Expecting source {oldBalanceSrc} to be {eventEntry.NewSourcePublicKeyBalance} and reach {newBalanceSrc}, target {oldBalanceTarget} to be {eventEntry.NewTargetPublicKeyBalance} and reach {newBalanceTarget}");
+                        $"{GetType().Name} detected fatal event inconsistency of expected wallet balances during consolidation event id {eventEntry.Id} processing. Expecting source {oldBalanceSrc} to become {newBalanceSrc} and reach {eventEntry.NewSourcePublicKeyBalance}, target {oldBalanceTarget} to become {newBalanceTarget} and reach {eventEntry.NewTargetPublicKeyBalance}");
                 }
 
+                // Assume there was a successful target deposit
                 _knownPublicKeyBalances[eventEntry.TransferTargetPublicKey] = newBalanceTarget;
             }
 
-            // Unlock balance for deposit detection
+            // Unlock balance for a deposit detection
             _knownPublicKeyBalances[eventEntry.TransferSourcePublicKey] = newBalanceSrc;
         }
 
@@ -276,9 +279,17 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     newBalance = oldBalance - deposit.DepositQty;
                     break;
                 case WalletWithdrawalEventEntry withdrawal:
-                    if (withdrawal.Validated == false)
+                    if (withdrawal.Validated == null)
                     {
-                        // Not revoking event that was not executed
+                        throw new Exception(
+                            "Fatal error: revocation of withdrawal event was allowed to start being processed without the Validated flag being set at all, the processing order is probably wrong");
+                    }
+
+                    if (withdrawal.Validated == false || withdrawal.Executed == false)
+                    {
+                        // Not revoking event that was not executed, the expected real wallet balance was not reduced,
+                        // so this event only matters on the TradingService side, where it unlocks the user's balance.
+                        // This does not revoke consolidation result!
                         return;
                     }
 
@@ -339,6 +350,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 {
                     case true:
                     {
+                        // We have to be sure all consolidations have also finished
+                        _versionControl.WaitForIntegration(withdrawalEventEntry.VersionNumber);
+                        // And now we are ready for the main goal
                         var success = Withdraw(
                             withdrawalEventEntry.LastWalletPublicKey,
                             withdrawalEventEntry.WithdrawalTargetPublicKey,
@@ -349,9 +363,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                         if (success)
                         {
                             // Note: this report will occur after event gets processed by this own service
-                            _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry);
-                            // We just avoided re-processing the withdrawal event, so we have to fire it manually
-                            OnWithdrawal(withdrawalEventEntry);
+                            _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
+                            {
+                                // We just avoided re-processing the withdrawal event, so we have to fire it manually
+                                // (We want this to occur inside a version number lock)
+                                OnWithdrawal(withdrawalEventEntry);
+                            });
                         }
                         else
                         {

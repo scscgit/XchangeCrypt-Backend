@@ -69,7 +69,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
         }
 
         public override async Task<bool> Withdraw(
-            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value)
+            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee)
         {
             // We intentionally let the provider's service fatally crash on exception, it's risky to cause a revocation
             var transaction = await new Web3(
@@ -82,7 +82,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                     Web3Url
                 ).Eth
                 .GetEtherTransferService()
-                .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, value, _withdrawalGasPriceGwei);
+                .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, valueExclFee, _withdrawalGasPriceGwei);
             var success = !(transaction.HasErrors() ?? true);
             // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;

@@ -135,7 +135,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
                 coinSymbol.ToUpperInvariant(),
                 recipientPublicKey,
                 withdrawalAmount,
-                ""
+                CommandService.RandomRequestId()
             ).Result;
         }
 

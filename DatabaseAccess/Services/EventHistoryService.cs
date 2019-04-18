@@ -18,7 +18,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
     {
         private readonly ILogger<EventHistoryService> _logger;
         private EventHistoryRepository EventHistoryRepository { get; }
-        private VersionControl VersionControl { get; }
+        public VersionControl VersionControl { get; }
 
         public EventHistoryService(
             EventHistoryRepository eventHistoryRepository,
@@ -33,7 +33,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
         /// <summary>
         /// Atomically persists multiple event entries representing a single version.
         /// </summary>
-        public async Task<IList<EventEntry>> Persist(
+        public virtual async Task<IList<EventEntry>> Persist(
             IEnumerable<EventEntry> eventTransaction,
             long? alreadyLockedVersionNumber = null)
         {
@@ -48,7 +48,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             };
             events.Add(commit);
             // Double-check validate them all to have the same version number, and assign the same current time
-            var now = DateTime.Now;
+            var now = CurrentTime();
             foreach (var eventEntry in events)
             {
                 if (eventEntry.VersionNumber != versionNumber)
@@ -139,6 +139,11 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             return thisSuccessful ? events : null;
         }
 
+        protected virtual DateTime CurrentTime()
+        {
+            return DateTime.Now;
+        }
+
         public async Task<IList<EventEntry>> LoadMissingEvents(
             long currentVersionNumber,
             long? maxVersionNumber = null)
@@ -202,9 +207,10 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             );
         }
 
-        public void ReportWithdrawalExecuted(WalletWithdrawalEventEntry withdrawal)
+        public void ReportWithdrawalExecuted(WalletWithdrawalEventEntry withdrawal, Action afterMarkedExecuted)
         {
             // Note: this must occur after withdrawal event processing by this own service
+            // TODO: try to use VersionControl.WaitForIntegration instead (same functionality)
             var retry = true;
             while (retry)
             {
@@ -222,6 +228,9 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                             true
                         )
                     );
+                    afterMarkedExecuted();
+                    _logger.LogInformation(
+                        $"Reported executed withdrawal of {withdrawal.WithdrawalQty} {withdrawal.CoinSymbol}");
                     retry = false;
                 });
                 if (retry)
@@ -231,9 +240,6 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
                     Task.Delay(1000).Wait();
                 }
             }
-
-            _logger.LogInformation(
-                $"Reported executed withdrawal of {withdrawal.WithdrawalQty} {withdrawal.CoinSymbol}");
         }
 
         public void ReportWithdrawalValidation(WalletWithdrawalEventEntry withdrawal, bool validation)
@@ -252,7 +258,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
         public void ReportConsolidationExecuted(WalletConsolidationTransferEventEntry consolidation)
         {
             _logger.LogInformation(
-                $"Reported executed consolidation of {consolidation.TransferQty} {consolidation.CoinSymbol}");
+                $"Reported a new executed consolidation of {consolidation.TransferQty} {consolidation.CoinSymbol}, target becomes {consolidation.NewTargetPublicKeyBalance}");
             EventHistoryRepository.Events().FindOneAndUpdate(
                 eventEntry => eventEntry.Id.Equals(consolidation.Id),
                 Builders<EventEntry>.Update.Set(

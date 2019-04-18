@@ -71,7 +71,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 }
 
                 _logger.LogInformation(
-                    $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
+                    $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by {walletCommandType} command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
                 success = await EventHistoryService.Persist(eventEntries);
                 retry = success == null;
                 // Assuming the event listener has attempted to acquire the lock meanwhile
@@ -127,7 +127,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
         }
 
         private Task<IList<EventEntry>> PlanWithdrawalEvents(
-            string user, string accountId, string coinSymbol, string withdrawalTargetPublicKey, decimal amount,
+            string user, string accountId, string coinSymbol, string withdrawalTargetPublicKey, decimal amountInclFees,
             string requestId, Func<string, Exception> reportInvalidMessage,
             out Action<IList<EventEntry>> afterPersistence, IList<EventEntry> previousEventEntries)
         {
@@ -137,18 +137,19 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             {
                 var eventVersionNumber = currentVersionNumber + 1;
                 var sourcePublicKey = WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol);
-                var sourcePublicKeyBalance = AbstractProvider.ProviderLookup[coinSymbol]
+                var sourcePublicKeyBalanceExclFees = AbstractProvider.ProviderLookup[coinSymbol]
                     .GetCurrentlyCachedBalance(sourcePublicKey)
                     .Result;
 
-                var combinedFee = AbstractProvider.ProviderLookup[coinSymbol].Fee();
+                var singleFee = AbstractProvider.ProviderLookup[coinSymbol].Fee();
+                var combinedFee = singleFee;
 
                 // If the wallet doesn't physically contain the coins, it'll be consolidated beforehand.
                 // The consolidation events will be first validated by TradingService
-                if (sourcePublicKeyBalance < amount)
+                if (sourcePublicKeyBalanceExclFees < amountInclFees)
                 {
-                    var (consolidationEvents, expectedTargetBalance) = PlanConsolidateLocked(
-                        user, accountId, sourcePublicKey, coinSymbol, amount, true, reportInvalidMessage,
+                    var (consolidationEvents, expectedTargetBalanceExclFees) = PlanConsolidateLocked(
+                        user, accountId, sourcePublicKey, coinSymbol, amountInclFees, true, reportInvalidMessage,
                         currentVersionNumber).Result;
                     consolidationEvents.ForEach(consolidationEvent =>
                     {
@@ -156,10 +157,10 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                         combinedFee += consolidationEvent.TransferFee;
                     });
                     // This may be less than amount, considering there were fees paid
-                    sourcePublicKeyBalance = expectedTargetBalance;
+                    sourcePublicKeyBalanceExclFees = expectedTargetBalanceExclFees;
                 }
 
-                if (combinedFee >= amount)
+                if (combinedFee >= amountInclFees)
                 {
                     throw reportInvalidMessage(
                         $"The withdrawal fee ({combinedFee}{(plannedEvents.Count > 0 ? $" over {plannedEvents.Count} consolidations" : "")}) exceeds the withdrawal amount");
@@ -173,11 +174,13 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     CoinSymbol = coinSymbol,
                     LastWalletPublicKey = sourcePublicKey,
                     WithdrawalSourcePublicKey = sourcePublicKey,
-                    // Note: the new public key balance can go to negative values, as there can be a consolidation
-                    NewSourcePublicKeyBalance = sourcePublicKeyBalance - amount - combinedFee,
+                    // Withdrawal begins after consolidation, so its previous balance may start as a lower value
+                    // As the amount includes consolidation fee, we only subtract the last withdrawal with one fee
+                    NewSourcePublicKeyBalance =
+                        sourcePublicKeyBalanceExclFees - (amountInclFees - combinedFee + singleFee),
                     //BlockchainTransactionId = ,
                     WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
-                    WithdrawalQty = amount - combinedFee,
+                    WithdrawalQty = amountInclFees - combinedFee,
                     WithdrawalCombinedFee = combinedFee,
                     OverdrawnAndCanceledOrders = false,
                     Executed = false,
@@ -196,7 +199,8 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     withdrawalEventEntry, () =>
                     {
                         ExecuteWalletOperationCommand(user, accountId, coinSymbol,
-                            MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amount, withdrawalEventEntry.Id,
+                            MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amountInclFees,
+                            withdrawalEventEntry.Id,
                             null,
                             requestId, silentErrors => null).Wait();
                     });
@@ -212,17 +216,17 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             var plannedEvents = new List<WalletConsolidationTransferEventEntry>();
             _logger.LogInformation(
                 $"Consolidation calculation for wallet {targetPublicKey}, target {targetBalanceInclFees} {coinSymbol} {(allowMoreBalance ? "or more" : "")}");
-            var expectedCurrentBalance = await AbstractProvider.ProviderLookup[coinSymbol]
+            var expectedCurrentBalanceExclFees = await AbstractProvider.ProviderLookup[coinSymbol]
                 .GetCurrentlyCachedBalance(targetPublicKey);
             var fee = AbstractProvider.ProviderLookup[coinSymbol].Fee();
 
             #region directConsolidation
 
-            if (targetBalanceInclFees < expectedCurrentBalance)
+            if (targetBalanceInclFees < expectedCurrentBalanceExclFees)
             {
                 // Direct consolidation command of reducing the target balance available to the user always
                 // withdraws the remainder to the newest wallet
-                var balanceReduction = expectedCurrentBalance - targetBalanceInclFees;
+                var balanceReduction = expectedCurrentBalanceExclFees - targetBalanceInclFees;
                 var destinationPublicKey = WalletOperationService.GetLastPublicKey(targetPublicKey);
                 var destinationPreviousBalance = await AbstractProvider.ProviderLookup[coinSymbol]
                     .GetCurrentlyCachedBalance(destinationPublicKey);
@@ -258,19 +262,20 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             #endregion directConsolidation
 
             // Increasing the target wallet balance, there may be multiple required withdrawals
-            var missingBalance = targetBalanceInclFees - expectedCurrentBalance;
+            var missingBalance = targetBalanceInclFees - expectedCurrentBalanceExclFees;
             var sourcePairs = await AbstractProvider.ProviderLookup[coinSymbol]
                 .GetWalletsHavingSumBalance(missingBalance, targetPublicKey, false);
 
             foreach (var (sourcePublicKey, sourceBalance) in sourcePairs)
             {
                 var balanceToWithdrawInclFee = sourceBalance;
-                if (!allowMoreBalance && expectedCurrentBalance + balanceToWithdrawInclFee > targetBalanceInclFees)
+                if (!allowMoreBalance &&
+                    expectedCurrentBalanceExclFees + balanceToWithdrawInclFee > targetBalanceInclFees)
                 {
-                    balanceToWithdrawInclFee = targetBalanceInclFees - expectedCurrentBalance;
+                    balanceToWithdrawInclFee = targetBalanceInclFees - expectedCurrentBalanceExclFees;
                 }
 
-                expectedCurrentBalance += balanceToWithdrawInclFee - fee;
+                expectedCurrentBalanceExclFees += balanceToWithdrawInclFee - fee;
 
                 _logger.LogInformation(
                     $"Consolidation withdrawal of {balanceToWithdrawInclFee} - {fee} {coinSymbol} from {sourcePublicKey} to {targetPublicKey} planned");
@@ -284,7 +289,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     LastWalletPublicKey = null,
                     // Note: the new public key balance can go to negative values, as there can be a consolidation
                     NewSourcePublicKeyBalance = sourceBalance - balanceToWithdrawInclFee,
-                    NewTargetPublicKeyBalance = expectedCurrentBalance,
+                    NewTargetPublicKeyBalance = expectedCurrentBalanceExclFees,
                     TransferSourcePublicKey = sourcePublicKey,
                     TransferTargetPublicKey = targetPublicKey,
                     TransferQty = balanceToWithdrawInclFee - fee,
@@ -294,14 +299,16 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 });
             }
 
-            if (allowMoreBalance && expectedCurrentBalance + plannedEvents.Count * fee < targetBalanceInclFees
-                || !allowMoreBalance && expectedCurrentBalance + plannedEvents.Count * fee != targetBalanceInclFees)
+            if (allowMoreBalance
+                && expectedCurrentBalanceExclFees + plannedEvents.Count * fee < targetBalanceInclFees
+                || !allowMoreBalance
+                && expectedCurrentBalanceExclFees + plannedEvents.Count * fee != targetBalanceInclFees)
             {
                 throw reportInvalidMessage(
-                    $"Consolidation planning self-check assertion failed, expected new balance {expectedCurrentBalance} + fees {plannedEvents.Count * fee} of a target {coinSymbol} wallet {targetPublicKey} doesn't match requested target balance value {targetBalanceInclFees}{(allowMoreBalance ? "+" : "")}");
+                    $"There are probably not enough collective funds in wallets. Consolidation planning self-check assertion failed, expected new balance {expectedCurrentBalanceExclFees} + fees {plannedEvents.Count * fee} of a target {coinSymbol} wallet {targetPublicKey} doesn't match requested target balance value {targetBalanceInclFees}{(allowMoreBalance ? "+" : "")}");
             }
 
-            return (plannedEvents, expectedCurrentBalance);
+            return (plannedEvents, expectedCurrentBalanceExclFees);
         }
 
         private Task<IList<EventEntry>> PlanRevokeEvents(

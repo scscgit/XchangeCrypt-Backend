@@ -215,13 +215,13 @@ namespace XchangeCrypt.Backend.QueueAccess
                     }
                     catch (AggregateException e)
                     {
-                        if (e.InnerExceptions.Count == 1)
+                        while (e.InnerException is AggregateException anotherAggregate && e.InnerExceptions.Count == 1)
                         {
-                            // Rethrow a possible InvalidMessageException
-                            throw e.InnerException;
+                            e = anotherAggregate;
                         }
 
-                        throw;
+                        // Rethrow a possible InvalidMessageException
+                        throw e.InnerException;
                     }
                 }
                 catch (InvalidMessageException e)

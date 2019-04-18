@@ -63,7 +63,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         public abstract Task<string> GetPublicKeyFromHdWallet(string hdSeed);
 
         public abstract Task<bool> Withdraw(
-            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal value);
+            string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee);
 
         public abstract Task PrepareWithdrawalAsync(
             WalletWithdrawalEventEntry withdrawalEventEntry, Action revocationAction);

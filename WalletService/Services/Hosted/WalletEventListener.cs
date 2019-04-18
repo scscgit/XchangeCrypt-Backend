@@ -54,6 +54,8 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                                 if (missingEvent is WalletEventEntry walletEvent)
                                 {
                                     AbstractProvider.ProviderLookup[walletEvent.CoinSymbol].ProcessEvent(walletEvent);
+                                    _logger.LogDebug(
+                                        $"Processed {walletEvent.CoinSymbol} event {walletEvent.GetType().Name}");
                                 }
 
                                 var eventVersionNumber = missingEvent.VersionNumber;

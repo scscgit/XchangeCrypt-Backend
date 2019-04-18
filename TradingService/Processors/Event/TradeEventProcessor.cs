@@ -137,9 +137,15 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     relativeBalance = -deposit.DepositQty;
                     break;
                 case WalletWithdrawalEventEntry withdrawal:
+                    if (withdrawal.Validated == null)
+                    {
+                        throw new Exception(
+                            "Fatal error: revocation of withdrawal event was allowed to start being processed without the Validated flag being set at all, the processing order is probably wrong");
+                    }
+
                     if (withdrawal.Validated == false)
                     {
-                        // Not revoking event that was not executed
+                        // Not revoking event that was not processed; Validated withdrawals are guaranteed to be done
                         return;
                     }
 
@@ -214,7 +220,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
             // Lastly, there is an issue with Wallet Service not having access to the user's current balance.
             // This is solved using a Saga approach, so that we must validate the Withdrawal Event entry here,
             // while the Wallet Service actively waits using a parallel thread. If the thread ever gets killed,
-            // the withdrawal process will get stuck, waiting for administrator to consolidate such transaction.
+            // the withdrawal process will get stuck, waiting for administrator to resolve the conflict.
             // In the future, an alternative approach to unstuck such ignored withdrawals can be added.
 
             if (eventEntry.Validated == false)
