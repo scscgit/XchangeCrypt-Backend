@@ -175,7 +175,20 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 var eventVersionNumber = currentVersionNumber + 1;
                 // We are now locked to a specific version number
                 limitOrderEvent.VersionNumber = eventVersionNumber;
+                var currencies = instrument.Split("_");
+                var baseCurrency = currencies[0];
+                var quoteCurrency = currencies[1];
                 var quantityRemaining = quantity;
+
+                // Make sure that it even makes sense to open this order
+                var paymentCurrency = orderSide == OrderSide.Buy ? quoteCurrency : baseCurrency;
+                var (balance, reservedBalance) =
+                    UserService.GetBalanceAndReservedBalance(user, accountId, paymentCurrency);
+                if (quantity > balance - reservedBalance)
+                {
+                    throw reportInvalidMessage(
+                        $"Cannot open a limit order, your available balance of {balance - reservedBalance} {paymentCurrency} is less than {quantity} {paymentCurrency} required. Please close some orders");
+                }
 
                 // Start the process of matching relevant offers
                 var matchingOffers = orderSide == OrderSide.Buy
@@ -225,9 +238,6 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                         };
 
                         // Calculating new balances for double-check purposes
-                        var currencies = instrument.Split("_");
-                        var baseCurrency = currencies[0];
-                        var quoteCurrency = currencies[1];
                         var (actionBaseMod, actionQuoteMod, targetBaseMod, targetQuoteMod) =
                             TradeEventProcessor.MatchOrderBalanceModifications(matchEvent);
                         try

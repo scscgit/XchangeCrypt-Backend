@@ -177,33 +177,33 @@ namespace XchangeCrypt.Backend.TradingService.Services
                 );
             }
 
-            TransactionHistory.InsertOne(
-                new TransactionHistoryEntry
+            TransactionHistory.InsertMany(
+                new[]
                 {
-                    ExecutionTime = now,
-                    User = matchOrder.ActionUser,
-                    AccountId = matchOrder.ActionAccountId,
-                    Instrument = matchOrder.Instrument,
-                    Side = targetOrder.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy,
-                    OrderId = actionOrder.Id,
-                    // The entire quantity was filled
-                    FilledQty = matchOrder.Qty,
-                    Price = targetOrder.LimitPrice,
-                }
-            );
-
-            TransactionHistory.InsertOne(
-                new TransactionHistoryEntry
-                {
-                    ExecutionTime = now,
-                    User = targetOrder.User,
-                    AccountId = targetOrder.AccountId,
-                    Instrument = targetOrder.Instrument,
-                    Side = targetOrder.Side,
-                    OrderId = targetOrder.Id,
-                    // The entire quantity was filled
-                    FilledQty = matchOrder.Qty,
-                    Price = targetOrder.LimitPrice,
+                    new TransactionHistoryEntry
+                    {
+                        ExecutionTime = now,
+                        User = matchOrder.ActionUser,
+                        AccountId = matchOrder.ActionAccountId,
+                        Instrument = matchOrder.Instrument,
+                        Side = targetOrder.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy,
+                        OrderId = actionOrder.Id,
+                        // The entire quantity was filled
+                        FilledQty = matchOrder.Qty,
+                        Price = targetOrder.LimitPrice,
+                    },
+                    new TransactionHistoryEntry
+                    {
+                        ExecutionTime = now,
+                        User = targetOrder.User,
+                        AccountId = targetOrder.AccountId,
+                        Instrument = targetOrder.Instrument,
+                        Side = targetOrder.Side,
+                        OrderId = targetOrder.Id,
+                        // The entire quantity was filled
+                        FilledQty = matchOrder.Qty,
+                        Price = targetOrder.LimitPrice,
+                    }
                 }
             );
 
@@ -231,43 +231,36 @@ namespace XchangeCrypt.Backend.TradingService.Services
         /// <summary>
         /// Cancels an active order, inserting a relevant order history entry.
         /// </summary>
-        /// <param name="cancelOrder">Event referencing the order to be canceled</param>
-        /// <returns>Remaining unmatched quantity of the order</returns>
-        internal decimal CancelOrder(CancelOrderEventEntry cancelOrder)
-        {
-            return CancelOrderByCreatedOnVersionNumber(
-                cancelOrder.CancelOrderCreatedOnVersionNumber,
-                cancelOrder.EntryTime
-            );
-        }
-
-        /// <summary>
-        /// Cancels an active order, inserting a relevant order history entry.
-        /// </summary>
         /// <param name="cancelOrderCreatedOnVersionNumber">Version number of creation of the order to be canceled</param>
         /// <param name="orderHistoryTime">Time of the cancellation event</param>
-        /// <returns>Remaining unmatched quantity of the order if it's limit order, zero if it's stop order</returns>
+        /// <param name="openOrder">Found open order</param>
+        /// <returns>Remaining unmatched order amount of paid coin depending on side if it's limit order, zero if it's stop order</returns>
         internal decimal CancelOrderByCreatedOnVersionNumber(
             long cancelOrderCreatedOnVersionNumber,
-            DateTime orderHistoryTime)
+            DateTime orderHistoryTime,
+            out object openOrder)
         {
-            decimal remainingQuantity;
-            var openOrder = FindOpenOrderCreatedByVersionNumber(cancelOrderCreatedOnVersionNumber);
+            decimal remainingAmount;
+            openOrder = FindOpenOrderCreatedByVersionNumber(cancelOrderCreatedOnVersionNumber);
             if (openOrder is OrderBookEntry limitOrder)
             {
                 InsertOrderHistoryEntry(limitOrder.FilledQty, limitOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingQuantity = limitOrder.Qty - limitOrder.FilledQty;
+                remainingAmount = limitOrder.Qty - limitOrder.FilledQty;
+                if (limitOrder.Side == OrderSide.Buy)
+                {
+                    remainingAmount *= limitOrder.LimitPrice;
+                }
+
                 OrderBook.DeleteOne(
-                    Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, cancelOrderCreatedOnVersionNumber)
+                    Builders<OrderBookEntry>.Filter.Eq(e => e.Id, limitOrder.Id)
                 );
             }
             else if (openOrder is HiddenOrderEntry stopOrder)
             {
                 InsertOrderHistoryEntry(stopOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingQuantity = 0;
+                remainingAmount = 0;
                 HiddenOrders.DeleteOne(
-                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.CreatedOnVersionId,
-                        cancelOrderCreatedOnVersionNumber)
+                    Builders<HiddenOrderEntry>.Filter.Eq(e => e.Id, stopOrder.Id)
                 );
             }
             else
@@ -276,7 +269,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     $"Couldn't cancel order created on version number {cancelOrderCreatedOnVersionNumber}, as there was no such order open");
             }
 
-            return remainingQuantity;
+            return remainingAmount;
         }
 
         public object FindOpenOrderCreatedByVersionNumber(long cancelOrderCreatedOnVersionNumber)
@@ -290,9 +283,10 @@ namespace XchangeCrypt.Backend.TradingService.Services
             }
             else
             {
+                // There has to be one or the other
                 var hiddenOrder = HiddenOrders.Find(
                     Builders<HiddenOrderEntry>.Filter.Eq(e => e.CreatedOnVersionId, cancelOrderCreatedOnVersionNumber)
-                ).SingleOrDefault();
+                ).Single();
                 return hiddenOrder;
             }
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
@@ -36,12 +37,40 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
 
         public void ProcessEvent(CancelOrderEventEntry eventEntry)
         {
-            _tradingOrderService.CancelOrder(eventEntry);
+            var matchedAmount = _tradingOrderService.CancelOrderByCreatedOnVersionNumber(
+                eventEntry.CancelOrderCreatedOnVersionNumber,
+                eventEntry.EntryTime,
+                out var openOrder
+            );
+            if (openOrder is OrderBookEntry limitOrder)
+            {
+                _userService.ModifyReservedBalance(
+                    eventEntry.User,
+                    eventEntry.AccountId,
+                    eventEntry.Instrument.Split("_")[
+                        limitOrder.Side == OrderSide.Buy ? 1 : 0
+                    ],
+                    -matchedAmount
+                );
+            }
         }
 
         public void ProcessEvent(CreateOrderEventEntry eventEntry)
         {
             _tradingOrderService.CreateOrder(eventEntry);
+            if (eventEntry.Type == OrderType.Limit)
+            {
+                _userService.ModifyReservedBalance(
+                    eventEntry.User,
+                    eventEntry.AccountId,
+                    eventEntry.Instrument.Split("_")[
+                        eventEntry.Side == OrderSide.Buy ? 1 : 0
+                    ],
+                    eventEntry.Side == OrderSide.Buy
+                        ? eventEntry.Qty * eventEntry.LimitPrice.Value
+                        : eventEntry.Qty
+                );
+            }
         }
 
         public static (decimal, decimal, decimal, decimal) MatchOrderBalanceModifications(
@@ -105,6 +134,19 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 eventEntry.TargetAccountId,
                 quoteCurrency,
                 targetQuote);
+
+            _userService.ModifyReservedBalance(
+                eventEntry.ActionUser,
+                eventEntry.ActionAccountId,
+                // Unlock the opposite side of the limit order owner
+                eventEntry.ActionSide == OrderSide.Buy ? quoteCurrency : baseCurrency,
+                eventEntry.ActionSide == OrderSide.Buy ? actionQuote : actionBase);
+
+            _userService.ModifyReservedBalance(
+                eventEntry.TargetUser,
+                eventEntry.TargetAccountId,
+                eventEntry.ActionSide == OrderSide.Buy ? baseCurrency : quoteCurrency,
+                eventEntry.ActionSide == OrderSide.Buy ? targetBase : targetQuote);
         }
 
         public void ProcessEvent(TransactionCommitEventEntry eventEntry)
@@ -285,7 +327,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     {
                         unreservedBalance += _tradingOrderService.CancelOrderByCreatedOnVersionNumber(
                             orderBookEntry.CreatedOnVersionId,
-                            eventEntry.EntryTime
+                            eventEntry.EntryTime,
+                            out _
                         );
                         _logger.LogInformation(
                             $"Canceling {instrument} limit order due to balance overdraw, id {orderBookEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");
@@ -298,7 +341,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     {
                         unreservedBalance += _tradingOrderService.CancelOrderByCreatedOnVersionNumber(
                             stopOrderEntry.CreatedOnVersionId,
-                            eventEntry.EntryTime
+                            eventEntry.EntryTime,
+                            out _
                         );
                         _logger.LogInformation(
                             $"Canceling {instrument} stop order due to balance overdraw, id {stopOrderEntry.Id} (unreserved a rolling total of {unreservedBalance} {eventEntry.CoinSymbol})");

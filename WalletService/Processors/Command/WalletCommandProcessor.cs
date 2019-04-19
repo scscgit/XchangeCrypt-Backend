@@ -131,6 +131,12 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             string requestId, Func<string, Exception> reportInvalidMessage,
             out Action<IList<EventEntry>> afterPersistence, IList<EventEntry> previousEventEntries)
         {
+            if (amountInclFees < 0)
+            {
+                throw reportInvalidMessage(
+                    "One does not simply withdraw negative amount. Hey, the client doesn't even let you do that");
+            }
+
             // TODO: block concurrent withdrawals, as their cached balance is not stable (NewBalance becomes incorrect)
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
