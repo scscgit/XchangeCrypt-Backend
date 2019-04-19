@@ -181,6 +181,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     //BlockchainTransactionId = ,
                     WithdrawalTargetPublicKey = withdrawalTargetPublicKey,
                     WithdrawalQty = amountInclFees - combinedFee,
+                    WithdrawalSingleFee = singleFee,
                     WithdrawalCombinedFee = combinedFee,
                     OverdrawnAndCanceledOrders = false,
                     Executed = false,

@@ -536,7 +536,23 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task T99_PopulateMockHistory()
+        public async Task T99_PopulateMockHistory2_2()
+        {
+            await T99_PopulateMockHistory(2, 2);
+        }
+
+        [Fact]
+        public async Task T99_PopulateMockHistory6_50()
+        {
+            await T99_PopulateMockHistory(6, 50);
+        }
+
+//        [Theory]
+//        // Fast test to check consolidation
+//        [InlineData(2, 2)]
+//        // Long test that populates history
+//        [InlineData(6, 50)]
+        public async Task T99_PopulateMockHistory(int days, int eventsPerDay)
         {
             // Generate the wallets
 
@@ -576,8 +592,6 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 ).Balance);
             //});
 
-            const int days = 2;
-            const int eventsPerDay = 2;
             const int secondsPerDay = 24 * 60 * 60;
             var pseudoRandom = new Random(1234567890);
             var now = DateTime.Now;
@@ -640,7 +654,6 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             foreach (var openOrder in openOrders)
             {
                 await CloseOrder(openOrder);
-                Task.Delay(1000).Wait();
             }
 
             wallets = await GetWallets();
@@ -655,8 +668,9 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 Integrate(async () =>
                     Assert.Null(await WalletWithdraw(wallet.CoinSymbol, "mockedCleanupKey", wallet.Balance))
                 );
-                Task.Delay(3000).Wait();
             }
+
+            Task.Delay(2000).Wait();
 
             foreach (var wallet in await GetWallets())
             {
@@ -667,9 +681,9 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             foreach (var openOrder in GetOrders().Result)
             {
                 await CloseOrder(openOrder);
-                Task.Delay(1000).Wait();
             }
 
+            // Note that consolidation also happens here
             wallets = await GetWallets();
             foreach (var wallet in wallets)
             {
@@ -682,8 +696,9 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 Integrate(async () =>
                     Assert.Null(await WalletWithdraw(wallet.CoinSymbol, "mockedCleanupKey", wallet.Balance))
                 );
-                Task.Delay(3000).Wait();
             }
+
+            Task.Delay(2000).Wait();
 
             foreach (var wallet in await GetWallets())
             {

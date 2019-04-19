@@ -21,6 +21,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         private readonly RandomEntropyService _randomEntropyService;
         private readonly VersionControl _versionControl;
         private readonly IDictionary<string, decimal> _knownPublicKeyBalances = new Dictionary<string, decimal>();
+        private readonly IDictionary<string, decimal> _lockedPublicKeyBalances = new Dictionary<string, decimal>();
 
         protected SimpleProvider(
             string thisCoinSymbol,
@@ -51,7 +52,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 decimal balance;
                 try
                 {
-                    balance = GetBalance(publicKey).Result;
+                    balance = GetBalance(publicKey).Result - _lockedPublicKeyBalances[publicKey];
                 }
                 catch (Exception)
                 {
@@ -67,17 +68,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     continue;
                 }
 
-                if (balance <= oldBalance)
+                if (balance < oldBalance)
                 {
-                    if (balance < oldBalance)
-                    {
-                        _logger.LogInformation(
-                            "Detected a negative value deposit event; assuming there is a withdrawal going on");
-                        //throw new Exception(
-                        //    "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
-                    }
-
-                    continue;
+                    //_logger.LogInformation(
+                    //    "Detected a negative value deposit event; assuming there is a withdrawal going on");
+                    throw new Exception(
+                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
                 }
 
                 // Generate event does not change, so we won't request it multiple times
@@ -99,7 +95,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                         // We have acquired a lock, so the deposit event may have been already processed
                         try
                         {
-                            balance = GetBalance(publicKey).Result;
+                            balance = GetBalance(publicKey).Result - _lockedPublicKeyBalances[publicKey];
                         }
                         catch (Exception)
                         {
@@ -157,6 +153,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         private void ProcessEvent(WalletGenerateEventEntry eventEntry)
         {
             _knownPublicKeyBalances.Add(eventEntry.LastWalletPublicKey, 0);
+            _lockedPublicKeyBalances.Add(eventEntry.LastWalletPublicKey, 0);
         }
 
         private void ProcessEvent(WalletWithdrawalEventEntry eventEntry)
@@ -171,26 +168,40 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 eventEntry = (WalletWithdrawalEventEntry) _eventHistoryService.FindById(eventEntry.Id);
             }
 
-            if (eventEntry.Validated == false || eventEntry.Executed == false)
+            if (eventEntry.Validated == false)
             {
                 return;
             }
 
-            // We only process the balance unlock if it hasn't been executed in this service run
             OnWithdrawal(eventEntry);
+
+            if (eventEntry.Executed)
+            {
+                // We only process the balance unlock for deposit if it isn't being executed in this service run
+                UnlockAfterWithdrawal(eventEntry);
+            }
         }
 
         private void OnWithdrawal(WalletWithdrawalEventEntry eventEntry)
         {
             var oldBalance = GetCurrentlyCachedBalance(eventEntry.WithdrawalSourcePublicKey).Result;
-            var newBalance = oldBalance - eventEntry.WithdrawalQty - eventEntry.WithdrawalCombinedFee;
+            var newBalance = oldBalance - eventEntry.WithdrawalQty - eventEntry.WithdrawalSingleFee;
             if (newBalance != eventEntry.NewSourcePublicKeyBalance)
             {
                 throw new Exception(
                     $"{GetType().Name} withdrawal event processing detected fatal event inconsistency of wallet values, new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
-            _knownPublicKeyBalances[eventEntry.LastWalletPublicKey] = eventEntry.NewSourcePublicKeyBalance;
+            // We unlock the balance for deposit, and immediately lock it back until the processing
+            _knownPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] = eventEntry.NewSourcePublicKeyBalance;
+            _lockedPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] +=
+                eventEntry.WithdrawalQty + eventEntry.WithdrawalSingleFee;
+        }
+
+        private void UnlockAfterWithdrawal(WalletWithdrawalEventEntry eventEntry)
+        {
+            _lockedPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] -=
+                eventEntry.WithdrawalQty + eventEntry.WithdrawalSingleFee;
         }
 
         private void ProcessEvent(WalletConsolidationTransferEventEntry eventEntry)
@@ -285,12 +296,18 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                             "Fatal error: revocation of withdrawal event was allowed to start being processed without the Validated flag being set at all, the processing order is probably wrong");
                     }
 
-                    if (withdrawal.Validated == false || withdrawal.Executed == false)
+                    if (withdrawal.Validated == false)
                     {
                         // Not revoking event that was not executed, the expected real wallet balance was not reduced,
                         // so this event only matters on the TradingService side, where it unlocks the user's balance.
                         // This does not revoke consolidation result!
                         return;
+                    }
+
+                    if (withdrawal.Executed == false)
+                    {
+                        // If the withdrawal wasn't executed yet, then this is where it'll get unlocked for deposit
+                        UnlockAfterWithdrawal(withdrawal);
                     }
 
                     revokedPublicKey = withdrawal.WithdrawalSourcePublicKey;
@@ -354,7 +371,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                         _versionControl.WaitForIntegration(withdrawalEventEntry.VersionNumber);
                         // And now we are ready for the main goal
                         var success = Withdraw(
-                            withdrawalEventEntry.LastWalletPublicKey,
+                            withdrawalEventEntry.WithdrawalSourcePublicKey,
                             withdrawalEventEntry.WithdrawalTargetPublicKey,
                             withdrawalEventEntry.WithdrawalQty
                         ).Result;
@@ -365,9 +382,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                             // Note: this report will occur after event gets processed by this own service
                             _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
                             {
-                                // We just avoided re-processing the withdrawal event, so we have to fire it manually
-                                // (We want this to occur inside a version number lock)
-                                OnWithdrawal(withdrawalEventEntry);
+                                // We will unlock the amount for deposit
+                                // (We want this to occur inside a version number lock, so that no other events
+                                // apply themselves right after the withdrawal event processing)
+                                UnlockAfterWithdrawal(withdrawalEventEntry);
                             });
                         }
                         else
@@ -444,6 +462,29 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             {
                 result.Add((key, value));
                 sumBalance -= value - (expectedSumAfterDeductingFees ? Fee() : 0m);
+
+//                // As an additional protection against pending withdrawals making cached balance get stuck,
+//                // we don't trust it during consolidation preparation phase, so we only use the safest wallets
+//                decimal actualBalance;
+//                try
+//                {
+//                    actualBalance = GetBalance(key).Result;
+//                }
+//                catch (Exception)
+//                {
+//                    actualBalance = 0;
+//                }
+//
+//                actualBalance = actualBalance < value ? actualBalance : value;
+//                var incrementBalance = actualBalance - (expectedSumAfterDeductingFees ? Fee() : 0m);
+//                if (incrementBalance <= 0)
+//                {
+//                    continue;
+//                }
+//
+//                result.Add((key, actualBalance));
+//                sumBalance -= incrementBalance;
+
                 if (sumBalance <= 0)
                 {
                     // Already exceeded the sum

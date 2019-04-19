@@ -13,6 +13,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public decimal WithdrawalQty;
 
+        public decimal WithdrawalSingleFee;
+
         public decimal WithdrawalCombinedFee;
 
         public bool OverdrawnAndCanceledOrders;
