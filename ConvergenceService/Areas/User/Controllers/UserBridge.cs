@@ -54,6 +54,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
 
         /// <summary>
         /// Receives details of all wallets of the authorized user.
+        /// </summary>
         /// <param name="accountId">The account identifier.</param>
         /// </summary>
         [HttpGet("accounts/{accountId}/wallets")]
@@ -142,7 +143,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         // TODO: withdrawal history with state, cancel pending
 
         /// <summary>
-        /// Requests a coin withdrawal from a specific wallet of the authorized user.
+        /// Requests a generation of a new deposit address for a specific wallet of the authorized user.
         /// </summary>
         /// <param name="accountId">The account identifier.</param>
         /// <param name="coinSymbol">A unique symbol identification of a coin.</param>

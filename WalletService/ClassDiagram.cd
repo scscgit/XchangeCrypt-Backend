@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="XchangeCrypt.Backend.WalletService.Program">
+    <Position X="0.5" Y="6" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAAAQAAAAAAAAAAAAAABAAAAAE=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Startup">
+    <Position X="0.5" Y="8" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAgAAACAAAAAA=</HashCode>
+      <FileName>Startup.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Dispatch.WalletOperationDispatch">
+    <Position X="7.25" Y="8.5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Dispatch\WalletOperationDispatch.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Processors.Command.WalletCommandProcessor">
+    <Position X="12.75" Y="7.75" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAQAAAAAAIAAAAggAIAACAAAAAACABAAAAAA=</HashCode>
+      <FileName>Processors\Command\WalletCommandProcessor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Processors.ProcessorFactory">
+    <Position X="10.75" Y="5" Width="5.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAgAAAAAAAAAAAAAAACgBAAAAAA=</HashCode>
+      <FileName>Processors\ProcessorFactory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Providers.ETH.BitcoinProvider">
+    <Position X="13.25" Y="1" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Providers\ETH\BitcoinProvider.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Providers.ETH.EthereumProvider">
+    <Position X="9.25" Y="1" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAASQgAAAAAAAgIAAAAAAFAAAAAAIAAAAAIAAEAAA=</HashCode>
+      <FileName>Providers\ETH\EthereumProvider.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Providers.ETH.LitecoinProvider">
+    <Position X="13.25" Y="3" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Providers\ETH\LitecoinProvider.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Providers.AbstractProvider">
+    <Position X="0.5" Y="1" Width="3.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAJQAAAAAAAAAoAAiAAAIEIAEAACIAAAQAAAAAAEA=</HashCode>
+      <FileName>Providers\AbstractProvider.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Providers.SimpleProvider">
+    <Position X="4.75" Y="1" Width="4" />
+    <TypeIdentifier>
+      <HashCode>ABAAIAQgAEAAAgAgICCAAAIAAAEAACABAAQBAAAAAAA=</HashCode>
+      <FileName>Providers\SimpleProvider.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Services.Hosted.DispatchReceiver">
+    <Position X="3" Y="8.25" Width="3.75" />
+    <TypeIdentifier>
+      <HashCode>AAgQAAAAAAAIAAAAAAAAAQAAIAAAACAIAAAAAAAAAAA=</HashCode>
+      <FileName>Services\Hosted\DispatchReceiver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Services.Hosted.WalletEventListener">
+    <Position X="7.5" Y="5" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAgAAAgAAAAIAgAAAIAIAAAAAAAAAAAAgAAAEA=</HashCode>
+      <FileName>Services\Hosted\WalletEventListener.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Services.RandomEntropyService">
+    <Position X="10.25" Y="7.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAEAAAAAgAAAAAAAAAAAACAAAAAAAAAI=</HashCode>
+      <FileName>Services\RandomEntropyService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.WalletService.Services.WalletOperationService">
+    <Position X="4.25" Y="6" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAEgAAAAAAAAAAAAAAAAAAAAACAAAAAAQAABAAAAAAA=</HashCode>
+      <FileName>Services\WalletOperationService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

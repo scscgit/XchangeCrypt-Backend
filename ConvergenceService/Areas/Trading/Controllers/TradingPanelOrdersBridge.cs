@@ -575,7 +575,7 @@ namespace IO.Swagger.Controllers
                     Errmsg = null,
                     D = new AuthorizationResponse
                     {
-                        AccessToken = "Bearer: test",
+                        AccessToken = "Bearer: test_1",
                         Expiration = null
                     }
                 }

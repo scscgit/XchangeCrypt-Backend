@@ -1,0 +1,553 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="IO.Swagger.Attributes.ValidateModelStateAttribute">
+    <Position X="8.5" Y="13.5" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAAAAAgAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Attributes\Swagger\ValidateModelStateAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IO.Swagger.Controllers.TradingPanelBrokerDataBridge">
+    <Position X="15.25" Y="11.25" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAAAAAAAAAAEAAAAAIAEAACAQAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Controllers\TradingPanelBrokerDataBridge.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IO.Swagger.Controllers.TradingPanelOrdersBridge">
+    <Position X="10.75" Y="9" Width="4.5" />
+    <TypeIdentifier>
+      <HashCode>AAAJIAAABAAQAAgAAAgAAABCIAAACCFAEAIwABAIACg=</HashCode>
+      <FileName>Areas\Trading\Controllers\TradingPanelOrdersBridge.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IO.Swagger.Controllers.TradingTerminalIntegration">
+    <Position X="14.75" Y="9.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Controllers\TradingTerminalIntegration.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IO.Swagger.Filters.BasePathFilter" BaseTypeListCollapsed="true">
+    <Position X="5.5" Y="4.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>BAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Filters\Swagger\BasePathFilter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Filters.GeneratePathParamsValidationFilter" BaseTypeListCollapsed="true">
+    <Position X="16" Y="5" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Filters\Swagger\GeneratePathParamsValidationFilter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Account" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="0.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAgAAAAAEgAAAAAQAKAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\Account.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.AccountFlags" BaseTypeListCollapsed="true">
+    <Position X="2.5" Y="0.5" Width="3" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAQSBQAAAAAAAACEhDAAEgACAAAAAICAKAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\AccountFlags.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.AccountManagerColumn" BaseTypeListCollapsed="true">
+    <Position X="5.5" Y="0.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>CAASAAAAAAAAAEAEgAAAAAAAAAAAAIAAIAAAIAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\AccountManagerColumn.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.AccountManagerTable" BaseTypeListCollapsed="true">
+    <Position X="7.75" Y="0.5" Width="3" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAEAEgAAAAAAAAAAAAIAAIAAAAAgAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\AccountManagerTable.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.AccountStateResponse" BaseTypeListCollapsed="true">
+    <Position X="10.75" Y="0.5" Width="2.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAgAAAAAEgAgAAAAAAAAAAIAAIACAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\AccountStateResponse.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.AuthorizationResponse" BaseTypeListCollapsed="true">
+    <Position X="13.5" Y="0.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAAAAAAEgAAAAAAAEAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\AuthorizationResponse.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.BarsArrays" BaseTypeListCollapsed="true">
+    <Position X="14.5" Y="2" Width="1.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgEAAAAAAAAAAAIAAIAAAgEyUAiA=</HashCode>
+      <FileName>Areas\Trading\Models\BarsArrays.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.ConfigResponse" BaseTypeListCollapsed="true">
+    <Position X="9" Y="2.25" Width="3.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAACACAEgAAAAAAAAAAAAIAAIQAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\ConfigResponse.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Depth" BaseTypeListCollapsed="true">
+    <Position X="6.75" Y="2.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAEgAAACAAAAAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\Depth.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.DepthItem" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="2" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\DepthItem.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Duration" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="2.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACCAAAAAAAAEAEgAAAAAAAAAAAIIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\Duration.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Execution" BaseTypeListCollapsed="true">
+    <Position X="12.75" Y="2" Width="1.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAQAAgAAEgAAAAAAAiAAAAIAAIAAAAAAAAyA=</HashCode>
+      <FileName>Areas\Trading\Models\Execution.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse200" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="4.25" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse200.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2001" BaseTypeListCollapsed="true">
+    <Position X="2.75" Y="4.5" Width="1.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2001.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse20010" BaseTypeListCollapsed="true">
+    <Position X="5" Y="2.5" Width="1.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse20010.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse20011" BaseTypeListCollapsed="true">
+    <Position X="7.25" Y="4.25" Width="2" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse20011.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse20012" BaseTypeListCollapsed="true">
+    <Position X="9.5" Y="4" Width="2.25" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse20012.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse20013" BaseTypeListCollapsed="true">
+    <Position X="13.5" Y="4.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse20013.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse20014" BaseTypeListCollapsed="true">
+    <Position X="11.75" Y="4" Width="1.75" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="IO.Swagger.Models.InlineResponse20014.FEnum">
+        <TypeIdentifier>
+          <NewMemberFileName>Areas\Trading\Models\InlineResponse20014.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAkEzUAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse20014.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2002" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="5.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2002.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2003" BaseTypeListCollapsed="true">
+    <Position X="2.25" Y="6" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2003.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2004" BaseTypeListCollapsed="true">
+    <Position X="4.5" Y="5.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2004.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2005" BaseTypeListCollapsed="true">
+    <Position X="0.75" Y="7.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2005.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2005D" BaseTypeListCollapsed="true">
+    <Position X="3" Y="7.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>EAAAAAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2005D.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2006" BaseTypeListCollapsed="true">
+    <Position X="3" Y="8.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2006.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2007" BaseTypeListCollapsed="true">
+    <Position X="13.25" Y="6" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAAACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2007.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2008" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="9" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2008.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.InlineResponse2009" BaseTypeListCollapsed="true">
+    <Position X="1.5" Y="10.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAABACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\InlineResponse2009.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Instrument" BaseTypeListCollapsed="true">
+    <Position X="3" Y="10.25" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAEgAAAEAQAAEAAAoAAIAACAAAAByA=</HashCode>
+      <FileName>Areas\Trading\Models\Instrument.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.MarksArrays" BaseTypeListCollapsed="true">
+    <Position X="5.25" Y="8.25" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AACCAAAEEAAAAAAEgAAAAAAAAAAAAIAAIAAAiAAAAyA=</HashCode>
+      <FileName>Areas\Trading\Models\MarksArrays.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Order" BaseTypeListCollapsed="true">
+    <Position X="15.5" Y="6" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACAAAEAAADgAAEgIAAAAAAqAAAAIAAIwAQAgAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\Order.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.OrderDuration" BaseTypeListCollapsed="true">
+    <Position X="9.25" Y="5.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAAAAIAAIQAAAABAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\OrderDuration.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.Position" BaseTypeListCollapsed="true">
+    <Position X="12.75" Y="7.25" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAACAAABAAAAgAAEgAAAAAAAqAAAAIAAIAAAAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\Position.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.PullingInterval" BaseTypeListCollapsed="true">
+    <Position X="0.5" Y="12" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAACAkgAAAAAAAgAAAAIAAIAACAAAAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\PullingInterval.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.QuotesResponse" BaseTypeListCollapsed="true">
+    <Position X="9.25" Y="7.25" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAABCQAiA=</HashCode>
+      <FileName>Areas\Trading\Models\QuotesResponse.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.SingleMapping" BaseTypeListCollapsed="true">
+    <Position X="5.25" Y="10.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEgAAAAAAAAAAAAIAAIAAAEACAAiA=</HashCode>
+      <FileName>Areas\Trading\Models\SingleMapping.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.SingleQuote" BaseTypeListCollapsed="true">
+    <Position X="6.75" Y="5.75" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEiAAgAIAAAAAAwIAAoAIgAAAABiA=</HashCode>
+      <FileName>Areas\Trading\Models\SingleQuote.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.SymbolInfoArrays" BaseTypeListCollapsed="true">
+    <Position X="7.5" Y="8.75" Width="3.25" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAgABBAAAAAggAAWgIAgAAAAAAAAAIAQIQABAAAACmA=</HashCode>
+      <FileName>Areas\Trading\Models\SymbolInfoArrays.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.SymbolMapping" BaseTypeListCollapsed="true">
+    <Position X="5" Y="12.25" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAABAAAAEgAAAAAAAAAAAAIAAIAAAAAAAgiA=</HashCode>
+      <FileName>Areas\Trading\Models\SymbolMapping.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="IO.Swagger.Models.TimescaleMark" BaseTypeListCollapsed="true">
+    <Position X="16.25" Y="0.5" Width="2.5" />
+    <Compartments>
+      <Compartment Name="Methods" Collapsed="true" />
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Enum Name="IO.Swagger.Models.TimescaleMark.ColorEnum">
+        <TypeIdentifier>
+          <NewMemberFileName>Areas\Trading\Models\TimescaleMark.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAACAAAAEAAAAAAEgAAAAAAAAAAAAIAAIAAAoAAAAyA=</HashCode>
+      <FileName>Areas\Trading\Models\TimescaleMark.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Enum Name="IO.Swagger.Models.ParentTypeEnum">
+    <Position X="15.5" Y="14.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAAAAAAAAgAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Models\ParentTypeEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.SEnum">
+    <Position X="5.25" Y="13.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>Areas\Trading\Models\SEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.SideEnum">
+    <Position X="1.75" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Models\SideEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.SingleField">
+    <Position X="13.75" Y="14.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Models\SingleField.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.Status">
+    <Position X="17" Y="14.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACAIAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Models\Status.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.StatusEnum">
+    <Position X="3.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAABBAAAAAAAAAAAAAAEAAACAIAAAAAAA=</HashCode>
+      <FileName>Areas\Trading\Models\StatusEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="IO.Swagger.Models.TypeEnum">
+    <Position X="6.75" Y="13.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAAAAAAAQAAAAAAgAAAAAAAAAAAAAAAQA=</HashCode>
+      <FileName>Areas\Trading\Models\TypeEnum.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

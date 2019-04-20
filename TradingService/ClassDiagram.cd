@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="XchangeCrypt.Backend.TradingService.Program">
+    <Position X="13" Y="5.75" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAAAQAAAAAAAAAAAAAABAAAAAE=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Startup">
+    <Position X="13.5" Y="7.75" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAgAAACAAAAAA=</HashCode>
+      <FileName>Startup.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Dispatch.TradeOrderDispatch">
+    <Position X="1.25" Y="7.75" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Dispatch\TradeOrderDispatch.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Processors.Command.TradeCommandProcessor">
+    <Position X="12.75" Y="2" Width="3.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAgAEIIAkAAAAAAACABABEAAA=</HashCode>
+      <FileName>Processors\Command\TradeCommandProcessor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Processors.Event.TradeEventProcessor">
+    <Position X="1" Y="2" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAQAIAAgAAAAAAAAAEAAAAAAIAAAAAAAAQAEAAAAAAA=</HashCode>
+      <FileName>Processors\Event\TradeEventProcessor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Processors.ProcessorFactory">
+    <Position X="7.5" Y="2" Width="5.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAACADABAABA=</HashCode>
+      <FileName>Processors\ProcessorFactory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Services.Hosted.DatabaseGenerator">
+    <Position X="4.25" Y="2" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAgABkgAgQAIAgAAAIAIAAAAAAAAAAAAAAAAEA=</HashCode>
+      <FileName>Services\Hosted\DatabaseGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Services.Hosted.DispatchReceiver">
+    <Position X="0.75" Y="4.75" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAgwAAAAAAAIAAAAAAAAAQAAIAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>Services\Hosted\DispatchReceiver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Services.TradingOrderService">
+    <Position X="8.25" Y="4.75" Width="4.5" />
+    <TypeIdentifier>
+      <HashCode>AAIAAwBAAAAYIAAAABAAAAAEIAgIAAEAAFAAAAgAAQA=</HashCode>
+      <FileName>Services\TradingOrderService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.TradingService.Services.UserService">
+    <Position X="4" Y="6" Width="4.25" />
+    <TypeIdentifier>
+      <HashCode>AAIAAAAAEAAAAAABAAAAAAAEIAAAAADAAAAABAAAAAA=</HashCode>
+      <FileName>Services\UserService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

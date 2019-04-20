@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="XchangeCrypt.Backend.QueueAccess.AbstractDispatchReceiver">
+    <Position X="1.25" Y="4" Width="3.5" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Class Name="XchangeCrypt.Backend.QueueAccess.AbstractDispatchReceiver.InvalidMessageException">
+        <TypeIdentifier>
+          <NewMemberFileName>AbstractDispatchReceiver.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="XchangeCrypt.Backend.QueueAccess.AbstractDispatchReceiver.DispatcherResetJump">
+        <TypeIdentifier>
+          <NewMemberFileName>AbstractDispatchReceiver.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>gAgQBQAAABgAFAAAkAgAAAIAMAAiAAAIAAQAAAgCgGE=</HashCode>
+      <FileName>AbstractDispatchReceiver.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.QueueAccess.QueueWriter">
+    <Position X="5.25" Y="4" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAACAAAAAAEAAAAAAAIAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>QueueWriter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="XchangeCrypt.Backend.ConstantsLibrary.GlobalConfiguration">
+    <Position X="3.5" Y="3.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>GlobalConfiguration.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants">
+    <Position X="0.5" Y="2" Width="2.75" />
+    <Compartments>
+      <Compartment Name="Nested Types" Collapsed="false" />
+    </Compartments>
+    <NestedTypes>
+      <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants.ParameterNames">
+        <TypeIdentifier>
+          <NewMemberFileName>MessagingConstants.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants.MessageTypes">
+        <TypeIdentifier>
+          <NewMemberFileName>MessagingConstants.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants.OrderTypes">
+        <TypeIdentifier>
+          <NewMemberFileName>MessagingConstants.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants.OrderSides">
+        <TypeIdentifier>
+          <NewMemberFileName>MessagingConstants.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants.WalletCommandTypes">
+        <TypeIdentifier>
+          <NewMemberFileName>MessagingConstants.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>MessagingConstants.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ConstantsLibrary.Extensions.DictionaryExtensions">
+    <Position X="3.5" Y="2" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Extensions\DictionaryExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

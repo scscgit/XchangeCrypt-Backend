@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="XchangeCrypt.Backend.ViewService.Program">
+    <Position X="0.75" Y="2.25" Width="3.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAAAQAAAAAAAAAAAAAABAAAAAE=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ViewService.Startup">
+    <Position X="1" Y="4.25" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAgAAACAAAAAA=</HashCode>
+      <FileName>Startup.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ViewService.Controllers.OrderViewController">
+    <Position X="4" Y="2" Width="4.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACAAAAAgAAAAAAAAAAAAAEAAAABAAACA=</HashCode>
+      <FileName>Controllers\OrderViewController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ViewService.Controllers.UserViewController">
+    <Position X="4.5" Y="4.5" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAABAAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Controllers\UserViewController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="XchangeCrypt.Backend.ViewService.Services.OrderCaching">
+    <Position X="8.5" Y="2" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAIAQAAAAAAAACAAAAAAAABYAAAAQAAAgAABAAIAAA=</HashCode>
+      <FileName>Services\OrderCaching.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
