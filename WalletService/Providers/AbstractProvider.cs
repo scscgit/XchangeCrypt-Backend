@@ -62,6 +62,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public abstract Task<string> GetPublicKeyFromHdWallet(string hdSeed);
 
+        public abstract Task<string> GetPrivateKeyFromHdWallet(string hdSeed);
+
         public abstract Task<bool> Withdraw(
             string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee);
 

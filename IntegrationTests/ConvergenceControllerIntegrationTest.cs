@@ -24,6 +24,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.WalletService.Providers.BTC;
 using XchangeCrypt.Backend.WalletService.Providers.ETH;
 using XchangeCrypt.Backend.WalletService.Services;
 using Xunit;

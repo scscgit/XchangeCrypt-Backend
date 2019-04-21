@@ -52,7 +52,19 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 decimal balance;
                 try
                 {
-                    balance = GetBalance(publicKey).Result - _lockedPublicKeyBalances[publicKey];
+                    try
+                    {
+                        balance = GetBalance(publicKey).Result - _lockedPublicKeyBalances[publicKey];
+                    }
+                    catch (AggregateException e)
+                    {
+                        foreach (var ex in e.InnerExceptions)
+                        {
+                            _logger.LogError(ex.GetType().Name + ": " + ex.Message + "\n" + ex.StackTrace);
+                        }
+
+                        throw;
+                    }
                 }
                 catch (Exception)
                 {
@@ -70,10 +82,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
                 if (balance < oldBalance)
                 {
-                    //_logger.LogInformation(
-                    //    "Detected a negative value deposit event; assuming there is a withdrawal going on");
-                    throw new Exception(
-                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
+                    _logger.LogWarning(
+                        "Detected a negative value deposit event; assuming there is a withdrawal going on");
+//                    throw new Exception(
+//                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
                 }
 
                 // Generate event does not change, so we won't request it multiple times
@@ -192,7 +204,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     $"{GetType().Name} withdrawal event processing detected fatal event inconsistency of wallet values, new balance event value of {eventEntry.NewSourcePublicKeyBalance} should be {newBalance}");
             }
 
-            // We unlock the balance for deposit, and immediately lock it back until the processing
+            // We unlock the balance for deposit, and immediately lock it back until withdrawal gets processed
             _knownPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] = eventEntry.NewSourcePublicKeyBalance;
             _lockedPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] +=
                 eventEntry.WithdrawalQty + eventEntry.WithdrawalSingleFee;
@@ -225,19 +237,18 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             var newBalanceTarget = oldBalanceTarget + eventEntry.TransferQty;
             if (!eventEntry.Executed)
             {
-                if (oldBalanceSrc == eventEntry.NewSourcePublicKeyBalance
-                    && oldBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
-                {
-                    // Already seems to be consolidated properly
-                    _logger.LogError(
-                        "Consolidation event already seems to have been successfully finished, even though it was unexpected. Marking the event as executed");
-                }
-                else if (newBalanceSrc == eventEntry.NewSourcePublicKeyBalance
-                         && newBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
+                if (newBalanceSrc == eventEntry.NewSourcePublicKeyBalance
+                    && newBalanceTarget == eventEntry.NewTargetPublicKeyBalance)
                 {
                     // Sanity check successful, we can execute the consolidation
                     // We start by expecting the target deposit, not yielding it to user as his own deposit
                     _knownPublicKeyBalances[eventEntry.TransferTargetPublicKey] = newBalanceTarget;
+
+                    // We can unlock source for deposit, and immediately lock it back until withdrawal gets processed,
+                    // but we instead expect to be locked throw a fatal error in case withdrawal goes wrong
+//                    _knownPublicKeyBalances[eventEntry.TransferSourcePublicKey] = eventEntry.NewSourcePublicKeyBalance;
+//                    _lockedPublicKeyBalances[eventEntry.TransferSourcePublicKey] +=
+//                        eventEntry.TransferQty + eventEntry.TransferFee;
 
                     var success = Withdraw(
                         eventEntry.TransferSourcePublicKey,
@@ -249,6 +260,19 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                         throw new Exception(
                             $"Consolidation event id {eventEntry.Id} failed to execute the withdrawal. {GetType().Name} has to stop processing further events, requiring administrator to solve this issue");
                     }
+
+                    // We could unlock the source for deposit if we locked it before withdrawal
+//                    _lockedPublicKeyBalances[eventEntry.TransferSourcePublicKey] -=
+//                        eventEntry.TransferQty + eventEntry.TransferFee;
+                }
+                else if (GetBalance(eventEntry.TransferSourcePublicKey).Result == eventEntry.NewSourcePublicKeyBalance
+                         && GetBalance(eventEntry.TransferTargetPublicKey).Result ==
+                         eventEntry.NewTargetPublicKeyBalance)
+                {
+                    // Already seems to be consolidated properly
+                    // If the GetBalance call fails, we consider this a fatal error anyway, as else branch does it too
+                    _logger.LogError(
+                        "Consolidation event already seems to have been successfully finished, even though it was unexpected. Marking the event as executed");
                 }
                 else
                 {
@@ -312,7 +336,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
                     revokedPublicKey = withdrawal.WithdrawalSourcePublicKey;
                     oldBalance = _knownPublicKeyBalances[revokedPublicKey];
-                    newBalance = oldBalance + withdrawal.WithdrawalQty;
+                    newBalance = oldBalance + withdrawal.WithdrawalQty + withdrawal.WithdrawalSingleFee;
                     break;
                 default:
                     throw new Exception("Unsupported wallet revoke event type " + revoke.GetType().Name);

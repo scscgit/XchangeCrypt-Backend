@@ -68,16 +68,20 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
             return new Wallet(hdSeed, "").GetAccount(0).Address;
         }
 
+        public override async Task<string> GetPrivateKeyFromHdWallet(string hdSeed)
+        {
+            return new Wallet(hdSeed, "").GetAccount(0).PrivateKey;
+        }
+
         public override async Task<bool> Withdraw(
             string walletPublicKeyUserReference, string withdrawToPublicKey, decimal valueExclFee)
         {
             // We intentionally let the provider's service fatally crash on exception, it's risky to cause a revocation
             var transaction = await new Web3(
                     new Account(
-                        new Wallet(
-                            _walletOperationService.GetHotWallet(walletPublicKeyUserReference, ThisCoinSymbol).HdSeed,
-                            ""
-                        ).GetAccount(0).PrivateKey
+                        await GetPrivateKeyFromHdWallet(
+                            _walletOperationService.GetHotWallet(walletPublicKeyUserReference, ThisCoinSymbol).HdSeed
+                        )
                     ),
                     Web3Url
                 ).Eth
