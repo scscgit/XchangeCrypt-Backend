@@ -102,6 +102,7 @@ namespace XchangeCrypt.Backend.QueueAccess
             }
             catch (Exception e)
             {
+                // NOTE: Breakpoint condition _stopped == false
                 _logger.LogError($"{e.GetType().Name}: {e.Message}\n{e.StackTrace}");
                 _shutdownAction();
                 throw;
@@ -143,7 +144,7 @@ namespace XchangeCrypt.Backend.QueueAccess
         /// <summary>
         /// Cleanup.
         /// </summary>
-        public new async Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopAsync(CancellationToken cancellationToken)
         {
             _stopped = true;
             _logger.LogWarning("Stopping dispatch receiver");

@@ -121,9 +121,23 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     {
                         previousEventEntry.VersionNumber = eventVersionNumber;
                         plannedEvents.Add(previousEventEntry);
-                    }
+                        if (previousEventEntry is WalletGenerateEventEntry generate)
+                        {
+                            // Also update the creation version number
+                            WalletOperationService.StoreHdWallet(
+                                WalletOperationService
+                                    .GetHotWallet(generate.LastWalletPublicKey, generate.CoinSymbol)
+                                    .HdSeed,
+                                generate.LastWalletPublicKey,
+                                user,
+                                accountId,
+                                coinSymbol,
+                                eventVersionNumber
+                            );
+                        }
 
-                    return;
+                        return;
+                    }
                 }
 
                 // Do the actual seed generation, storing it during a version control lock
@@ -170,6 +184,11 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 var sourcePublicKeyBalanceExclFees = AbstractProvider.ProviderLookup[coinSymbol]
                     .GetCurrentlyCachedBalance(sourcePublicKey)
                     .Result;
+                if (sourcePublicKeyBalanceExclFees == -1)
+                {
+                    throw reportInvalidMessage(
+                        "You probably haven't generated a wallet yet, since you were provided with an inactive public key");
+                }
 
                 var singleFee = AbstractProvider.ProviderLookup[coinSymbol].Fee();
                 var combinedFee = singleFee;

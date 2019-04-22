@@ -711,10 +711,10 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
         {
             // TODO: somehow make sure the previous hosted background service is stopped,
             // because there is a hazard of previous test creating a high-versioned event
+            _tradingService.Server.Host.StopAsync().Wait();
+            _walletService.Server.Host.StopAsync().Wait();
             _tradingServiceEventHistoryService.Stopped = true;
             _walletServiceEventHistoryService.Stopped = true;
-            _tradingService.Server.Host.StopAsync();
-            _walletService.Server.Host.StopAsync();
 //            _tradingService.Dispose();
 //            _walletService.Dispose();
 //            _client.Dispose();

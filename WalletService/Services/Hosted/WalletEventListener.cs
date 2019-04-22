@@ -17,16 +17,19 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
 
         private long _currentVersion = 0;
         private readonly EventHistoryService _eventHistoryService;
+        private readonly WalletOperationService _walletOperationService;
         private readonly VersionControl _versionControl;
         private readonly ILogger<WalletEventListener> _logger;
         private bool _stopped;
 
         public WalletEventListener(
             EventHistoryService eventHistoryService,
+            WalletOperationService walletOperationService,
             VersionControl versionControl,
             ILogger<WalletEventListener> logger)
         {
             _eventHistoryService = eventHistoryService;
+            _walletOperationService = walletOperationService;
             _versionControl = versionControl;
             _logger = logger;
         }
@@ -36,6 +39,7 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
         {
             try
             {
+                var beforeIntegration = true;
                 // This enables the version control semaphore
                 _versionControl.Initialize(_currentVersion);
                 _logger.LogInformation(
@@ -74,13 +78,29 @@ namespace XchangeCrypt.Backend.WalletService.Services.Hosted
                                     $"Integrity error: the event ID {missingEvent.Id} attempted to jump version from {_currentVersion} to {eventVersionNumber}. This cannot be recovered from and requires a manual fix by administrator");
                             }
 
+                            if (beforeIntegration)
+                            {
+                                beforeIntegration = false;
+                                _walletOperationService.HideWalletsAfterVersionNumber(_currentVersion);
+                            }
+
                             _logger.LogInformation($"Current version is increased to {_currentVersion}");
+
                             return _currentVersion;
                         });
                         _listeningInterval = 50;
                     }
                     else
                     {
+                        if (beforeIntegration)
+                        {
+                            _versionControl.ExecuteUsingFixedVersion(_currentVersion =>
+                            {
+                                beforeIntegration = false;
+                                _walletOperationService.HideWalletsAfterVersionNumber(_currentVersion);
+                            });
+                        }
+
                         if (_listeningInterval < _listeningIntervalMax)
                         {
                             _listeningInterval += 50;
