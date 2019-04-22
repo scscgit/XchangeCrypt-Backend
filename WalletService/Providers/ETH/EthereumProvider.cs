@@ -57,8 +57,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         public override async Task<decimal> GetBalance(string publicKey)
         {
-            // Adding a limit of 4 requests per second, TODO switch to a local fast node
-            Task.Delay(250).Wait();
+            // Adding a limit of 2 requests per second, TODO switch to a local fast node
+            Task.Delay(500).Wait();
             var balance = await _web3.Eth.GetBalance.SendRequestAsync(publicKey);
             return Web3.Convert.FromWei(balance.Value);
         }
@@ -87,7 +87,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
                 ).Eth
                 .GetEtherTransferService()
                 .TransferEtherAndWaitForReceiptAsync(withdrawToPublicKey, valueExclFee, _withdrawalGasPriceGwei);
-            var success = !(transaction.HasErrors() ?? true);
+            var success = !(transaction.HasErrors() ?? false);
             // The known balance structure will be reduced by the withdrawal quantity asynchronously
             return success;
         }

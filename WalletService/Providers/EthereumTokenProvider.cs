@@ -1,10 +1,12 @@
 using System;
+using System.Numerics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Nethereum.Contracts;
 using Nethereum.HdWallet;
 using Nethereum.StandardTokenEIP20.ContractDefinition;
+using Nethereum.Util;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
@@ -19,13 +21,16 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         protected readonly decimal Gwei = 0.000000001m;
         protected readonly decimal _withdrawalGasPriceGwei;
         protected readonly string _contractAddress;
+        private readonly int _decimalPlaces;
         protected readonly WalletOperationService _walletOperationService;
+        protected readonly EventHistoryService _eventHistoryService;
         protected readonly string Web3Url;
         private readonly Web3 _web3;
 
         public EthereumTokenProvider(
             string thisCoinSymbol,
             string contractAddress,
+            int decimalPlaces,
             ILogger logger,
             WalletOperationService walletOperationService,
             EventHistoryService eventHistoryService,
@@ -42,7 +47,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 configuration)
         {
             _contractAddress = contractAddress;
+            _decimalPlaces = decimalPlaces;
             _walletOperationService = walletOperationService;
+            _eventHistoryService = eventHistoryService;
             Web3Url = configuration["ETH:Web3Url"] ?? throw new ArgumentException("ETH:Web3Url");
             _web3 = new Web3(Web3Url);
             _withdrawalGasPriceGwei = decimal.Parse(
@@ -65,9 +72,10 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public override async Task<decimal> GetBalance(string publicKey)
         {
+            Task.Delay(500).Wait();
             var tokenService = new Nethereum.StandardTokenEIP20.StandardTokenService(_web3, _contractAddress);
-            var ownerBalanceTask = tokenService.BalanceOfQueryAsync(publicKey);
-            return Web3.Convert.FromWei(await ownerBalanceTask);
+            var ownerBalance = await tokenService.BalanceOfQueryAsync(publicKey);
+            return (decimal) new BigDecimal(ownerBalance, _decimalPlaces * -1, false);
         }
 
         public override decimal Fee()
@@ -75,9 +83,6 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             return 0;
         }
 
-        public decimal EthFee()
-        {
-            return _withdrawalGasPriceGwei * WithdrawalGasMultiplier * Gwei;
-        }
+        public abstract decimal EthFee();
     }
 }

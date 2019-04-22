@@ -144,7 +144,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Services
             return DateTime.Now;
         }
 
-        public async Task<IList<EventEntry>> LoadMissingEvents(
+        public virtual async Task<IList<EventEntry>> LoadMissingEvents(
             long currentVersionNumber,
             long? maxVersionNumber = null)
         {

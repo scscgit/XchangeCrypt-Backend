@@ -24,6 +24,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.WalletService.Providers;
 using XchangeCrypt.Backend.WalletService.Providers.BTC;
 using XchangeCrypt.Backend.WalletService.Providers.ETH;
 using XchangeCrypt.Backend.WalletService.Services;
@@ -215,9 +216,6 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
             // Wipe the testing DB
             _eventHistoryRepository = new EventHistoryRepository(new DataAccess(TestingConnectionString));
             _eventHistoryRepository.Events().DeleteMany(Builders<EventEntry>.Filter.Where(e => true));
-            new WalletRepository(new DataAccess(TestingConnectionString))
-                .HotWallets()
-                .DeleteMany(Builders<HotWallet>.Filter.Where(e => true));
             _logger.LogInformation("Wiped test DB, preparing a new test run");
 
             // Start other queue-based supporting micro-services

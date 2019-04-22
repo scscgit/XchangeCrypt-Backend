@@ -84,6 +84,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 {
                     _logger.LogWarning(
                         "Detected a negative value deposit event; assuming there is a withdrawal going on");
+                    return;
 //                    throw new Exception(
 //                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
                 }
