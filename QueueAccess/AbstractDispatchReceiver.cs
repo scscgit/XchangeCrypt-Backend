@@ -71,7 +71,21 @@ namespace XchangeCrypt.Backend.QueueAccess
 
                     try
                     {
-                        await ListenOnQueue(stoppingToken);
+                        try
+                        {
+                            await ListenOnQueue(stoppingToken);
+                        }
+                        catch (AggregateException e)
+                        {
+                            // We want the DispatcherResetJump to escape AggregateException
+                            Exception ex = e;
+                            while (ex is AggregateException)
+                            {
+                                ex = ex.InnerException;
+                            }
+
+                            throw ex;
+                        }
                     }
                     catch (DispatcherResetJump)
                     {

@@ -8,7 +8,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors
 {
     public class ProcessorFactory
     {
-        private readonly ILogger<WalletCommandProcessor> _walletOperationPersistenceProcessorLogger;
+        private readonly ILogger<WalletCommandProcessor> _processorLogger;
         private VersionControl VersionControl { get; }
         private EventHistoryService EventHistoryService { get; }
         private WalletOperationService WalletOperationService { get; }
@@ -17,9 +17,9 @@ namespace XchangeCrypt.Backend.WalletService.Processors
             VersionControl versionControl,
             EventHistoryService eventHistoryService,
             WalletOperationService walletOperationService,
-            ILogger<WalletCommandProcessor> walletOperationPersistenceProcessorLogger)
+            ILogger<WalletCommandProcessor> processorLogger)
         {
-            _walletOperationPersistenceProcessorLogger = walletOperationPersistenceProcessorLogger;
+            _processorLogger = processorLogger;
             VersionControl = versionControl;
             EventHistoryService = eventHistoryService;
             WalletOperationService = walletOperationService;
@@ -28,8 +28,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors
         public WalletCommandProcessor CreateWalletOperationPersistenceProcessor()
         {
             return new WalletCommandProcessor(
-                VersionControl, EventHistoryService, WalletOperationService,
-                _walletOperationPersistenceProcessorLogger);
+                VersionControl, EventHistoryService, WalletOperationService, _processorLogger);
         }
     }
 }

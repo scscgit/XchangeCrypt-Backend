@@ -7,6 +7,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             "ETH",
             "BTC",
             "LTC",
+            "XCT",
         };
 
         public static readonly (string, string)[] Instruments =
@@ -14,6 +15,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             ("ETH", "BTC"),
             ("LTC", "BTC"),
             ("LTC", "ETH"),
+            ("ETH", "XCT"),
         };
     }
 }

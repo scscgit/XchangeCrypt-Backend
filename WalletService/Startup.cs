@@ -16,6 +16,7 @@ using XchangeCrypt.Backend.WalletService.Processors;
 using XchangeCrypt.Backend.WalletService.Providers.BTC;
 using XchangeCrypt.Backend.WalletService.Providers.ETH;
 using XchangeCrypt.Backend.WalletService.Providers.LTC;
+using XchangeCrypt.Backend.WalletService.Providers.XCT;
 using XchangeCrypt.Backend.WalletService.Services;
 using XchangeCrypt.Backend.WalletService.Services.Hosted;
 using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
@@ -70,6 +71,11 @@ namespace XchangeCrypt.Backend.WalletService
             services.AddSingleton<LitecoinProvider>();
             services.AddSingleton<IHostedService, LitecoinProvider>(
                 serviceProvider => serviceProvider.GetService<LitecoinProvider>()
+            );
+
+            services.AddSingleton<XchangeCryptTokenProvider>();
+            services.AddSingleton<IHostedService, XchangeCryptTokenProvider>(
+                serviceProvider => serviceProvider.GetService<XchangeCryptTokenProvider>()
             );
 
             // Persistently running queue message handler

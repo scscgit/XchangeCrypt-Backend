@@ -32,9 +32,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.LTC
                 versionControl,
                 configuration)
         {
-            node = Node.Connect(net);
-            node.VersionHandshake();
-            var chain = node.GetChain();
+            //node = Node.Connect(net);
+            //node.VersionHandshake();
+            //var chain = node.GetChain();
             // TODO: process new blocks since last checkpoint - the Node.Connect doesn't work as it should, use local
 
             if (GetType() == typeof(EthereumProvider))

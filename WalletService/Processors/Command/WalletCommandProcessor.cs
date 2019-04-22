@@ -9,6 +9,7 @@ using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
 using XchangeCrypt.Backend.WalletService.Providers;
+using XchangeCrypt.Backend.WalletService.Providers.ETH;
 using XchangeCrypt.Backend.WalletService.Services;
 
 namespace XchangeCrypt.Backend.WalletService.Processors.Command
@@ -171,6 +172,28 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     throw reportInvalidMessage(
                         $"The withdrawal fee ({combinedFee}{(plannedEvents.Count > 0 ? $" over {plannedEvents.Count} consolidations" : "")}) exceeds the withdrawal amount");
                 }
+
+                #region EthereumTokenProvider
+
+                // Ethereum fee providing (a hotfix before we find a better solution)
+                if (AbstractProvider.ProviderLookup[coinSymbol] is EthereumTokenProvider provider)
+                {
+                    if (AbstractProvider.ProviderLookup[EthereumProvider.ETH].GetBalance(sourcePublicKey).Result
+                        < provider.EthFee())
+                    {
+                        // We pay several fees to be pretty sure we gain at least one
+                        // TODO: implement an overload that requires target balance excluding fees
+                        var randomMagicNumber = 2m;
+                        // TODO: implement another ETH consolidation before a Token consolidation
+                        var (consolidationEvents, expectedTargetBalanceExclFees) = PlanConsolidateLocked(
+                            user, accountId, sourcePublicKey, EthereumProvider.ETH,
+                            provider.EthFee() * randomMagicNumber,
+                            false, reportInvalidMessage, currentVersionNumber).Result;
+                        consolidationEvents.ForEach(plannedEvents.Add);
+                    }
+                }
+
+                #endregion EthereumTokenProvider
 
                 var withdrawalEventEntry = new WalletWithdrawalEventEntry
                 {

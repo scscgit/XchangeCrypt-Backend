@@ -17,9 +17,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers.ETH
 
         private readonly long WithdrawalGasMultiplier = 21000;
         private readonly decimal Gwei = 0.000000001m;
+        private readonly decimal _withdrawalGasPriceGwei;
         private readonly string Web3Url;
         private readonly Web3 _web3;
-        private readonly decimal _withdrawalGasPriceGwei;
         private readonly WalletOperationService _walletOperationService;
         private readonly EventHistoryService _eventHistoryService;
         private readonly VersionControl _versionControl;

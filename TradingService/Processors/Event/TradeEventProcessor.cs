@@ -1,5 +1,8 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
@@ -51,7 +54,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                         limitOrder.Side == OrderSide.Buy ? 1 : 0
                     ],
                     -matchedAmount
-                );
+                ).Wait();
             }
         }
 
@@ -69,7 +72,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     eventEntry.Side == OrderSide.Buy
                         ? eventEntry.Qty * eventEntry.LimitPrice.Value
                         : eventEntry.Qty
-                );
+                ).Wait();
             }
         }
 
@@ -111,42 +114,44 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
             var quoteCurrency = currencies[1];
             var (actionBase, actionQuote, targetBase, targetQuote) = MatchOrderBalanceModifications(eventEntry);
 
-            _userService.ModifyBalance(
-                eventEntry.ActionUser,
-                eventEntry.ActionAccountId,
-                baseCurrency,
-                actionBase);
-
-            _userService.ModifyBalance(
-                eventEntry.ActionUser,
-                eventEntry.ActionAccountId,
-                quoteCurrency,
-                actionQuote);
-
-            _userService.ModifyBalance(
-                eventEntry.TargetUser,
-                eventEntry.TargetAccountId,
-                baseCurrency,
-                targetBase);
-
-            _userService.ModifyBalance(
-                eventEntry.TargetUser,
-                eventEntry.TargetAccountId,
-                quoteCurrency,
-                targetQuote);
-
-            _userService.ModifyReservedBalance(
-                eventEntry.ActionUser,
-                eventEntry.ActionAccountId,
-                // Unlock the opposite side of the limit order owner
-                eventEntry.ActionSide == OrderSide.Buy ? quoteCurrency : baseCurrency,
-                eventEntry.ActionSide == OrderSide.Buy ? actionQuote : actionBase);
-
-            _userService.ModifyReservedBalance(
-                eventEntry.TargetUser,
-                eventEntry.TargetAccountId,
-                eventEntry.ActionSide == OrderSide.Buy ? baseCurrency : quoteCurrency,
-                eventEntry.ActionSide == OrderSide.Buy ? targetBase : targetQuote);
+            var parallelTasks = new List<Task>
+            {
+                _userService.ModifyBalance(
+                    eventEntry.ActionUser,
+                    eventEntry.ActionAccountId,
+                    baseCurrency,
+                    actionBase),
+                _userService.ModifyBalance(
+                    eventEntry.ActionUser,
+                    eventEntry.ActionAccountId,
+                    quoteCurrency,
+                    actionQuote),
+                _userService.ModifyBalance(
+                    eventEntry.TargetUser,
+                    eventEntry.TargetAccountId,
+                    baseCurrency,
+                    targetBase),
+                _userService.ModifyBalance(
+                    eventEntry.TargetUser,
+                    eventEntry.TargetAccountId,
+                    quoteCurrency,
+                    targetQuote),
+                _userService.ModifyReservedBalance(
+                    eventEntry.ActionUser,
+                    eventEntry.ActionAccountId,
+                    // Unlock the opposite side of the limit order owner
+                    eventEntry.ActionSide == OrderSide.Buy ? quoteCurrency : baseCurrency,
+                    eventEntry.ActionSide == OrderSide.Buy ? actionQuote : actionBase),
+                _userService.ModifyReservedBalance(
+                    eventEntry.TargetUser,
+                    eventEntry.TargetAccountId,
+                    eventEntry.ActionSide == OrderSide.Buy ? baseCurrency : quoteCurrency,
+                    eventEntry.ActionSide == OrderSide.Buy ? targetBase : targetQuote)
+            };
+            foreach (var task in parallelTasks)
+            {
+                task.Wait();
+            }
         }
 
         public void ProcessEvent(TransactionCommitEventEntry eventEntry)
@@ -166,7 +171,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 eventEntry.User,
                 eventEntry.AccountId,
                 eventEntry.CoinSymbol,
-                eventEntry.DepositQty);
+                eventEntry.DepositQty
+            ).Wait();
         }
 
         public void ProcessEvent(WalletRevokeEventEntry eventEntry)
@@ -201,7 +207,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                 eventEntry.User,
                 eventEntry.AccountId,
                 eventEntry.CoinSymbol,
-                relativeBalance);
+                relativeBalance
+            ).Wait();
         }
 
         public void ProcessEvent(WalletConsolidationTransferEventEntry eventEntry)
@@ -231,7 +238,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
             else
             {
                 var (balance, reservedBalance) = _userService
-                    .GetBalanceAndReservedBalance(eventEntry.User, eventEntry.AccountId, eventEntry.CoinSymbol);
+                    .GetBalanceAndReservedBalance(withdrawal.User, withdrawal.AccountId, withdrawal.CoinSymbol);
                 if (!IsValidWithdrawal(withdrawal, balance))
                 {
                     valid = false;
@@ -353,14 +360,16 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                     eventEntry.User,
                     eventEntry.AccountId,
                     eventEntry.CoinSymbol,
-                    -unreservedBalance);
+                    -unreservedBalance
+                ).Wait();
             }
 
             _userService.ModifyBalance(
                 eventEntry.User,
                 eventEntry.AccountId,
                 eventEntry.CoinSymbol,
-                -eventEntry.WithdrawalQty - eventEntry.WithdrawalCombinedFee);
+                -eventEntry.WithdrawalQty - eventEntry.WithdrawalCombinedFee
+            ).Wait();
         }
 
         private bool IsValidWithdrawal(WalletWithdrawalEventEntry eventEntry, decimal userCoinBalance)

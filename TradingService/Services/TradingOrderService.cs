@@ -240,15 +240,15 @@ namespace XchangeCrypt.Backend.TradingService.Services
             DateTime orderHistoryTime,
             out object openOrder)
         {
-            decimal remainingAmount;
+            decimal remainingUnmatchedAmount;
             openOrder = FindOpenOrderCreatedByVersionNumber(cancelOrderCreatedOnVersionNumber);
             if (openOrder is OrderBookEntry limitOrder)
             {
                 InsertOrderHistoryEntry(limitOrder.FilledQty, limitOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingAmount = limitOrder.Qty - limitOrder.FilledQty;
+                remainingUnmatchedAmount = limitOrder.Qty - limitOrder.FilledQty;
                 if (limitOrder.Side == OrderSide.Buy)
                 {
-                    remainingAmount *= limitOrder.LimitPrice;
+                    remainingUnmatchedAmount *= limitOrder.LimitPrice;
                 }
 
                 OrderBook.DeleteOne(
@@ -258,7 +258,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
             else if (openOrder is HiddenOrderEntry stopOrder)
             {
                 InsertOrderHistoryEntry(stopOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingAmount = 0;
+                remainingUnmatchedAmount = 0;
                 HiddenOrders.DeleteOne(
                     Builders<HiddenOrderEntry>.Filter.Eq(e => e.Id, stopOrder.Id)
                 );
@@ -269,7 +269,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     $"Couldn't cancel order created on version number {cancelOrderCreatedOnVersionNumber}, as there was no such order open");
             }
 
-            return remainingAmount;
+            return remainingUnmatchedAmount;
         }
 
         public object FindOpenOrderCreatedByVersionNumber(long cancelOrderCreatedOnVersionNumber)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Models;
@@ -34,7 +35,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
             return (userWallet.Balance, userWallet.ReservedBalance);
         }
 
-        public void ModifyBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
+        public async Task ModifyBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
         {
             AccountEntry result;
             do
@@ -68,7 +69,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
             while (result == null);
         }
 
-        public void ModifyReservedBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
+        public async Task ModifyReservedBalance(string user, string accountId, string coinSymbol, decimal relativeValue)
         {
             AccountEntry result;
             do

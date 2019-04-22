@@ -378,65 +378,82 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         public override async Task PrepareWithdrawalAsync(
             WalletWithdrawalEventEntry withdrawalEventEntry, Action revocationAction)
         {
-            var withdrawalDescription =
-                $"Withdrawal of {withdrawalEventEntry.WithdrawalQty} {withdrawalEventEntry.CoinSymbol} of user {withdrawalEventEntry.User} to wallet {withdrawalEventEntry.WithdrawalTargetPublicKey}";
-
-            // Saga operation: we wait for TradingService to confirm the withdrawal event
-            for (var i = 0; i < 60; i++)
+            try
             {
-                await Task.Delay(1000);
-                var validated = ((WalletWithdrawalEventEntry)
-                    _eventHistoryService.FindById(withdrawalEventEntry.Id)).Validated;
-                switch (validated)
+                var withdrawalDescription =
+                    $"Withdrawal of {withdrawalEventEntry.WithdrawalQty} {withdrawalEventEntry.CoinSymbol} of user {withdrawalEventEntry.User} to wallet {withdrawalEventEntry.WithdrawalTargetPublicKey}";
+
+                // Saga operation: we wait for TradingService to confirm the withdrawal event
+                for (var i = 0; i < 60; i++)
                 {
-                    case true:
+                    await Task.Delay(1000);
+                    var validated = ((WalletWithdrawalEventEntry)
+                        _eventHistoryService.FindById(withdrawalEventEntry.Id)).Validated;
+                    switch (validated)
                     {
-                        // We have to be sure all consolidations have also finished
-                        _versionControl.WaitForIntegration(withdrawalEventEntry.VersionNumber);
-                        // And now we are ready for the main goal
-                        var success = Withdraw(
-                            withdrawalEventEntry.WithdrawalSourcePublicKey,
-                            withdrawalEventEntry.WithdrawalTargetPublicKey,
-                            withdrawalEventEntry.WithdrawalQty
-                        ).Result;
-                        _logger.LogInformation(
-                            $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
-                        if (success)
+                        case true:
                         {
-                            // Note: this report will occur after event gets processed by this own service
-                            _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
+                            // We have to be sure all consolidations have also finished
+                            _versionControl.WaitForIntegration(withdrawalEventEntry.VersionNumber);
+                            // And now we are ready for the main goal
+                            var success = Withdraw(
+                                withdrawalEventEntry.WithdrawalSourcePublicKey,
+                                withdrawalEventEntry.WithdrawalTargetPublicKey,
+                                withdrawalEventEntry.WithdrawalQty
+                            ).Result;
+                            _logger.LogInformation(
+                                $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
+                            if (success)
                             {
-                                // We will unlock the amount for deposit
-                                // (We want this to occur inside a version number lock, so that no other events
-                                // apply themselves right after the withdrawal event processing)
-                                UnlockAfterWithdrawal(withdrawalEventEntry);
-                            });
+                                // Note: this report will occur after event gets processed by this own service
+                                _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
+                                {
+                                    // We will unlock the amount for deposit
+                                    // (We want this to occur inside a version number lock, so that no other events
+                                    // apply themselves right after the withdrawal event processing)
+                                    UnlockAfterWithdrawal(withdrawalEventEntry);
+                                });
+                            }
+                            else
+                            {
+                                // Validation successful, yet the blockchain refused the transaction,
+                                // so we can immediately unlock user's balance for trading or another retry
+                                revocationAction();
+                            }
+
+                            return;
                         }
-                        else
-                        {
-                            // Validation successful, yet the blockchain refused the transaction,
-                            // so we can immediately unlock user's balance for trading or another retry
+                        case false:
+                            // Validation failed
+                            _logger.LogInformation(
+                                $"{withdrawalDescription} has failed due to negative response of a Trading Backend validation, revocation initiated");
                             revocationAction();
-                        }
+                            return;
 
-                        return;
+                        case null:
+                            _logger.LogInformation($"{withdrawalDescription} still waiting for a validation...");
+                            break;
                     }
-                    case false:
-                        // Validation failed
-                        _logger.LogInformation(
-                            $"{withdrawalDescription} has failed due to negative response of a Trading Backend validation, revocation initiated");
-                        revocationAction();
-                        return;
+                }
 
-                    case null:
-                        _logger.LogInformation($"{withdrawalDescription} still waiting for a validation...");
-                        break;
+                // Timed out
+                _logger.LogInformation($"{withdrawalDescription} has failed due to a timeout, revocation initiated");
+                revocationAction();
+            }
+            catch (AggregateException e)
+            {
+                _logger.LogError(
+                    $"{e.GetType()} happened during {nameof(PrepareWithdrawalAsync)}, this was unexpected.");
+                foreach (var inner in e.InnerExceptions)
+                {
+                    _logger.LogError($"\n{inner.Message}\n{inner.StackTrace}");
                 }
             }
-
-            // Timed out
-            _logger.LogInformation($"{withdrawalDescription} has failed due to a timeout, revocation initiated");
-            revocationAction();
+            catch (Exception e)
+            {
+                _logger.LogError(
+                    $"{e.GetType()} happened during {nameof(PrepareWithdrawalAsync)}, this was unexpected.\n{e.Message}\n{e.StackTrace}");
+            }
         }
 
 //        public override void OnWithdraw(string fromPublicKey, string toPublicKey, decimal value)
