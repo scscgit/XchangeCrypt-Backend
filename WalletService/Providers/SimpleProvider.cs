@@ -469,9 +469,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
 
         public override async Task<decimal> GetCurrentlyCachedBalance(string publicKey)
         {
-            // The zero is only returned if there was no Wallet Generate event processed yet,
+            // The -1 is only returned if there was no Wallet Generate event processed yet,
             // which means that the command method, which called this, will surely be deemed invalid before it persists
-            return _knownPublicKeyBalances.ContainsKey(publicKey) ? _knownPublicKeyBalances[publicKey] : 0m;
+            return _knownPublicKeyBalances.ContainsKey(publicKey) ? _knownPublicKeyBalances[publicKey] : -1m;
         }
 
         public override async Task<List<(string, decimal)>> GetWalletsHavingSumBalance(

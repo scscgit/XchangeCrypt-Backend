@@ -35,6 +35,7 @@ namespace XchangeCrypt.Backend.ConstantsLibrary
             public const string WithdrawalTargetPublicKey = "WithdrawalTargetPublicKey";
             public const string Amount = "Amount";
             public const string WalletEventIdReference = "WalletEventIdReference";
+            public const string FirstGeneration = "FirstGeneration";
 
             // Misc
 

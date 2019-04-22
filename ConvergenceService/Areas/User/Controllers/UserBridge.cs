@@ -56,7 +56,6 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         /// Receives details of all wallets of the authorized user.
         /// </summary>
         /// <param name="accountId">The account identifier.</param>
-        /// </summary>
         [HttpGet("accounts/{accountId}/wallets")]
         public IEnumerable<WalletDetails> Wallets(
             [FromRoute] [Required] string accountId)
@@ -69,7 +68,9 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
                 if (!wallets.Any(wallet => wallet.CoinSymbol.Equals(expectedCoin)))
                 {
                     _logger.LogInformation($"Generating {expectedCoin} wallet for user {User.GetIdentifier()}");
-                    generateTasks.Add(expectedCoin, WalletGenerate(accountId, expectedCoin));
+                    generateTasks.Add(
+                        expectedCoin,
+                        WalletGenerate(accountId, expectedCoin, MessagingConstants.ParameterNames.FirstGeneration));
                 }
             }
 
@@ -147,17 +148,26 @@ namespace XchangeCrypt.Backend.ConvergenceService.Areas.User.Controllers
         /// </summary>
         /// <param name="accountId">The account identifier.</param>
         /// <param name="coinSymbol">A unique symbol identification of a coin.</param>
+        /// <param name="requestId">Unique identifier for a request</param>
         /// <returns>Error if any</returns>
         [HttpPut("accounts/{accountId}/wallets/{coinSymbol}/generate")]
         public async Task<string> WalletGenerate(
             [FromRoute] [Required] string accountId,
-            [FromRoute] [Required] string coinSymbol)
+            [FromRoute] [Required] string coinSymbol,
+            [FromForm] string requestId)
         {
+            var firstGeneration = MessagingConstants.ParameterNames.FirstGeneration.Equals(requestId);
+            if (firstGeneration)
+            {
+                requestId = null;
+            }
+
             return await CommandService.GenerateWallet(
                 User.GetIdentifier(),
                 accountId,
                 coinSymbol.ToUpperInvariant(),
-                CommandService.RandomRequestId()
+                firstGeneration,
+                requestId ?? CommandService.RandomRequestId()
             );
         }
     }

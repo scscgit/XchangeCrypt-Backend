@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using XchangeCrypt.Backend.ConstantsLibrary;
 using XchangeCrypt.Backend.ConvergenceService.Services.Hosted;
 using static XchangeCrypt.Backend.ConstantsLibrary.MessagingConstants;
 
@@ -194,6 +195,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
             string user,
             string accountId,
             string coinSymbol,
+            bool firstGeneration,
             string requestId)
         {
             requestId = Sha256Hash(requestId);
@@ -207,6 +209,7 @@ namespace XchangeCrypt.Backend.ConvergenceService.Services
                         {ParameterNames.User, user},
                         {ParameterNames.AccountId, accountId},
                         {ParameterNames.CoinSymbol, coinSymbol},
+                        {ParameterNames.FirstGeneration, firstGeneration},
                         {ParameterNames.RequestId, requestId},
                         {ParameterNames.AnswerQueuePostfix, _answerQueueReceiver.QueryNamePostfix},
                     }

@@ -75,16 +75,23 @@ namespace XchangeCrypt.Backend.QueueAccess
                         {
                             await ListenOnQueue(stoppingToken);
                         }
-                        catch (AggregateException e)
+                        catch (Exception e)
                         {
-                            // We want the DispatcherResetJump to escape AggregateException
-                            Exception ex = e;
+                            // We want the DispatcherResetJump to escape AggregateException,
+                            // but rethrowing an exception erases its stack trace
+                            var ex = e;
                             while (ex is AggregateException)
                             {
                                 ex = ex.InnerException;
+                                _logger.LogError($"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
                             }
 
-                            throw ex;
+                            if (ex is DispatcherResetJump)
+                            {
+                                throw ex;
+                            }
+
+                            throw;
                         }
                     }
                     catch (DispatcherResetJump)
@@ -95,7 +102,7 @@ namespace XchangeCrypt.Backend.QueueAccess
             }
             catch (Exception e)
             {
-                _logger.LogError($"{e.Message}\n{e.StackTrace}");
+                _logger.LogError($"{e.GetType().Name}: {e.Message}\n{e.StackTrace}");
                 _shutdownAction();
                 throw;
             }
@@ -231,6 +238,7 @@ namespace XchangeCrypt.Backend.QueueAccess
                     {
                         while (e.InnerException is AggregateException anotherAggregate && e.InnerExceptions.Count == 1)
                         {
+                            _logger.LogError($"{e.Message}\n{e.StackTrace}");
                             e = anotherAggregate;
                         }
 

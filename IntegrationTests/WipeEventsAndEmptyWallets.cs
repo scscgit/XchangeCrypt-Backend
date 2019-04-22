@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
+using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
@@ -79,12 +80,13 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                 .ToList()
                 .ForEach(hotwallet =>
                 {
-                    decimal balance;
+                    Task<decimal> balance;
                     try
                     {
                         balance = AbstractProvider.ProviderLookup[hotwallet.CoinSymbol]
-                            .GetBalance(hotwallet.PublicKey).Result;
-                        if (balance == 0)
+                            .GetBalance(hotwallet.PublicKey);
+                        balance.Wait(2_000);
+                        if (balance.IsCompletedSuccessfully && balance.Result == 0)
                         {
                             walletRepo.DeleteOne(e => e.Id.Equals(hotwallet.Id));
                             return;
@@ -95,6 +97,12 @@ namespace XchangeCrypt.Backend.Tests.IntegrationTests
                         // When we are not sure, we keep the wallet (you can breakpoint this)
                         var error = e.Message.Trim();
                     }
+
+                    walletRepo.UpdateOne(
+                        Builders<HotWallet>.Filter.Eq(e => e.Id, hotwallet.Id),
+                        Builders<HotWallet>.Update.Set(
+                            e => e.CreatedOnVersionNumber, versionNumber)
+                    );
 
                     var now = DateTime.Now;
                     eventHistoryRepository.Events().InsertMany(new EventEntry[]

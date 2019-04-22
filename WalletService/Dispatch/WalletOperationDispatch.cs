@@ -35,6 +35,8 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
             var amount = (decimal?) message.GetValueOrDefault(MessagingConstants.ParameterNames.Amount);
             var walletEventIdReference =
                 (ObjectId?) message.GetValueOrDefault(MessagingConstants.ParameterNames.WalletEventIdReference);
+            var firstGeneration =
+                (bool?) message.GetValueOrDefault(MessagingConstants.ParameterNames.FirstGeneration);
             var requestId = (string) message.GetValueOrDefault(MessagingConstants.ParameterNames.RequestId);
 
             // Ignored request ID, maybe persist it to make sure no duplicates occur
@@ -42,7 +44,7 @@ namespace XchangeCrypt.Backend.WalletService.Dispatch
             //todo
             return ProcessorFactory.CreateWalletOperationPersistenceProcessor().ExecuteWalletOperationCommand(
                 user, accountId, coinSymbol, walletCommandType, amount, walletEventIdReference,
-                withdrawalTargetPublicKey, requestId, reportInvalidMessage);
+                withdrawalTargetPublicKey, firstGeneration, requestId, reportInvalidMessage);
         }
     }
 }

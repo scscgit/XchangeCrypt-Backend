@@ -38,7 +38,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 
         public async Task ExecuteWalletOperationCommand(
             string user, string accountId, string coinSymbol, string walletCommandType, decimal? amount,
-            ObjectId? walletEventIdReference, string withdrawalTargetPublicKey, string requestId,
+            ObjectId? walletEventIdReference, string withdrawalTargetPublicKey, bool? firstGeneration, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
             var retry = false;
@@ -51,7 +51,8 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 {
                     case MessagingConstants.WalletCommandTypes.Generate:
                         eventEntries = await PlanGenerateEvents(
-                            user, accountId, coinSymbol, requestId, reportInvalidMessage, eventEntries);
+                            user, accountId, coinSymbol, firstGeneration.Value, requestId, reportInvalidMessage,
+                            eventEntries);
                         break;
 
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
@@ -84,12 +85,34 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
         }
 
         private async Task<IList<EventEntry>> PlanGenerateEvents(
-            string user, string accountId, string coinSymbol, string requestId,
+            string user, string accountId, string coinSymbol, bool firstGeneration, string requestId,
             Func<string, Exception> reportInvalidMessage, IList<EventEntry> previousEventEntries)
         {
             IList<EventEntry> plannedEvents = new List<EventEntry>();
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
+                if (firstGeneration)
+                {
+                    var walletExists = false;
+                    // Request identifier of an empty string means that we only want to generate a wallet if there is none,
+                    // so that we don't spam the database too much (but nothing bad would happen either way)
+                    try
+                    {
+                        walletExists = AbstractProvider.ProviderLookup[coinSymbol].GetCurrentlyCachedBalance(
+                                           WalletOperationService.GetLastPublicKey(user, accountId, coinSymbol)
+                                       ).Result != -1;
+                    }
+                    catch (Exception)
+                    {
+                        // There is no such wallet, so we can continue the generation
+                    }
+
+                    if (walletExists)
+                    {
+                        throw reportInvalidMessage($"The {coinSymbol} wallet was already generated");
+                    }
+                }
+
                 var eventVersionNumber = currentVersionNumber + 1;
                 // Wallet generation is determined statically, so after private key gets persisted, we have the event
                 if (previousEventEntries != null)
@@ -230,9 +253,8 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                     {
                         ExecuteWalletOperationCommand(user, accountId, coinSymbol,
                             MessagingConstants.WalletCommandTypes.RevokeWithdrawal, amountInclFees,
-                            withdrawalEventEntry.Id,
-                            null,
-                            requestId, silentErrors => null).Wait();
+                            withdrawalEventEntry.Id, null, null, requestId, silentErrors => null
+                        ).Wait();
                     });
             };
             return Task.FromResult(plannedEvents);
