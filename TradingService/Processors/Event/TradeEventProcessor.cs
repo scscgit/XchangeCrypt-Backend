@@ -61,8 +61,11 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
         public void ProcessEvent(CreateOrderEventEntry eventEntry)
         {
             _tradingOrderService.CreateOrder(eventEntry);
-            if (eventEntry.Type == OrderType.Limit)
+            if (eventEntry.Type == OrderType.Limit || eventEntry.Type == OrderType.Stop)
             {
+                var price = eventEntry.Type == OrderType.Limit
+                    ? eventEntry.LimitPrice.Value
+                    : eventEntry.StopPrice.Value;
                 _userService.ModifyReservedBalance(
                     eventEntry.User,
                     eventEntry.AccountId,
@@ -70,7 +73,7 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Event
                         eventEntry.Side == OrderSide.Buy ? 1 : 0
                     ],
                     eventEntry.Side == OrderSide.Buy
-                        ? eventEntry.Qty * eventEntry.LimitPrice.Value
+                        ? eventEntry.Qty * price
                         : eventEntry.Qty
                 ).Wait();
             }

@@ -11,13 +11,14 @@ using XchangeCrypt.Backend.DatabaseAccess.Models;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Enums;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Repositories;
+using XchangeCrypt.Backend.DatabaseAccess.Services;
 
 namespace XchangeCrypt.Backend.TradingService.Services
 {
     // TODO: one instance per instrument?
     public class TradingOrderService
     {
-        private readonly EventHistoryRepository _eventHistoryRepository;
+        private readonly EventHistoryService _eventHistoryService;
         private readonly ILogger<TradingOrderService> _logger;
         private IMongoCollection<OrderBookEntry> OrderBook { get; }
         private IMongoCollection<HiddenOrderEntry> HiddenOrders { get; }
@@ -28,10 +29,10 @@ namespace XchangeCrypt.Backend.TradingService.Services
         /// </summary>
         public TradingOrderService(
             TradingRepository tradingRepository,
-            EventHistoryRepository eventHistoryRepository,
+            EventHistoryService eventHistoryService,
             ILogger<TradingOrderService> logger)
         {
-            _eventHistoryRepository = eventHistoryRepository;
+            _eventHistoryService = eventHistoryService;
             _logger = logger;
             OrderBook = tradingRepository.OrderBook();
             HiddenOrders = tradingRepository.HiddenOrders();
@@ -112,8 +113,30 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     HiddenOrders.InsertOne(stopOrder);
                     break;
                 case OrderType.Market:
-                    throw new ArgumentOutOfRangeException(nameof(createOrder.Type),
-                        "Cannot create unmatched market order");
+                    OrderHistory.InsertOne(
+                        new OrderHistoryEntry
+                        {
+                            CreateTime = createOrder.EntryTime,
+                            CloseTime = createOrder.EntryTime,
+                            User = createOrder.User,
+                            AccountId = createOrder.AccountId,
+                            Instrument = createOrder.Instrument,
+                            Qty = createOrder.Qty,
+                            Side = createOrder.Side,
+                            // Closed market order
+                            Type = OrderType.Market,
+                            // The market order will be filled by the following match orders
+                            FilledQty = createOrder.FilledMarketOrderQty,
+                            LimitPrice = null,
+                            StopPrice = null,
+                            // TODO from stop loss and take profit
+                            //ChildrenIds
+                            DurationType = createOrder.DurationType,
+                            Duration = createOrder.Duration,
+                            Status = OrderStatus.Filled,
+                        }
+                    );
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(createOrder.Type));
             }
@@ -133,30 +156,45 @@ namespace XchangeCrypt.Backend.TradingService.Services
 //            var actionOrderId = matchOrderRelatedCreateOrder.Id;
 
             var now = matchOrder.EntryTime;
-            // NOTE: We use First instead of Single because of the nature of our custom Event Sourcing persistence
+            // Action order is not used in case it's a market order
             var actionOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
-            ).First();
+            ).SingleOrDefault();
             var targetOrder = OrderBook.Find(
                 Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.TargetOrderOnVersionNumber)
-            ).First();
+            ).Single();
             AssertMatchOrderQty(matchOrder, actionOrder, targetOrder);
 
-            if (matchOrder.ActionOrderQtyRemaining == 0)
+            if (actionOrder != null)
             {
-                OrderBook.DeleteOne(
-                    Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
-                );
-                // The entire order quantity was filled
-                InsertOrderHistoryEntry(actionOrder.Qty, actionOrder, OrderStatus.Filled, now);
+                if (matchOrder.ActionOrderQtyRemaining == 0)
+                {
+                    OrderBook.DeleteOne(
+                        Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber)
+                    );
+                    // The entire order quantity was filled
+                    InsertOrderHistoryEntry(actionOrder.Qty, actionOrder, OrderStatus.Filled, now);
+                }
+                else
+                {
+                    OrderBook.UpdateOne(
+                        Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber),
+                        Builders<OrderBookEntry>.Update.Set(
+                            e => e.FilledQty, actionOrder.Qty - matchOrder.ActionOrderQtyRemaining)
+                    );
+                }
             }
-            else
+            else if (
+                // This condition can be completely deleted without a worry, it's just a double-check
+                ((CreateOrderEventEntry) _eventHistoryService
+                    .FindByVersionNumber(matchOrder.VersionNumber)
+                    .First()
+                ).Type != OrderType.Market
+            )
             {
-                OrderBook.UpdateOne(
-                    Builders<OrderBookEntry>.Filter.Eq(e => e.CreatedOnVersionId, matchOrder.VersionNumber),
-                    Builders<OrderBookEntry>.Update.Set(
-                        e => e.FilledQty, actionOrder.Qty - matchOrder.ActionOrderQtyRemaining)
-                );
+                // We don't have to update the OrderHistoryEntry, because it already contains the matched quantity
+                throw new Exception(
+                    $"Match order id {matchOrder.Id} did not have action being a limit order, and it was not a market order");
             }
 
             if (matchOrder.TargetOrderQtyRemaining == 0)
@@ -187,7 +225,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                         AccountId = matchOrder.ActionAccountId,
                         Instrument = matchOrder.Instrument,
                         Side = targetOrder.Side == OrderSide.Buy ? OrderSide.Sell : OrderSide.Buy,
-                        OrderId = actionOrder.Id,
+                        OrderId = actionOrder?.Id,
                         // The entire quantity was filled
                         FilledQty = matchOrder.Qty,
                         Price = targetOrder.LimitPrice,
@@ -213,15 +251,14 @@ namespace XchangeCrypt.Backend.TradingService.Services
         private void AssertMatchOrderQty(
             MatchOrderEventEntry matchOrder, OrderBookEntry actionOrder, OrderBookEntry targetOrder)
         {
-            var actionFilledQty = actionOrder.FilledQty + matchOrder.Qty;
-            if (matchOrder.ActionOrderQtyRemaining != actionOrder.Qty - actionFilledQty)
+            if (actionOrder != null && matchOrder.ActionOrderQtyRemaining !=
+                actionOrder.Qty - (actionOrder.FilledQty + matchOrder.Qty))
             {
                 throw new Exception(
                     $"Integrity assertion failed! {nameof(MatchOrderEventEntry)} ID {matchOrder.Id} attempted to increase {nameof(targetOrder.FilledQty)} of action order ID {actionOrder.Id} from {actionOrder.FilledQty.ToString(CultureInfo.CurrentCulture)} by {matchOrder.Qty}, but that didn't add up to event entry-asserted value of {matchOrder.ActionOrderQtyRemaining.ToString(CultureInfo.CurrentCulture)}!");
             }
 
-            var targetFilledQty = targetOrder.FilledQty + matchOrder.Qty;
-            if (matchOrder.TargetOrderQtyRemaining != targetOrder.Qty - targetFilledQty)
+            if (matchOrder.TargetOrderQtyRemaining != targetOrder.Qty - (targetOrder.FilledQty + matchOrder.Qty))
             {
                 throw new Exception(
                     $"Integrity assertion failed! {nameof(MatchOrderEventEntry)} ID {matchOrder.Id} attempted to increase {nameof(targetOrder.FilledQty)} of target order ID {targetOrder.Id} from {targetOrder.FilledQty.ToString(CultureInfo.CurrentCulture)} by {matchOrder.Qty}, but that didn't add up to event entry-asserted value of {matchOrder.TargetOrderQtyRemaining.ToString(CultureInfo.CurrentCulture)}!");
@@ -234,7 +271,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
         /// <param name="cancelOrderCreatedOnVersionNumber">Version number of creation of the order to be canceled</param>
         /// <param name="orderHistoryTime">Time of the cancellation event</param>
         /// <param name="openOrder">Found open order</param>
-        /// <returns>Remaining unmatched order amount of paid coin depending on side if it's limit order, zero if it's stop order</returns>
+        /// <returns>Remaining unmatched order amount of paid coin depending on side</returns>
         internal decimal CancelOrderByCreatedOnVersionNumber(
             long cancelOrderCreatedOnVersionNumber,
             DateTime orderHistoryTime,
@@ -258,7 +295,12 @@ namespace XchangeCrypt.Backend.TradingService.Services
             else if (openOrder is HiddenOrderEntry stopOrder)
             {
                 InsertOrderHistoryEntry(stopOrder, OrderStatus.Cancelled, orderHistoryTime);
-                remainingUnmatchedAmount = 0;
+                remainingUnmatchedAmount = stopOrder.Qty;
+                if (stopOrder.Side == OrderSide.Buy)
+                {
+                    remainingUnmatchedAmount *= stopOrder.StopPrice;
+                }
+
                 HiddenOrders.DeleteOne(
                     Builders<HiddenOrderEntry>.Filter.Eq(e => e.Id, stopOrder.Id)
                 );
@@ -334,7 +376,7 @@ namespace XchangeCrypt.Backend.TradingService.Services
                     Side = orderToClose.Side,
                     // Closed stop order
                     Type = OrderType.Stop,
-                    // The entire order quantity was filled
+                    // Stop order does not fill quantity, it only creates a limit order
                     FilledQty = 0,
                     LimitPrice = null,
                     StopPrice = orderToClose.StopPrice,
@@ -347,19 +389,27 @@ namespace XchangeCrypt.Backend.TradingService.Services
             );
         }
 
-        internal async Task<IAsyncCursor<OrderBookEntry>> MatchSellers(decimal belowOrAt, string instrument)
+        internal async Task<IAsyncCursor<OrderBookEntry>> MatchSellers(decimal? belowOrAt, string instrument)
         {
-            return await OrderBook
-                .Find(e => e.Side == OrderSide.Sell && e.LimitPrice <= belowOrAt && e.Instrument.Equals(instrument))
-                .Sort(Builders<OrderBookEntry>.Sort.Ascending(e => e.LimitPrice))
+            return await
+                (belowOrAt.HasValue
+                    ? OrderBook.Find(e =>
+                        e.Side == OrderSide.Sell && e.LimitPrice <= belowOrAt.Value && e.Instrument.Equals(instrument))
+                    : OrderBook.Find(e =>
+                        e.Side == OrderSide.Sell && e.Instrument.Equals(instrument))
+                ).Sort(Builders<OrderBookEntry>.Sort.Ascending(e => e.LimitPrice))
                 .ToCursorAsync();
         }
 
-        internal async Task<IAsyncCursor<OrderBookEntry>> MatchBuyers(decimal aboveOrAt, string instrument)
+        internal async Task<IAsyncCursor<OrderBookEntry>> MatchBuyers(decimal? aboveOrAt, string instrument)
         {
-            return await OrderBook
-                .Find(e => e.Side == OrderSide.Buy && e.LimitPrice >= aboveOrAt && e.Instrument.Equals(instrument))
-                .Sort(Builders<OrderBookEntry>.Sort.Descending(e => e.LimitPrice))
+            return await
+                (aboveOrAt.HasValue
+                    ? OrderBook.Find(e =>
+                        e.Side == OrderSide.Buy && e.LimitPrice >= aboveOrAt.Value && e.Instrument.Equals(instrument))
+                    : OrderBook.Find(e =>
+                        e.Side == OrderSide.Buy && e.Instrument.Equals(instrument))
+                ).Sort(Builders<OrderBookEntry>.Sort.Descending(e => e.LimitPrice))
                 .ToCursorAsync();
         }
     }

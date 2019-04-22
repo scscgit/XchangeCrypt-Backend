@@ -26,7 +26,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         /// <summary>
         /// Optional.
         /// </summary>
-        public ObjectId OrderId { get; set; }
+        public ObjectId? OrderId { get; set; }
 
         public decimal FilledQty { get; set; }
 

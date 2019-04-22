@@ -98,9 +98,18 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
             {
                 var eventVersionNumber = currentVersionNumber + 1;
-                var openOrder = TradingOrderService.FindOpenOrderCreatedByVersionNumber(
-                    orderCreatedOnVersionNumber
-                );
+                object openOrder;
+                try
+                {
+                    openOrder = TradingOrderService.FindOpenOrderCreatedByVersionNumber(
+                        orderCreatedOnVersionNumber
+                    );
+                }
+                catch (InvalidOperationException)
+                {
+                    openOrder = null;
+                }
+
                 if (openOrder is OrderBookEntry limitOrder)
                 {
                     if (!user.Equals(limitOrder.User)
@@ -175,118 +184,13 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 var eventVersionNumber = currentVersionNumber + 1;
                 // We are now locked to a specific version number
                 limitOrderEvent.VersionNumber = eventVersionNumber;
-                var currencies = instrument.Split("_");
-                var baseCurrency = currencies[0];
-                var quoteCurrency = currencies[1];
-                var quantityRemaining = quantity;
 
-                // Make sure that it even makes sense to open this order
-                var paymentCurrency = orderSide == OrderSide.Buy ? quoteCurrency : baseCurrency;
-                var (balance, reservedBalance) =
-                    UserService.GetBalanceAndReservedBalance(user, accountId, paymentCurrency);
-                if (quantity > balance - reservedBalance)
-                {
-                    throw reportInvalidMessage(
-                        $"Cannot open a limit order, your available balance of {balance - reservedBalance} {paymentCurrency} is less than {quantity} {paymentCurrency} required. Please close some orders");
-                }
+                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
 
-                // Start the process of matching relevant offers
-                var matchingOffers = orderSide == OrderSide.Buy
-                    ? TradingOrderService.MatchSellers(limitPriceValue, instrument).Result
-                    : TradingOrderService.MatchBuyers(limitPriceValue, instrument).Result;
-                matchingOffers.MoveNext();
-                var matchingOfferBatch = matchingOffers.Current.ToList();
-                while (quantityRemaining > 0 && matchingOfferBatch.Count > 0)
-                {
-                    _logger.LogInformation(
-                        $"Limit order request {requestId} matched a batch of {matchingOfferBatch.Count} {(orderSide == OrderSide.Buy ? "buyers" : "sellers")}");
-                    foreach (var other in matchingOfferBatch)
-                    {
-                        var otherRemaining = other.Qty - other.FilledQty;
-                        decimal matchedQuantity;
-                        if (otherRemaining >= quantityRemaining)
-                        {
-                            // Entire command order remainder is consumed by the seller offer
-                            matchedQuantity = quantityRemaining;
-                            _logger.LogInformation(
-                                $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning entirely matched order id {other.Id}");
-                        }
-                        else
-                        {
-                            // Fraction of order will remain, but the seller offer will be consumed
-                            matchedQuantity = otherRemaining;
-                            _logger.LogInformation(
-                                $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning partially matched order id {other.Id}");
-                        }
-
-                        quantityRemaining -= matchedQuantity;
-
-                        var matchEvent = new MatchOrderEventEntry
-                        {
-                            VersionNumber = eventVersionNumber,
-                            ActionUser = user,
-                            ActionAccountId = accountId,
-                            TargetOrderOnVersionNumber = other.CreatedOnVersionId,
-                            TargetUser = other.User,
-                            TargetAccountId = other.AccountId,
-                            Instrument = instrument,
-                            Qty = matchedQuantity,
-                            ActionSide = orderSide,
-                            Price = other.LimitPrice,
-                            ActionOrderQtyRemaining = quantityRemaining,
-                            TargetOrderQtyRemaining = other.Qty - other.FilledQty - matchedQuantity,
-                        };
-
-                        // Calculating new balances for double-check purposes
-                        var (actionBaseMod, actionQuoteMod, targetBaseMod, targetQuoteMod) =
-                            TradeEventProcessor.MatchOrderBalanceModifications(matchEvent);
-                        try
-                        {
-                            matchEvent.ActionBaseNewBalance =
-                                UserService.GetBalanceAndReservedBalance(
-                                    matchEvent.ActionUser, matchEvent.ActionAccountId, baseCurrency
-                                ).Item1 + actionBaseMod;
-                            matchEvent.ActionQuoteNewBalance =
-                                UserService.GetBalanceAndReservedBalance(
-                                    matchEvent.ActionUser, matchEvent.ActionAccountId, quoteCurrency
-                                ).Item1 + actionQuoteMod;
-                            matchEvent.TargetBaseNewBalance =
-                                UserService.GetBalanceAndReservedBalance(
-                                    matchEvent.TargetUser, matchEvent.TargetAccountId, baseCurrency
-                                ).Item1 + targetBaseMod;
-                            matchEvent.TargetQuoteNewBalance =
-                                UserService.GetBalanceAndReservedBalance(
-                                    matchEvent.TargetUser, matchEvent.TargetAccountId, quoteCurrency
-                                ).Item1 + targetQuoteMod;
-                        }
-                        catch (Exception e)
-                        {
-                            // This can happen if a user didn't generate his balances yet, so it's not a fatal error
-                            throw reportInvalidMessage(
-                                $"There was a problem with your coin balances. {e.GetType().Name}: {e.Message}");
-                        }
-
-                        plannedEvents.Add(matchEvent);
-                        if (quantityRemaining == 0)
-                        {
-                            break;
-                        }
-                    }
-
-                    if (quantityRemaining == 0)
-                    {
-                        break;
-                    }
-
-
-                    // Keep the iteration going in order to find further matching orders as long as remaining qty > 0
-                    if (!matchingOffers.MoveNext())
-                    {
-                        break;
-                    }
-
-                    matchingOfferBatch = matchingOffers.Current.ToList();
-                }
+                PlanMatchOrdersLocked(
+                    user, accountId, instrument, orderSide, limitPriceValue, quantity, eventVersionNumber,
+                    requestId, reportInvalidMessage
+                ).Item1.ForEach(plannedEvents.Add);
 
                 finished = true;
             });
@@ -299,12 +203,165 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             return plannedEvents;
         }
 
+        private void AssertUnreservedBalance(
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide,
+            Func<string, Exception> reportInvalidMessage)
+        {
+            var baseCurrency = instrument.Split("_")[0];
+            var quoteCurrency = instrument.Split("_")[1];
+
+            // Make sure that it even makes sense to open this order
+            var paymentCurrency = orderSide == OrderSide.Buy ? quoteCurrency : baseCurrency;
+            var (balance, reservedBalance) =
+                UserService.GetBalanceAndReservedBalance(user, accountId, paymentCurrency);
+            if (quantity > balance - reservedBalance)
+            {
+                throw reportInvalidMessage(
+                    $"Cannot open a limit order, your available balance of {balance - reservedBalance} {paymentCurrency} is less than {quantity} {paymentCurrency} required. Please close some orders");
+            }
+        }
+
+        private (List<MatchOrderEventEntry>, decimal) PlanMatchOrdersLocked(
+            string user, string accountId, string instrument, OrderSide orderSide, decimal? limitPriceValue,
+            decimal quantityRemaining, long lockedEventVersionNumber, string requestId,
+            Func<string, Exception> reportInvalidMessage)
+        {
+            var plannedEvents = new List<MatchOrderEventEntry>();
+            var baseCurrency = instrument.Split("_")[0];
+            var quoteCurrency = instrument.Split("_")[1];
+// Start the process of matching relevant offers
+            var matchingOffers = orderSide == OrderSide.Buy
+                ? TradingOrderService.MatchSellers(limitPriceValue, instrument).Result
+                : TradingOrderService.MatchBuyers(limitPriceValue, instrument).Result;
+            matchingOffers.MoveNext();
+            var matchingOfferBatch = matchingOffers.Current.ToList();
+            while (quantityRemaining > 0 && matchingOfferBatch.Count > 0)
+            {
+                _logger.LogInformation(
+                    $"Request {requestId} matched a batch of {matchingOfferBatch.Count} {(orderSide == OrderSide.Buy ? "buyers" : "sellers")}");
+                foreach (var other in matchingOfferBatch)
+                {
+                    var otherRemaining = other.Qty - other.FilledQty;
+                    decimal matchedQuantity;
+                    if (otherRemaining >= quantityRemaining)
+                    {
+                        // Entire command order remainder is consumed by the seller offer
+                        matchedQuantity = quantityRemaining;
+                        _logger.LogInformation(
+                            $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning entirely matched order id {other.Id}");
+                    }
+                    else
+                    {
+                        // Fraction of order will remain, but the seller offer will be consumed
+                        matchedQuantity = otherRemaining;
+                        _logger.LogInformation(
+                            $"New {instrument} {(orderSide == OrderSide.Buy ? "buy" : "sell")} limit order planning partially matched order id {other.Id}");
+                    }
+
+                    quantityRemaining -= matchedQuantity;
+
+                    var matchEvent = new MatchOrderEventEntry
+                    {
+                        VersionNumber = lockedEventVersionNumber,
+                        ActionUser = user,
+                        ActionAccountId = accountId,
+                        TargetOrderOnVersionNumber = other.CreatedOnVersionId,
+                        TargetUser = other.User,
+                        TargetAccountId = other.AccountId,
+                        Instrument = instrument,
+                        Qty = matchedQuantity,
+                        ActionSide = orderSide,
+                        Price = other.LimitPrice,
+                        ActionOrderQtyRemaining = quantityRemaining,
+                        TargetOrderQtyRemaining = other.Qty - other.FilledQty - matchedQuantity,
+                    };
+
+                    // Calculating new balances for double-check purposes
+                    var (actionBaseMod, actionQuoteMod, targetBaseMod, targetQuoteMod) =
+                        TradeEventProcessor.MatchOrderBalanceModifications(matchEvent);
+                    try
+                    {
+                        matchEvent.ActionBaseNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.ActionUser, matchEvent.ActionAccountId, baseCurrency
+                            ).Item1 + actionBaseMod;
+                        matchEvent.ActionQuoteNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.ActionUser, matchEvent.ActionAccountId, quoteCurrency
+                            ).Item1 + actionQuoteMod;
+                        matchEvent.TargetBaseNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.TargetUser, matchEvent.TargetAccountId, baseCurrency
+                            ).Item1 + targetBaseMod;
+                        matchEvent.TargetQuoteNewBalance =
+                            UserService.GetBalanceAndReservedBalance(
+                                matchEvent.TargetUser, matchEvent.TargetAccountId, quoteCurrency
+                            ).Item1 + targetQuoteMod;
+                    }
+                    catch (Exception e)
+                    {
+                        // This can happen if a user didn't generate his balances yet, so it's not a fatal error
+                        throw reportInvalidMessage(
+                            $"There was a problem with your coin balances. {e.GetType().Name}: {e.Message}");
+                    }
+
+                    plannedEvents.Add(matchEvent);
+                    if (quantityRemaining == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (quantityRemaining == 0)
+                {
+                    break;
+                }
+
+
+                // Keep the iteration going in order to find further matching orders as long as remaining qty > 0
+                if (!matchingOffers.MoveNext())
+                {
+                    break;
+                }
+
+                matchingOfferBatch = matchingOffers.Current.ToList();
+            }
+
+            return (plannedEvents, quantityRemaining);
+        }
+
         private async Task<IList<EventEntry>> PlanStopOrderEvents(
             string user, string accountId, string instrument, decimal quantity, OrderSide orderSide,
             decimal stopPriceValue, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
-            throw new NotImplementedException();
+            var stopOrderEvent = new CreateOrderEventEntry
+            {
+                User = user,
+                AccountId = accountId,
+                Instrument = instrument,
+                Qty = quantity,
+                Side = orderSide,
+                Type = OrderType.Stop,
+                LimitPrice = null,
+                StopPrice = stopPriceValue,
+                DurationType = durationType,
+                Duration = duration,
+                StopLoss = stopLoss,
+                TakeProfit = takeProfit,
+            };
+            var plannedEvents = new List<EventEntry>
+            {
+                stopOrderEvent
+            };
+            VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+            {
+                var eventVersionNumber = currentVersionNumber + 1;
+                stopOrderEvent.VersionNumber = eventVersionNumber;
+
+                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
+            });
+            return plannedEvents;
         }
 
         private async Task<IList<EventEntry>> PlanMarketOrderEvents(
@@ -312,7 +369,47 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
-            throw new NotImplementedException();
+            var marketOrderEvent = new CreateOrderEventEntry
+            {
+                User = user,
+                AccountId = accountId,
+                Instrument = instrument,
+                Qty = quantity,
+                //FilledMarketOrderQty
+                Side = orderSide,
+                Type = OrderType.Market,
+                //LimitPrice,
+                StopPrice = null,
+                DurationType = durationType,
+                Duration = duration,
+                StopLoss = stopLoss,
+                TakeProfit = takeProfit,
+            };
+            var plannedEvents = new List<EventEntry>
+            {
+                marketOrderEvent
+            };
+            VersionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+            {
+                var eventVersionNumber = currentVersionNumber + 1;
+                marketOrderEvent.VersionNumber = eventVersionNumber;
+
+                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
+
+                var matchedOrders = PlanMatchOrdersLocked(
+                    user, accountId, instrument, orderSide, null, quantity, eventVersionNumber,
+                    requestId, reportInvalidMessage
+                );
+                if (matchedOrders.Item1.Count == 0)
+                {
+                    throw reportInvalidMessage("Cannot execute a market order, as there are no other orders");
+                }
+
+                matchedOrders.Item1.ForEach(plannedEvents.Add);
+                marketOrderEvent.FilledMarketOrderQty = quantity - matchedOrders.Item2;
+                marketOrderEvent.LimitPrice = matchedOrders.Item1.Last().Price;
+            });
+            return plannedEvents;
         }
 
         private static OrderSide ParseSide(string side, Func<string, Exception> reportInvalidMessage)

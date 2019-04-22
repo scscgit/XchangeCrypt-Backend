@@ -16,6 +16,8 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models.Events
 
         public decimal Qty;
 
+        public decimal FilledMarketOrderQty;
+
         [JsonConverter(typeof(StringEnumConverter))] [BsonRepresentation(BsonType.String)]
         public OrderSide Side;
 

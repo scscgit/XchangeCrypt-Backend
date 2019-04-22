@@ -28,7 +28,7 @@ namespace XchangeCrypt.Backend.DatabaseAccess.Models
         [BsonRepresentation(BsonType.String)]
         public OrderSide Side { get; set; }
 
-        public decimal? StopPrice { get; set; }
+        public decimal StopPrice { get; set; }
 
         public string ParentId { get; set; }
 
