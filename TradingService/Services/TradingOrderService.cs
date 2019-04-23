@@ -127,7 +127,8 @@ namespace XchangeCrypt.Backend.TradingService.Services
                             Type = OrderType.Market,
                             // The market order will be filled by the following match orders
                             FilledQty = createOrder.FilledMarketOrderQty,
-                            LimitPrice = null,
+                            // The most expensive accepted limit price will be shown to the user
+                            LimitPrice = createOrder.LimitPrice.Value,
                             StopPrice = null,
                             // TODO from stop loss and take profit
                             //ChildrenIds
