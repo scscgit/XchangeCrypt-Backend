@@ -16,7 +16,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
 {
     public class WalletCommandProcessor
     {
-        private readonly ILogger<WalletCommandProcessor> _logger;
+        private readonly ILogger _logger;
         private VersionControl VersionControl { get; }
         private EventHistoryService EventHistoryService { get; }
         private WalletOperationService WalletOperationService { get; }
@@ -28,7 +28,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             VersionControl versionControl,
             EventHistoryService eventHistoryService,
             WalletOperationService walletOperationService,
-            ILogger<WalletCommandProcessor> logger)
+            ILogger logger)
         {
             _logger = logger;
             VersionControl = versionControl;
@@ -36,36 +36,66 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
             WalletOperationService = walletOperationService;
         }
 
+        public async Task RetryPersist(
+            Func<IList<EventEntry>, (IList<EventEntry>, Action<IList<EventEntry>>)> eventPlanner)
+        {
+            bool retry;
+            Action<IList<EventEntry>> afterPersistence;
+            IList<EventEntry> eventEntries = null;
+            IList<EventEntry> success;
+            do
+            {
+                (eventEntries, afterPersistence) = eventPlanner(eventEntries);
+                if (eventEntries == null)
+                {
+                    return;
+                }
+                success = await EventHistoryService.Persist(eventEntries);
+                retry = success == null;
+                // Assuming the event listener has attempted to acquire the lock meanwhile
+            }
+            while (retry);
+
+            afterPersistence?.Invoke(success);
+        }
+
+        public async Task RetryPersist(Func<IList<EventEntry>, IList<EventEntry>> eventPlanner)
+        {
+            await RetryPersist(lastAttempt => (eventPlanner.Invoke(lastAttempt), null));
+        }
+
         public async Task ExecuteWalletOperationCommand(
             string user, string accountId, string coinSymbol, string walletCommandType, decimal? amount,
             ObjectId? walletEventIdReference, string withdrawalTargetPublicKey, bool? firstGeneration, string requestId,
             Func<string, Exception> reportInvalidMessage)
         {
-            var retry = false;
             Action<IList<EventEntry>> afterPersistence = null;
             IList<EventEntry> eventEntries = null;
-            IList<EventEntry> success;
-            do
+            await RetryPersist(lastAttempt =>
             {
                 switch (walletCommandType)
                 {
                     case MessagingConstants.WalletCommandTypes.Generate:
-                        eventEntries = await PlanGenerateEvents(
+                        eventEntries = PlanGenerateEvents(
                             user, accountId, coinSymbol, firstGeneration.Value, requestId, reportInvalidMessage,
-                            eventEntries);
+                            eventEntries
+                        ).Result;
                         break;
 
                     case MessagingConstants.WalletCommandTypes.Withdrawal:
-                        eventEntries = await PlanWithdrawalEvents(
+                        eventEntries = PlanWithdrawalEvents(
                             user, accountId, coinSymbol, withdrawalTargetPublicKey, amount.Value, requestId,
-                            reportInvalidMessage, out afterPersistence, eventEntries);
+                            reportInvalidMessage, out afterPersistence, eventEntries
+                        ).Result;
                         break;
 
                     case MessagingConstants.WalletCommandTypes.RevokeDeposit:
                     case MessagingConstants.WalletCommandTypes.RevokeWithdrawal:
-                        eventEntries = await PlanRevokeEvents(
-                            user, accountId, coinSymbol, walletEventIdReference.Value, requestId, reportInvalidMessage,
-                            eventEntries);
+                        eventEntries = PlanRevokeEvents(
+                            user, accountId, coinSymbol, walletEventIdReference.Value, requestId,
+                            reportInvalidMessage,
+                            eventEntries
+                        ).Result;
                         break;
 
                     default:
@@ -73,15 +103,13 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 }
 
                 _logger.LogInformation(
-                    $"{(retry ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by {walletCommandType} command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
-                success = await EventHistoryService.Persist(eventEntries);
-                retry = success == null;
-                // Assuming the event listener has attempted to acquire the lock meanwhile
-            }
-            while (retry);
-
-            _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
-            afterPersistence?.Invoke(success);
+                    $"{(lastAttempt != null ? "Retrying" : "Trying")} to persist {eventEntries.Count.ToString()} event(s) planned by {walletCommandType} command requestId {requestId} on version number {eventEntries[0].VersionNumber.ToString()}");
+                return (eventEntries, persistedEventEntries =>
+                {
+                    _logger.LogInformation($"Successfully persisted events from requestId {requestId}");
+                    afterPersistence?.Invoke(persistedEventEntries);
+                });
+            });
         }
 
         private async Task<IList<EventEntry>> PlanGenerateEvents(

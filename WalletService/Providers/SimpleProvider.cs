@@ -8,6 +8,8 @@ using NBitcoin;
 using XchangeCrypt.Backend.DatabaseAccess.Control;
 using XchangeCrypt.Backend.DatabaseAccess.Models.Events;
 using XchangeCrypt.Backend.DatabaseAccess.Services;
+using XchangeCrypt.Backend.WalletService.Processors;
+using XchangeCrypt.Backend.WalletService.Processors.Command;
 using XchangeCrypt.Backend.WalletService.Services;
 
 namespace XchangeCrypt.Backend.WalletService.Providers
@@ -60,7 +62,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                     {
                         foreach (var ex in e.InnerExceptions)
                         {
-                            _logger.LogError(ex.GetType().Name + ": " + ex.Message + "\n" + ex.StackTrace);
+                            _logger.LogWarning(ex.GetType().Name + ": " + ex.Message);
                         }
 
                         throw;
@@ -68,29 +70,86 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 }
                 catch (Exception)
                 {
-                    _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
-                                     $"service is probably offline, skipping the wallet and waiting a few seconds");
+                    _logger.LogWarning(
+                        $"Could not receive blockchain balance of {ThisCoinSymbol} public key {publicKey}, " +
+                        $"service is probably offline, skipping the wallet and waiting a few seconds");
                     Task.Delay(2000).Wait();
                     continue;
                 }
 
-                var oldBalance = _knownPublicKeyBalances[publicKey];
+                var oldBalance = GetCurrentlyCachedBalance(publicKey).Result;
                 if (balance == oldBalance)
                 {
                     continue;
                 }
 
-                if (balance < oldBalance)
-                {
-                    _logger.LogWarning(
-                        "Detected a negative value deposit event; assuming there is a withdrawal going on");
-                    return;
-//                    throw new Exception(
-//                        "Deposit event caused balance to be reduced. This is really unexpected, maybe a deposit event wasn't synchronized properly?");
-                }
-
                 // Generate event does not change, so we won't request it multiple times
                 var generateEvent = _eventHistoryService.FindWalletGenerateByPublicKey(publicKey);
+
+                if (balance < oldBalance)
+                {
+                    _logger.LogError(
+                        "Detected a negative value deposit event. This is really unexpected, check your implementation stability. Invoking a value-driven deposit revocation!");
+                    await new WalletCommandProcessor(
+                            _versionControl, _eventHistoryService, _walletOperationService, _logger)
+                        .RetryPersist(lastAttempt =>
+                        {
+                            IList<EventEntry> result = null;
+                            _versionControl.ExecuteUsingFixedVersion(currentVersionNumber =>
+                            {
+                                var eventVersionNumber = currentVersionNumber + 1;
+                                try
+                                {
+                                    balance = GetBalance(publicKey).Result - _lockedPublicKeyBalances[publicKey];
+                                }
+                                catch (Exception)
+                                {
+                                    _logger.LogError(
+                                        $"Could not receive blockchain balance of {ThisCoinSymbol} public key {publicKey}, " +
+                                        $"service is probably offline, waiting a few seconds");
+                                    Task.Delay(5000).Wait();
+                                    return;
+                                }
+
+                                // Example: balance is 30 minus locked 10. It was previously 40.
+                                // 20 + returned 10 - 40  = negativeDeposit of -10.
+                                // It's below zero, so we invoke a negative deposit.
+                                // New balance of 30 still includes the locked withdrawal of 10.
+                                var negativeDeposit = balance
+                                                      + _lockedPublicKeyBalances[publicKey]
+                                                      - GetCurrentlyCachedBalance(publicKey).Result;
+                                result = negativeDeposit < 0
+                                    ? new List<EventEntry>
+                                    {
+                                        new WalletDepositEventEntry
+                                        {
+                                            VersionNumber = eventVersionNumber,
+                                            DepositWalletPublicKey = publicKey,
+                                            User = generateEvent.User,
+                                            AccountId = generateEvent.AccountId,
+                                            CoinSymbol = ThisCoinSymbol,
+                                            LastWalletPublicKey = null,
+                                            DepositQty = negativeDeposit,
+                                            NewSourcePublicKeyBalance = balance + _lockedPublicKeyBalances[publicKey]
+                                        }
+                                    }
+                                    : null;
+                            });
+                            if (result == null)
+                            {
+                                _logger.LogInformation(
+                                    "Negative value deposit event has resolved itself, canceling the value-driven deposit revocation!");
+                            }
+
+                            return (result, persistedEvents =>
+                            {
+                                _logger.LogInformation(
+                                    "Successfully persisted negative value deposit event");
+                            });
+                        });
+                    continue;
+                }
+
                 var retry = false;
                 do
                 {
@@ -112,8 +171,9 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                         }
                         catch (Exception)
                         {
-                            _logger.LogError($"Could not receive blockchain balance of public key {publicKey}, " +
-                                             $"service is probably offline, waiting a few seconds");
+                            _logger.LogError(
+                                $"Could not receive blockchain balance of {ThisCoinSymbol} public key {publicKey}, " +
+                                $"service is probably offline, waiting a few seconds");
                             Task.Delay(5000).Wait();
                             retry = true;
                             return;
@@ -211,7 +271,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 eventEntry.WithdrawalQty + eventEntry.WithdrawalSingleFee;
         }
 
-        private void UnlockAfterWithdrawal(WalletWithdrawalEventEntry eventEntry)
+        protected virtual void UnlockAfterWithdrawal(WalletWithdrawalEventEntry eventEntry)
         {
             _lockedPublicKeyBalances[eventEntry.WithdrawalSourcePublicKey] -=
                 eventEntry.WithdrawalQty + eventEntry.WithdrawalSingleFee;
@@ -406,6 +466,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                                 $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
                             if (success)
                             {
+                                EnsureWithdrawn(withdrawalEventEntry);
                                 // Note: this report will occur after event gets processed by this own service
                                 _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
                                 {
@@ -454,6 +515,35 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             {
                 _logger.LogError(
                     $"{e.GetType()} happened during {nameof(PrepareWithdrawalAsync)}, this was unexpected.\n{e.Message}\n{e.StackTrace}");
+            }
+        }
+
+        private void EnsureWithdrawn(WalletWithdrawalEventEntry eventEntry)
+        {
+            var retry = true;
+            var remaining = 300;
+            while (retry && remaining > 0)
+            {
+                try
+                {
+                    retry = GetBalance(eventEntry.WithdrawalSourcePublicKey).Result
+                            > GetCurrentlyCachedBalance(eventEntry.WithdrawalSourcePublicKey).Result;
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError($"{e.GetType().Name}: {e.Message}");
+                }
+
+                _logger.LogWarning(
+                    $"Withdrawal of {eventEntry.WithdrawalQty} {ThisCoinSymbol} waiting for balance feedback before marking as executed...");
+                Task.Delay(1000);
+                remaining--;
+            }
+
+            if (retry)
+            {
+                throw new Exception(
+                    $"There is a feedback issue with withdrawal event ID {eventEntry.Id}, it could not be marked as executed and now it's stuck");
             }
         }
 
