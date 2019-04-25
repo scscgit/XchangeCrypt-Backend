@@ -31,7 +31,7 @@ namespace XchangeCrypt.Backend.ViewService
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Caching services
-            services.AddTransient<OrderCaching>();
+            services.AddSingleton<OrderCaching, RefreshAheadCaching>();
 
             // Database caching
             services.AddTransient<AccountRepository>();

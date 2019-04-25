@@ -23,7 +23,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
             TradingRepository = tradingRepository;
         }
 
-        internal List<Execution> GetExecutions(string user, string accountId, string instrument, int? maxCount)
+        internal virtual List<Execution> GetExecutions(string user, string accountId, string instrument, int? maxCount)
         {
             return TradingRepository
                 .TransactionHistory()
@@ -42,7 +42,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                 .ToList();
         }
 
-        internal List<Order> GetOrders(string user, string accountId)
+        internal virtual List<Order> GetOrders(string user, string accountId)
         {
             return TradingRepository
                 .OrderBook()
@@ -101,13 +101,13 @@ namespace XchangeCrypt.Backend.ViewService.Services
                 ).ToList();
         }
 
-        internal Order GetOrder(string user, string accountId, string orderId)
+        internal virtual Order GetOrder(string user, string accountId, string orderId)
         {
             // TODO: faster implementation - try to measure driver differences?
             return GetOrders(user, accountId).Find(e => e.Id.ToString().Equals(orderId));
         }
 
-        public List<Order> GetOrdersHistory(string user, string accountId, int? maxCount)
+        public virtual List<Order> GetOrdersHistory(string user, string accountId, int? maxCount)
         {
             return TradingRepository
                 .OrderHistory()
@@ -144,7 +144,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
                 ).ToList();
         }
 
-        public Depth GetDepth(string instrument)
+        public virtual Depth GetDepth(string instrument)
         {
             return new Depth
             {
@@ -173,7 +173,7 @@ namespace XchangeCrypt.Backend.ViewService.Services
             };
         }
 
-        public BarsArrays GetHistoryBars(
+        public virtual BarsArrays GetHistoryBars(
             string instrument, string resolution, decimal? from, decimal? to, decimal? countback)
         {
             long secondsInterval;
