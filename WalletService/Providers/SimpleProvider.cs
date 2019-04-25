@@ -322,6 +322,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                             $"Consolidation event id {eventEntry.Id} failed to execute the withdrawal. {GetType().Name} has to stop processing further events, requiring administrator to solve this issue");
                     }
 
+                    EnsureWithdrawn(
+                        eventEntry.TransferSourcePublicKey,
+                        eventEntry.NewSourcePublicKeyBalance,
+                        eventEntry.TransferQty + eventEntry.TransferFee,
+                        eventEntry.VersionNumber);
+
                     // We could unlock the source for deposit if we locked it before withdrawal
 //                    _lockedPublicKeyBalances[eventEntry.TransferSourcePublicKey] -=
 //                        eventEntry.TransferQty + eventEntry.TransferFee;
@@ -466,7 +472,11 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                                 $"{withdrawalDescription} {(success ? "successful" : "has failed due to blockchain response, this is a critical error and the event will be revoked")}");
                             if (success)
                             {
-                                EnsureWithdrawn(withdrawalEventEntry);
+                                EnsureWithdrawn(
+                                    withdrawalEventEntry.WithdrawalSourcePublicKey,
+                                    withdrawalEventEntry.NewSourcePublicKeyBalance,
+                                    withdrawalEventEntry.WithdrawalQty + withdrawalEventEntry.WithdrawalSingleFee,
+                                    withdrawalEventEntry.VersionNumber);
                                 // Note: this report will occur after event gets processed by this own service
                                 _eventHistoryService.ReportWithdrawalExecuted(withdrawalEventEntry, () =>
                                 {
@@ -518,7 +528,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             }
         }
 
-        private void EnsureWithdrawn(WalletWithdrawalEventEntry eventEntry)
+        private void EnsureWithdrawn(
+            string sourcePublicKey, decimal newSourceBalance, decimal withdrawalQtyInclFee, long versionNumber)
         {
             var retry = true;
             var remaining = 300;
@@ -526,8 +537,8 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             {
                 try
                 {
-                    retry = GetBalance(eventEntry.WithdrawalSourcePublicKey).Result
-                            > GetCurrentlyCachedBalance(eventEntry.WithdrawalSourcePublicKey).Result;
+                    retry = GetBalance(sourcePublicKey).Result
+                            > newSourceBalance;
                 }
                 catch (Exception e)
                 {
@@ -535,7 +546,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
                 }
 
                 _logger.LogWarning(
-                    $"Withdrawal of {eventEntry.WithdrawalQty} {ThisCoinSymbol} waiting for balance feedback before marking as executed...");
+                    $"Withdrawal of {withdrawalQtyInclFee} {ThisCoinSymbol} waiting for balance feedback before marking as executed...");
                 Task.Delay(1000);
                 remaining--;
             }
@@ -543,7 +554,7 @@ namespace XchangeCrypt.Backend.WalletService.Providers
             if (retry)
             {
                 throw new Exception(
-                    $"There is a feedback issue with withdrawal event ID {eventEntry.Id}, it could not be marked as executed and now it's stuck");
+                    $"There is a feedback issue with withdrawal event version {versionNumber}, it could not be marked as executed and now it's stuck");
             }
         }
 
