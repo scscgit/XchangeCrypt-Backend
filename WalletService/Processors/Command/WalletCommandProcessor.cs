@@ -50,6 +50,7 @@ namespace XchangeCrypt.Backend.WalletService.Processors.Command
                 {
                     return;
                 }
+
                 success = await EventHistoryService.Persist(eventEntries);
                 retry = success == null;
                 // Assuming the event listener has attempted to acquire the lock meanwhile
