@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Control.VersionControl">
-    <Position X="16" Y="8.75" Width="2.75" />
+    <Position X="16" Y="8.75" Width="2.5" />
     <TypeIdentifier>
       <HashCode>AEACAAAAAAAAAQAAAAAAAAAAIAAAAAgIAAAAAAAAAgA=</HashCode>
       <FileName>Control\VersionControl.cs</FileName>
@@ -50,7 +50,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Models.TransactionHistoryEntry">
-    <Position X="5.25" Y="10.5" Width="2.25" />
+    <Position X="5.5" Y="10.5" Width="2" />
     <TypeIdentifier>
       <HashCode>EAADAAAAAQAAgAAAAoAAAAAACIAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Models\TransactionHistoryEntry.cs</FileName>
@@ -64,9 +64,9 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Models.Events.CreateOrderEventEntry">
-    <Position X="5.25" Y="3.25" Width="2" />
+    <Position X="5.25" Y="3.25" Width="2.5" />
     <TypeIdentifier>
-      <HashCode>AAIBCAAAAAECgAAAAgAAAAAAiAAAAAAAAQAQAgAAAAA=</HashCode>
+      <HashCode>AAIBCAAAAAECgAAIAgAAAAAAiAAAAAAAAQAQAgAAAAA=</HashCode>
       <FileName>Models\Events\CreateOrderEventEntry.cs</FileName>
     </TypeIdentifier>
   </Class>
@@ -78,7 +78,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Models.Events.MatchOrderEventEntry">
-    <Position X="7.5" Y="3.25" Width="2.75" />
+    <Position X="7.75" Y="3.25" Width="2.75" />
     <TypeIdentifier>
       <HashCode>AAAAACAAAQAgAQAAAEgAAAAAqAQAEAJAAABAAgAAAAA=</HashCode>
       <FileName>Models\Events\MatchOrderEventEntry.cs</FileName>
@@ -106,7 +106,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Models.Events.WalletEventEntry">
-    <Position X="16.5" Y="3.25" Width="3" />
+    <Position X="16.5" Y="3.25" Width="2.75" />
     <TypeIdentifier>
       <HashCode>AAABAAAAAAAAAAAgAgAAACAAAAAAAAAAAAABAAAAAAA=</HashCode>
       <FileName>Models\Events\WalletEventEntry.cs</FileName>
@@ -134,7 +134,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Repositories.AccountRepository">
-    <Position X="7.75" Y="0.75" Width="3.5" />
+    <Position X="7.75" Y="0.75" Width="3.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAEAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAA=</HashCode>
       <FileName>Repositories\AccountRepository.cs</FileName>
@@ -148,7 +148,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Repositories.EventHistoryRepository">
-    <Position X="14.5" Y="0.5" Width="4.5" />
+    <Position X="14.5" Y="0.5" Width="4.25" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAEAAAAgAAAAAAAAAAgAAAAAAAAAAABAAAAA=</HashCode>
       <FileName>Repositories\EventHistoryRepository.cs</FileName>
@@ -169,19 +169,12 @@
     </TypeIdentifier>
   </Class>
   <Class Name="XchangeCrypt.Backend.DatabaseAccess.Services.EventHistoryService">
-    <Position X="19.25" Y="8.5" Width="4.25" />
+    <Position X="19.25" Y="8.5" Width="4" />
     <TypeIdentifier>
       <HashCode>AAAAAAAApAAAIEAAAAgAAAIGIAABAAAAAACAgIAAAAA=</HashCode>
       <FileName>Services\EventHistoryService.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Enum Name="XchangeCrypt.Backend.DatabaseAccess.Models.Enums.ActivityHistoryEntryType">
-    <Position X="10.5" Y="12.25" Width="2" />
-    <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAACAAAAAAAAAACAAAAAAAAAA=</HashCode>
-      <FileName>Models\Enums\ActivityHistoryEntryType.cs</FileName>
-    </TypeIdentifier>
-  </Enum>
   <Enum Name="XchangeCrypt.Backend.DatabaseAccess.Models.Enums.OrderSide">
     <Position X="12.75" Y="12.25" Width="1.5" />
     <TypeIdentifier>
