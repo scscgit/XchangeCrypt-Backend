@@ -158,6 +158,18 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             decimal limitPriceValue, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
+            if (quantity <= 0)
+            {
+                throw reportInvalidMessage("You cannot create an order with a quantity of 0 or less");
+            }
+
+            if (limitPriceValue <= 0
+                || stopLoss.HasValue && stopLoss.Value <= 0
+                || takeProfit.HasValue && takeProfit.Value <= 0)
+            {
+                throw reportInvalidMessage("You cannot create a limit order with a price of 0 or less");
+            }
+
             var limitOrderEvent = new CreateOrderEventEntry
             {
                 User = user,
@@ -185,7 +197,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 // We are now locked to a specific version number
                 limitOrderEvent.VersionNumber = eventVersionNumber;
 
-                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
+                AssertUnreservedBalance(
+                    user, accountId, instrument, quantity, orderSide, limitPriceValue, reportInvalidMessage);
 
                 PlanMatchOrdersLocked(
                     user, accountId, instrument, orderSide, limitPriceValue, quantity, eventVersionNumber,
@@ -204,20 +217,18 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
         }
 
         private void AssertUnreservedBalance(
-            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide,
+            string user, string accountId, string instrument, decimal quantity, OrderSide orderSide, decimal? price,
             Func<string, Exception> reportInvalidMessage)
         {
-            var baseCurrency = instrument.Split("_")[0];
-            var quoteCurrency = instrument.Split("_")[1];
-
+            var sideQuantity = orderSide == OrderSide.Buy ? quantity * price.Value : quantity;
             // Make sure that it even makes sense to open this order
-            var paymentCurrency = orderSide == OrderSide.Buy ? quoteCurrency : baseCurrency;
+            var paymentCurrency = instrument.Split("_")[orderSide == OrderSide.Buy ? 1 : 0];
             var (balance, reservedBalance) =
                 UserService.GetBalanceAndReservedBalance(user, accountId, paymentCurrency);
-            if (quantity > balance - reservedBalance)
+            if (sideQuantity > balance - reservedBalance)
             {
                 throw reportInvalidMessage(
-                    $"Cannot open a limit order, your available balance of {balance - reservedBalance} {paymentCurrency} is less than {quantity} {paymentCurrency} required. Please close some orders");
+                    $"Cannot open the order, your available balance of {balance - reservedBalance} {paymentCurrency} is less than {sideQuantity} {paymentCurrency} required. Please close some orders");
             }
         }
 
@@ -229,7 +240,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             var plannedEvents = new List<MatchOrderEventEntry>();
             var baseCurrency = instrument.Split("_")[0];
             var quoteCurrency = instrument.Split("_")[1];
-// Start the process of matching relevant offers
+
+            // Start the process of matching relevant offers
             var matchingOffers = orderSide == OrderSide.Buy
                 ? TradingOrderService.MatchSellers(limitPriceValue, instrument).Result
                 : TradingOrderService.MatchBuyers(limitPriceValue, instrument).Result;
@@ -335,6 +347,18 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             decimal stopPriceValue, string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
+            if (quantity <= 0)
+            {
+                throw reportInvalidMessage("You cannot create an order with a quantity of 0 or less");
+            }
+
+            if (stopPriceValue <= 0
+                || stopLoss.HasValue && stopLoss.Value <= 0
+                || takeProfit.HasValue && takeProfit.Value <= 0)
+            {
+                throw reportInvalidMessage("You cannot create a stop order with a price of 0 or less");
+            }
+
             var stopOrderEvent = new CreateOrderEventEntry
             {
                 User = user,
@@ -359,7 +383,8 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 var eventVersionNumber = currentVersionNumber + 1;
                 stopOrderEvent.VersionNumber = eventVersionNumber;
 
-                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
+                AssertUnreservedBalance(
+                    user, accountId, instrument, quantity, orderSide, stopPriceValue, reportInvalidMessage);
             });
             return plannedEvents;
         }
@@ -369,6 +394,17 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
             string durationType, decimal? duration, decimal? stopLoss, decimal? takeProfit,
             string requestId, Func<string, Exception> reportInvalidMessage)
         {
+            if (quantity <= 0)
+            {
+                throw reportInvalidMessage("You cannot create an order with a quantity of 0 or less");
+            }
+
+            if (stopLoss.HasValue && stopLoss.Value <= 0
+                || takeProfit.HasValue && takeProfit.Value <= 0)
+            {
+                throw reportInvalidMessage("You cannot create a market order with a price of 0 or less");
+            }
+
             var marketOrderEvent = new CreateOrderEventEntry
             {
                 User = user,
@@ -394,7 +430,12 @@ namespace XchangeCrypt.Backend.TradingService.Processors.Command
                 var eventVersionNumber = currentVersionNumber + 1;
                 marketOrderEvent.VersionNumber = eventVersionNumber;
 
-                AssertUnreservedBalance(user, accountId, instrument, quantity, orderSide, reportInvalidMessage);
+                // In the case of buying we cannot be sure that the entire quantity will get matched
+                if (orderSide == OrderSide.Sell)
+                {
+                    AssertUnreservedBalance(
+                        user, accountId, instrument, quantity, orderSide, null, reportInvalidMessage);
+                }
 
                 var matchedOrders = PlanMatchOrdersLocked(
                     user, accountId, instrument, orderSide, null, quantity, eventVersionNumber,
