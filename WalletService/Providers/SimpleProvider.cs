@@ -429,7 +429,12 @@ namespace XchangeCrypt.Backend.WalletService.Providers
         {
             //return "brass bus same payment express already energy direct type have venture afraid";
             const int bytesCount = 16;
-            var resultEntropy = RandomUtils.GetBytes(bytesCount);
+            var resultEntropy = new byte[bytesCount];
+            using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(resultEntropy);
+            }
+
             var thirdPartyEntropy = _randomEntropyService.GetRandomBytes(bytesCount);
             //_logger.LogInformation( $"Combining two entropies:\n{new Mnemonic(Wordlist.English, resultEntropy)}\nand\n{new Mnemonic(Wordlist.English, thirdPartyEntropy)}");
             for (var i = 0; i < bytesCount; i++)
