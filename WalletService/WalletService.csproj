@@ -18,7 +18,7 @@
         <PackageReference Include="Nethereum.HdWallet" Version="3.2.0" />
         <PackageReference Include="Nethereum.StandardTokenEIP20" Version="3.2.0" />
         <PackageReference Include="Nethereum.Web3" Version="3.2.0" />
-        <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="QBitNinja.Client" Version="1.0.3.47" />
         <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
     </ItemGroup>
